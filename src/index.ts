@@ -67,5 +67,13 @@ client
   .on('error', console.error)
   // .on('debug', console.info)
   .on('disconnect', () => console.log('client disconnected'))
-  .on('ready', () => console.log(`${client.user?.tag} ready`))
+  .on('ready', () => {
+    console.log(`${client.user?.tag} ready`);
+    client.user?.setPresence({
+      activity: {
+        name: 'your mom',
+        type: 'PLAYING',
+      },
+    });
+  })
   .login(process.env.DISCORD_TOKEN);
