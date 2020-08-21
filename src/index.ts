@@ -8,7 +8,7 @@ import { inspect } from 'util';
 import { commands } from './commands';
 import { Store } from './store';
 import { GuildConfig, GuildQueue } from './types';
-import { resolvePath } from './util';
+import { resolvePath, updateFlags } from './util';
 
 dotenv.config();
 
@@ -47,10 +47,7 @@ client.on('message', async (msg: Discord.Message) => {
     else return v.cmd.toLowerCase() === cmd.toLowerCase();
   });
 
-  for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--') break;
-    if (args[i].startsWith('-')) flags[args[i]] = i;
-  }
+  updateFlags(flags, args);
 
   if (!commandClass) return;
 

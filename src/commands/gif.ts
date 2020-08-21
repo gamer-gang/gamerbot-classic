@@ -4,7 +4,7 @@ import * as http from 'http';
 import * as https from 'https';
 import { Command } from '.';
 import { CmdArgs } from '../types';
-import { hasFlag, resolvePath, spliceFlags } from '../util';
+import { hasFlags, resolvePath, spliceFlag } from '../util';
 
 const fileRegExp = /^[A-Za-z0-9\-_]+$/;
 const urlRegExp = /^https?:\/\/[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/;
@@ -56,23 +56,26 @@ export class CommandGif implements Command {
     if (unrecognized.length > 0)
       return msg.channel.send(`unrecognized flags: \`${unrecognized.join('`, `')}\``);
 
-    if (hasFlag(flags, '-l', '--list')) {
+    if (hasFlags(flags, ['-l', '--list'])) {
       const files = await this.getGifs();
       return msg.channel.send(`files: \n\`\`\`\n${files.join(', ')}\n\`\`\``);
     }
 
-    if (hasFlag(flags, '-a', '--add')) {
-      spliceFlags(flags, args, '-a', '--add');
+    if (hasFlags(flags, ['-a', '--add'])) {
+      spliceFlag(flags, args, '-a');
+      spliceFlag(flags, args, '--add');
       return this.add(msg, args);
     }
 
-    if (hasFlag(flags, '-r', '--remove')) {
-      spliceFlags(flags, args, '-r', '--remove');
+    if (hasFlags(flags, ['-r', '--remove'])) {
+      spliceFlag(flags, args, '-r');
+      spliceFlag(flags, args, '--remove');
       return this.remove(msg, args);
     }
 
-    if (hasFlag(flags, '-n', '--rename')) {
-      spliceFlags(flags, args, '-n', '--rename');
+    if (hasFlags(flags, ['-n', '--rename'])) {
+      spliceFlag(flags, args, '-n');
+      spliceFlag(flags, args, '--rename');
       return this.remove(msg, args);
     }
 
