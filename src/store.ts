@@ -3,7 +3,6 @@ import * as fse from 'fs-extra';
 import * as yaml from 'js-yaml';
 import { mapToObject, objectToMap } from './util';
 import * as _ from 'lodash/fp';
-import { Dir } from 'fs-extra';
 
 export interface StoreOptions {
   /** Path to file to store data in. */

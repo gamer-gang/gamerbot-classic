@@ -26,7 +26,8 @@ export interface Video {
 
 export interface CmdArgs {
   msg: Discord.Message | Discord.PartialMessage;
-  args: Array<string>;
+  args: string[];
+  flags: Record<string, number>;
   cmd: string;
   configStore: Store<GuildConfig>;
   queueStore: Store<GuildQueue>;

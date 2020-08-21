@@ -24,3 +24,12 @@ export function objectToMap<T>(obj: { [key: string]: T }): Map<string, T> {
   }
   return map;
 }
+
+export const hasFlag = (flags: Record<string, number>, ...names: string[]) => {
+  for (const name of names) if (Object.prototype.hasOwnProperty.call(flags, name)) return true;
+  return false;
+};
+
+export const spliceFlags = (flags: Record<string, number>, args: string[], ...names: string[]) => {
+  for (const name of names) if (flags[name] !== undefined) args.splice(flags[name], 1);
+};

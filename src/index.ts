@@ -40,11 +40,17 @@ client.on('message', async (msg: Discord.Message) => {
   if (!msg.content.startsWith(config.prefix)) return;
 
   const [cmd, ...args] = msg.content.slice(config.prefix.length).split(' ');
+  const flags: Record<string, number> = {};
 
   const commandClass = commands.find(v => {
     if (Array.isArray(v.cmd)) return v.cmd.some(c => c.toLowerCase() === cmd.toLowerCase());
     else return v.cmd.toLowerCase() === cmd.toLowerCase();
   });
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--') break;
+    if (args[i].startsWith('-')) flags[args[i]] = i;
+  }
 
   if (!commandClass) return;
 
@@ -55,6 +61,7 @@ client.on('message', async (msg: Discord.Message) => {
     msg,
     cmd,
     args,
+    flags,
     client,
     configStore,
     queueStore,
