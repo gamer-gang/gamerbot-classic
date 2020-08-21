@@ -33,14 +33,6 @@ client.on('message', async (msg: Discord.Message) => {
   // don't respond to DMs
   if (!msg.guild) return;
 
-  if (
-    msg.content.includes('@everyone') ||
-    msg.content.includes('@here') ||
-    /<@!\d{18}>/g.test(msg.content)
-  ) {
-    return msg.channel.send('yea i aint doin that');
-  }
-
   configStore.setIfUnset(msg.guild.id, { prefix: '$', allowSpam: false });
   queueStore.setIfUnset(msg.guild.id, { videos: [], playing: false });
 
@@ -64,6 +56,14 @@ client.on('message', async (msg: Discord.Message) => {
 
   // console.debug(inspect(cmd, true, null, true));
   // console.debug(inspect(args, true, null, true));
+
+  if (
+    msg.content.includes('@everyone') ||
+    msg.content.includes('@here') ||
+    /<@!\d{18}>/g.test(msg.content)
+  ) {
+    return msg.channel.send('yea i aint doin that');
+  }
 
   return commandClass.executor({
     msg,
