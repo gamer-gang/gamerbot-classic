@@ -33,7 +33,7 @@ client.on('message', async (msg: Discord.Message) => {
   // don't respond to DMs
   if (!msg.guild) return;
 
-  if (msg.content.includes('@everyone') || msg.content.includes('@here')) {
+  if (msg.content.includes('@everyone') || msg.content.includes('@here') || /<@!\d{18}>/) {
     return msg.channel.send('yea i aint doin that');
   }
 
