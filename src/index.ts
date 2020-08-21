@@ -33,6 +33,10 @@ client.on('message', async (msg: Discord.Message) => {
   // don't respond to DMs
   if (!msg.guild) return;
 
+  if (msg.content.includes('@everyone') || msg.content.includes('@here')) {
+    return msg.channel.send('yea i aint doin that');
+  }
+
   configStore.setIfUnset(msg.guild.id, { prefix: '$', allowSpam: false });
   queueStore.setIfUnset(msg.guild.id, { videos: [], playing: false });
 
