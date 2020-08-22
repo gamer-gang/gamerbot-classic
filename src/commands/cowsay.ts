@@ -13,7 +13,7 @@ export class CommandCowsay implements Command {
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args } = cmdArgs;
 
-    if (args.length == 0) {
+    if (args.length == 0 || /^\s+$/.test(args.join(' '))) {
       msg.channel.send('nothing to say');
       return;
     }
