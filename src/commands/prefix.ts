@@ -21,6 +21,7 @@ export class CommandPrefix implements Command {
 
     if (!asciiRegExp.test(args[0])) {
       msg.channel.send('only ascii characters allowed');
+      return
     }
 
     config.prefix = args[0];
