@@ -31,8 +31,10 @@ export class CommandSpam implements Command {
     }
     if (hasFlags(flags, ['-m'])) {
       let providedMsgs = parseInt(spliceFlag(flags, args, '-m', true) as string);
-      if (!isNaN(providedMsgs)) messages = providedMsgs;
-      else return msg.channel.send('invalid message count');
+      if (!isNaN(providedMsgs)) {
+        messages = providedMsgs;
+        if (providedMsgs > 50) return msg.channel.send('too many messages');
+      } else return msg.channel.send('invalid message count');
     }
 
     if (!args[0])
