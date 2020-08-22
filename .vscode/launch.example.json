@@ -1,0 +1,14 @@
+{
+  "configurations": [
+    {
+      "name": "launch",
+      "request": "launch",
+      "preLaunchTask": "compile",
+      "type": "node",
+      "program": "dist/index.js",
+      "env": {
+        "PATH": "NVM_BIN_PATH:$PATH"
+      }
+    }
+  ]
+}
