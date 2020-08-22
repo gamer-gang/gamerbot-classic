@@ -15,16 +15,24 @@ export class CommandPrefix implements Command {
     if (args.length == 0) {
       msg.channel.send('argument needed');
       return;
+    } else if (args.length > 1) {
+      msg.channel.send('too many arguments');
+      return;
     }
 
     const asciiRegExp = /^[ -~]+$/;
 
     if (!asciiRegExp.test(args[0])) {
       msg.channel.send('only ascii characters allowed');
-      return
+      return;
     }
 
-    config.prefix = args[0];
+    if (args[0].length > 30) {
+      msg.channel.send('too long');
+      return;
+    }
+
+    if (args[0].length) config.prefix = args[0];
 
     configStore.set(msg.guild?.id as string, config);
 
