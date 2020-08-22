@@ -18,7 +18,13 @@ export class CommandSpam implements Command {
 
     const prefix = configStore.get(msg.guild?.id as string).prefix;
 
-    const unrecognized = Object.keys(flags).filter(v => !'r|m'.split('|').includes(v.substr(1)));
+    if (msg.content?.includes('/cow') && msg.author?.id !== process.env.OWNER_ID) {
+      return msg.channel.send('owner only');
+    }
+
+    const unrecognized = Object.keys(flags).filter(
+      v => !'r|m|t|-tts'.split('|').includes(v.substr(1))
+    );
     if (unrecognized.length > 0)
       return msg.channel.send(`unrecognized flag(s): \`${unrecognized.join('`, `')}\``);
 
@@ -42,6 +48,13 @@ export class CommandSpam implements Command {
     if (!args[0])
       return msg.channel.send(`no text to send\nusage: \`${prefix}${this.docs.usage}\``);
 
+    let tts = false;
+    if (hasFlags(flags, ['-t', '--ts'])) {
+      spliceFlag(flags, args, '-t');
+      spliceFlag(flags, args, '--tts');
+      tts = true;
+    }
+
     let output = '';
     let spamText = args.join(' ');
 
@@ -59,6 +72,9 @@ export class CommandSpam implements Command {
       for (let i = 0; i < repetitions; i++) output += ' ' + spamText;
     }
 
-    for (let i = 0; i < messages; i++) msg.channel.send(output);
+    for (let i = 0; i < messages; i++) {
+      if (tts) msg.channel.send(output, { tts: true });
+      else msg.channel.send(output);
+    }
   }
 }

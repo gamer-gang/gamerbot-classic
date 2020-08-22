@@ -18,6 +18,10 @@ export class CommandCowdos implements Command {
       return msg.channel.send('args needed');
     }
 
+    if (msg.author?.id !== process.env.OWNER_ID) {
+      return msg.channel.send('owner only');
+    }
+
     switch (args[0]) {
       case 'off': {
         if (!interval) return msg.channel.send('not running');
