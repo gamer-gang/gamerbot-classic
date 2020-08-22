@@ -13,6 +13,7 @@
     "axios": "^0.19.2",
     "bufferutil": "^4.0.1",
     "cheerio": "^1.0.0-rc.3",
+    "cowsay": "^1.4.0",
     "cross-env": "^7.0.2",
     "discord.js": "^12.3.1",
     "erlpack": "github:discordapp/erlpack",
