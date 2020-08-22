@@ -68,3 +68,8 @@ export const spliceFlag = (
   updateFlags(flags, args);
   return;
 };
+
+export const hasMentions = (content: string, includeSingleUser = true) =>
+  content.includes('@everyone') ||
+  content.includes('@here') ||
+  (includeSingleUser ? /<@!\d{18}>/g.test(content) : false);

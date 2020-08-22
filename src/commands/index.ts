@@ -3,6 +3,7 @@ import { CmdArgs } from '../types';
 import { CommandAbout } from './about';
 import { CommandAllowSpam } from './allowspam';
 import { CommandCowsay } from './cowsay';
+import { CommandCowdos } from './cowdos';
 import { CommandGif } from './gif';
 import { CommandHelp } from './help';
 import { CommandJoke } from './joke';
@@ -30,6 +31,7 @@ export const commands: Command[] = [
   new CommandAbout(),
   new CommandAllowSpam(),
   new CommandCowsay(),
+  new CommandCowdos(),
   new CommandGif(),
   new CommandHelp(),
   new CommandJoke(),

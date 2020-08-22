@@ -3,6 +3,7 @@ import { Command } from '.';
 import { CmdArgs } from '../types';
 import { say } from 'cowsay';
 import { LoremIpsum } from 'lorem-ipsum';
+import { hasMentions } from '../util';
 
 export class CommandCowsay implements Command {
   cmd = 'cowsay';
@@ -17,6 +18,8 @@ export class CommandCowsay implements Command {
       msg.channel.send('nothing to say');
       return;
     }
+
+    if (hasMentions(msg.content!)) return msg.channel.send('yea i aint doin that');
 
     let cowtext = args.join(' ');
 

@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 import { Command } from '.';
 import { CmdArgs } from '../types';
-import { hasFlags, spliceFlag } from '../util';
+import { hasFlags, hasMentions, spliceFlag } from '../util';
 
 export class CommandSpam implements Command {
   cmd = 'spam';
@@ -36,6 +36,8 @@ export class CommandSpam implements Command {
         if (providedMsgs > 50) return msg.channel.send('too many messages');
       } else return msg.channel.send('invalid message count');
     }
+
+    if (hasMentions(msg.content!)) return msg.channel.send('yea i aint doin that');
 
     if (!args[0])
       return msg.channel.send(`no text to send\nusage: \`${prefix}${this.docs.usage}\``);
