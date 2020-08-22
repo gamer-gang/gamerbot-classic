@@ -13,9 +13,16 @@ export class CommandPrefix implements Command {
     const config = configStore.get(msg.guild?.id as string);
 
     if (args.length == 0) {
-      msg.channel.send('yo i need an argument');
+      msg.channel.send('argument needed');
       return;
     }
+
+    const asciiRegExp = /^[ -~]+$/;
+
+    if (!asciiRegExp.test(args[0])) {
+      msg.channel.send('only ascii characters allowed');
+    }
+
     config.prefix = args[0];
 
     configStore.set(msg.guild?.id as string, config);
