@@ -18,7 +18,7 @@ export class CommandSpam implements Command {
 
     const prefix = configStore.get(msg.guild?.id as string).prefix;
 
-    const unrecognized = args.filter(v => v[0] === '-' && !'r|m'.split('|').includes(v.substr(1)));
+    const unrecognized = Object.keys(flags).filter(v => !'r|m'.split('|').includes(v.substr(1)));
     if (unrecognized.length > 0)
       return msg.channel.send(`unrecognized flag(s): \`${unrecognized.join('`, `')}\``);
 
