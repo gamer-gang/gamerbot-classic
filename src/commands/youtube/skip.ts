@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
-import { Command } from '.';
-import { CmdArgs } from '../types';
+import { Command } from '..';
+import { CmdArgs } from '../../types';
 
 export class CommandSkip implements Command {
   cmd = 'skip';

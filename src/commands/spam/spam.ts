@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
-import { Command } from '.';
-import { CmdArgs } from '../types';
-import { hasFlags, hasMentions, spliceFlag } from '../util';
+import { Command } from '..';
+import { CmdArgs } from '../../types';
+import { hasFlags, hasMentions, spliceFlag } from '../../util';
 
 export class CommandSpam implements Command {
   cmd = 'spam';
@@ -12,15 +12,13 @@ export class CommandSpam implements Command {
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args, configStore, flags } = cmdArgs;
 
-    if (!configStore.get(msg.guild?.id as string).allowSpam) {
+    const config = configStore.get(msg.guild?.id as string);
+
+    if (!config.allowSpam) {
       return msg.channel.send('spam commands are off');
     }
 
     const prefix = configStore.get(msg.guild?.id as string).prefix;
-
-    if (msg.content?.includes('/cow') && msg.author?.id !== process.env.OWNER_ID) {
-      return msg.channel.send('owner only');
-    }
 
     const unrecognized = Object.keys(flags).filter(
       v => !'r|m|t|-tts'.split('|').includes(v.substr(1))
@@ -57,6 +55,10 @@ export class CommandSpam implements Command {
 
     let output = '';
     let spamText = args.join(' ');
+
+    if (spamText.startsWith(config.cowPrefix) && msg.author?.id !== process.env.OWNER_ID) {
+      return msg.channel.send('owner only');
+    }
 
     if (args[1] == 'fill') {
       while (true) {

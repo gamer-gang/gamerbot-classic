@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 import * as _ from 'lodash';
-import { Command } from '.';
-import { CmdArgs } from '../types';
+import { Command } from '..';
+import { CmdArgs } from '../../types';
 
 export class CommandQueue implements Command {
   cmd = ['queue', 'q'];
