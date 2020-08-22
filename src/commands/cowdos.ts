@@ -12,7 +12,9 @@ export class CommandCowdos implements Command {
     description: 'spam text slowly',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+    const { msg, args, configStore } = cmdArgs;
+
+    msg.channel.send(`configured prefix is ${configStore.get(msg.guild?.id as string).cowPrefix}`);
 
     if (args.length == 0) {
       return msg.channel.send('args needed');

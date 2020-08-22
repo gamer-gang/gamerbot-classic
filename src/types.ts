@@ -7,6 +7,7 @@ import { Store } from './store';
 export interface GuildConfig {
   prefix: string;
   allowSpam: boolean;
+  cowPrefix: string;
 }
 
 export interface GuildQueue {
@@ -16,6 +17,35 @@ export interface GuildQueue {
   voiceConnection?: Discord.VoiceConnection;
   playing: boolean;
 }
+
+export interface GuildGames {
+  liarsDice: Record<string, LiarsDiceGame>;
+}
+
+export interface LiarsDiceGame {
+  players: Record<string, LiarsDicePlayer>;
+  creatorId: string;
+  metadata: LiarsDiceMetadata;
+  reactionCollector?: GameReactionCollector;
+}
+
+export interface LiarsDiceMetadata {
+  diceAmount: number;
+  diceSides: number;
+}
+
+export interface DiceObject {
+  sides: number;
+  value: number;
+}
+
+export interface LiarsDicePlayer {
+  dice: DiceObject[];
+}
+
+export type GameReactionCollector = Discord.ReactionCollector & {
+  gameCode?: string;
+};
 
 export interface Video {
   url: string;
@@ -31,6 +61,7 @@ export interface CmdArgs {
   cmd: string;
   configStore: Store<GuildConfig>;
   queueStore: Store<GuildQueue>;
+  gameStore: Store<GuildGames>;
   client: Discord.Client;
   youtube: YouTube;
 }

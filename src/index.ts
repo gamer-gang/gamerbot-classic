@@ -7,7 +7,7 @@ import * as YouTube from 'simple-youtube-api';
 import { inspect } from 'util';
 import { commands } from './commands';
 import { Store } from './store';
-import { GuildConfig, GuildQueue } from './types';
+import { GuildConfig, GuildGames, GuildQueue } from './types';
 import { resolvePath, updateFlags } from './util';
 
 dotenv.config();
@@ -27,14 +27,36 @@ const queueStore = new Store<GuildQueue>({
   path: 'data/queue.yaml',
   dataLanguage: 'yaml',
 });
+const gameStore = new Store<GuildGames>({
+  path: 'data/games.yaml',
+  dataLanguage: 'yaml',
+  readImmediately: true,
+  writeOnSet: false,
+});
 
 client.on('message', async (msg: Discord.Message) => {
-  if (msg.author.bot) return;
+  if (msg.author.id == client.user!.id) return;
   // don't respond to DMs
   if (!msg.guild) return;
 
-  configStore.setIfUnset(msg.guild.id, { prefix: '$', allowSpam: false });
+  if (msg.author.bot) {
+    if (
+      msg.author.id === '745448789657124935' &&
+      msg.content.includes('Prefix Successfully Changed To:')
+    ) {
+      console.log(msg.content);
+      // extract new prefix
+      const newCowPrefix = msg.content
+        .substring(msg.content.indexOf('```') + 3, msg.content.lastIndexOf('```'))
+        .trim();
+      configStore.get(msg.guild.id).cowPrefix = newCowPrefix;
+    }
+    return;
+  }
+
+  configStore.setIfUnset(msg.guild.id, { prefix: '$', allowSpam: false, cowPrefix: '/cow' });
   queueStore.setIfUnset(msg.guild.id, { videos: [], playing: false });
+  gameStore.setIfUnset(msg.guild.id, { liarsDice: {} });
 
   const config = configStore.get(msg.guild.id);
   if (!msg.content.startsWith(config.prefix)) return;
@@ -63,6 +85,7 @@ client.on('message', async (msg: Discord.Message) => {
     configStore,
     queueStore,
     youtube,
+    gameStore,
   });
 });
 
