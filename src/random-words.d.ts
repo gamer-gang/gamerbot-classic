@@ -1,6 +1,5 @@
 // these are probably wrong
 
-
 declare module 'random-words' {
   function words(): string;
   function words(num: number): string | string[];
