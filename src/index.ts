@@ -71,7 +71,7 @@ client.on('message', async (msg: Discord.Message) => {
   const config = configStore.get(msg.guild.id);
   if (!msg.content.startsWith(config.prefix)) return;
 
-  const [cmd, ...args] = msg.content.slice(config.prefix.length).split(' ');
+  const [cmd, ...args] = msg.content.slice(config.prefix.length).replace('  ', ' ').split(' ');
   const flags: Record<string, number> = {};
 
   const commandClass = commands.find(v => {

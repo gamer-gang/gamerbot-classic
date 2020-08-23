@@ -54,9 +54,9 @@ export class CommandSpam implements Command {
     }
 
     let output = '';
-    let spamText = args.join(' ');
+    let spamText = args.join(' ').trim();
 
-    if (spamText.startsWith(config.cowPrefix) && msg.author?.id !== process.env.OWNER_ID) {
+    if (spamText.startsWith('/cow') && msg.author?.id !== process.env.OWNER_ID) {
       return msg.channel.send('owner only');
     }
 
