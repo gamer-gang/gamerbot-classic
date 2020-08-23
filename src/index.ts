@@ -53,10 +53,11 @@ client.on('message', async (msg: Discord.Message) => {
         msg.embeds[0].description === '```gamerbot#0789```' &&
         msg.embeds[0].title === 'How Rich i$ $omeone'
       ) {
-        console.log(msg.embeds);
-        const money = parseInt(msg.embeds[0].fields[0].value.replace(/[`$]/g, '').trim());
-        if (money > 100000000) {
-          msg.channel.send('/cow buy upgrade dino ' + Math.floor(money / 100000000));
+        const money = BigInt(msg.embeds[0].fields[0].value.replace(/[`$]/g, '').trim());
+        if (money > 1) {
+          // typescript complaining about bigint literal even though it works perfectly
+          // @ts-ignore
+          msg.channel.send('/cow buy upgrade dino ' + money / 100000000n);
         }
       }
     }
