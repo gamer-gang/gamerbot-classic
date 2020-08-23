@@ -26,6 +26,7 @@
     "lodash": "^4.17.20",
     "lorem-ipsum": "^2.0.3",
     "mime-types": "^2.1.27",
+    "moment": "^2.27.0",
     "random-words": "^1.1.1",
     "randomstring": "^1.1.5",
     "simple-youtube-api": "^5.2.1",
