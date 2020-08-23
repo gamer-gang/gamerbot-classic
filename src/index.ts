@@ -40,16 +40,25 @@ client.on('message', async (msg: Discord.Message) => {
   if (!msg.guild) return;
 
   if (msg.author.bot) {
-    if (
-      msg.author.id === '745448789657124935' &&
-      msg.content.includes('Prefix Successfully Changed To:')
-    ) {
-      console.log(msg.content);
-      // extract new prefix
-      const newCowPrefix = msg.content
-        .substring(msg.content.indexOf('```') + 3, msg.content.lastIndexOf('```'))
-        .trim();
-      configStore.get(msg.guild.id).cowPrefix = newCowPrefix;
+    if (msg.author.id === '745448789657124935') {
+      if (msg.content.includes('Prefix Successfully Changed To:')) {
+        console.log(msg.content);
+        // extract new prefix
+        const newCowPrefix = msg.content
+          .substring(msg.content.indexOf('```') + 3, msg.content.lastIndexOf('```'))
+          .trim();
+        configStore.get(msg.guild.id).cowPrefix = newCowPrefix;
+      } else if (
+        msg.embeds[0] &&
+        msg.embeds[0].description === '```gamerbot#0789```' &&
+        msg.embeds[0].title === 'How Rich i$ $omeone'
+      ) {
+        console.log(msg.embeds);
+        const money = parseInt(msg.embeds[0].fields[0].value.replace(/[`$]/g, '').trim());
+        if (money > 100000000) {
+          msg.channel.send('/cow buy upgrade dino ' + Math.floor(money / 100000000));
+        }
+      }
     }
     return;
   }
