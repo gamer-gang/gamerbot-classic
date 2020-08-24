@@ -19,7 +19,7 @@ export class CommandCowsay implements Command {
       return;
     }
 
-    if (hasMentions(msg.content!)) return msg.channel.send('yea i aint doin that');
+    if (hasMentions(msg.content as string)) return msg.channel.send('yea i aint doin that');
 
     let cowtext = args.join(' ');
 

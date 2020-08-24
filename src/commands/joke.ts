@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { Message } from 'discord.js';
 import * as he from 'he';
-import { Command } from '.';
+import { Command, unknownFlags } from '.';
 import { CmdArgs } from '../types';
 import { hasFlags } from '../util';
 
@@ -22,7 +22,7 @@ export class CommandJoke implements Command {
       description: 'Get a joke from codepen (may take a while)',
     },
   ];
-  async getCodepenJoke() {
+  async getCodepenJoke(): Promise<string> {
     const response = await axios.get('https://codepen.io/pen/');
     if (response.status !== 200) throw new Error("response code " + response.status);
 
@@ -31,19 +31,22 @@ export class CommandJoke implements Command {
 
     return (he.decode(text.replace('\n', '').replace(/<\/?code>/g, '`')));
   }
-  async getGenericJoke() {
+  async getGenericJoke(): Promise<string> {
     const response = await axios.get('https://official-joke-api.appspot.com/jokes/random');
     return `${response.data.setup}\n${response.data.punchline}`;
   }
-  async getProgrammingJoke() {
+  async getProgrammingJoke(): Promise<string> {
     const response = await axios.get(
       'https://official-joke-api.appspot.com/jokes/programming/random'
     );
     return `${response.data[0].setup}\n${response.data[0].punchline}`;
   }
-  async executor({ msg, flags }: CmdArgs): Promise<void | Message> {
+  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
+    const { msg, flags }  = cmdArgs;
     try {
       let joke: string;
+
+      if (unknownFlags(cmdArgs, 'c|-c|g|-generic')) return;
 
       hasFlags(flags, ['-c', '--codepen']) && (joke ??= await this.getCodepenJoke());
       hasFlags(flags, ['-g', '--generic']) && (joke ??= await this.getGenericJoke());

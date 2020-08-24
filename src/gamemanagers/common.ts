@@ -1,4 +1,4 @@
-import { DiceObject } from "../types";
+import { DiceObject } from '../types';
 
 export class Dice {
   value!: number;
@@ -7,18 +7,18 @@ export class Dice {
     this.roll();
   }
 
-  setSides(n: number) {
+  setSides(n: number): Dice {
     this.sides = n;
 
     return this;
   }
 
-  roll() {
+  roll(): number {
     this.value = Math.floor(Math.random() * this.sides) + 1;
     return this.value;
   }
 
-  static array(amount: number, sides: number) {
+  static array(amount: number, sides: number): Dice[] {
     const output: Dice[] = [];
 
     for (let i = 0; i < amount; i++) {
@@ -28,7 +28,7 @@ export class Dice {
     return output;
   }
 
-  static fromObject({ sides, value }: DiceObject) {
+  static fromObject({ sides, value }: DiceObject): Dice {
     const output = new Dice(sides);
     output.value = value;
     return output;

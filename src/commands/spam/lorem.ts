@@ -31,6 +31,7 @@ export class CommandLorem implements Command {
 
     for (let i = 0; i < amount; i++) {
       let text = '';
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         const append = ' ' + lorem.generateSentences(1);
         if (text.length + append.length > 2000) break;

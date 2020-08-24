@@ -1,7 +1,9 @@
-import { LiarsDiceGame, GuildGames } from "../types";
+import { LiarsDiceGame, GuildGames } from '../types';
 import * as randomstring from 'randomstring';
-import { gameStore } from '..';
-
+import { client, gameStore } from '..';
+import { CategoryChannel, TextChannel } from 'discord.js';
+import { shuffle } from 'lodash/fp';
+import { Embed } from '../embed';
 export class LiarsDiceManager {
   games: GuildGames;
   liarsDice: Record<string, LiarsDiceGame>;
@@ -11,7 +13,7 @@ export class LiarsDiceManager {
     this.liarsDice = this.games.liarsDice;
   }
 
-  makeGameCode() {
+  makeGameCode(): string {
     let code: string;
 
     do {
@@ -26,30 +28,72 @@ export class LiarsDiceManager {
     return code;
   }
 
-  inGame(playerId: string) {
+  inGame(playerId: string): string | null {
     for (const code of Object.keys(this.liarsDice)) {
       if (Object.keys(this.liarsDice[code].players).some(id => playerId === id)) return code;
     }
     return null;
   }
 
-  isInGame(playerId: string) {
+  isInGame(playerId: string): boolean {
     for (const code of Object.keys(this.liarsDice)) {
       if (Object.keys(this.liarsDice[code].players).some(id => playerId === id)) return true;
     }
     return false;
   }
 
-  setGame(code: string, game: LiarsDiceGame) {
+  setGame(code: string, game: LiarsDiceGame): void {
     this.liarsDice[code] = game;
     this.write();
   }
 
-  get(code: string) {
+  get(code: string): LiarsDiceGame {
     return this.liarsDice[code];
   }
 
-  write() {
+  delete(code: string): void {
+    delete this.liarsDice[code];
+    this.write();
+  }
+
+  write(): void {
     gameStore.set(this.guildId, this.games);
+    gameStore.writeFile();
+  }
+
+  gameCodes(): string[] {
+    return Array.from(Object.keys(this.liarsDice));
+  }
+
+  async startGame(code: string, channel: TextChannel): Promise<void> {
+    const guild = await client.guilds.fetch(this.guildId);
+    const game = this.liarsDice[code];
+    const playerOrder = shuffle(Object.keys(game.players)).map(
+      id => guild.members.resolve(id)?.user.tag
+    );
+
+    const gameChannel = await guild.channels.create(this.channelName(code), {
+      parent: channel.parentID
+        ? (guild.channels.resolve(channel.parentID) as CategoryChannel)
+        : undefined,
+      type: 'text',
+    });
+
+    channel.send(
+      new Embed()
+        .setTitle(`liars dice (\`${code}\`)`)
+        .setDescription(`game started in <#${gameChannel.id}>!`)
+    );
+
+    gameChannel.send(
+      new Embed()
+        .setTitle(`liars dice (\`${code}\`): info`)
+        .addField('dice', `${game.metadata.diceAmount} ${game.metadata.diceSides}-sided dice`, true)
+        .addField('player order', `\`\`\`${playerOrder.join(' => ')}\`\`\``)
+    );
+  }
+
+  channelName(code: string): string {
+    return 'liarsdice-' + code.replace('ld-', '');
   }
 }

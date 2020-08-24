@@ -1,13 +1,12 @@
-import { Command } from '..';
-import { Embed } from '../../embed';
-import { CmdArgs, GameReactionCollector } from '../../types';
-import { hasFlags, spliceFlag } from '../../util';
+import { Guild, Message, TextChannel, User } from 'discord.js';
 import { inspect } from 'util';
 import * as yaml from 'js-yaml';
-import * as _ from 'lodash';
-import { User, Guild } from 'discord.js';
-import { LiarsDiceManager } from '../../gamemanagers/liarsdicemanager';
+import { Command, unknownFlags } from '..';
+import { Embed } from '../../embed';
 import { Dice } from '../../gamemanagers/common';
+import { LiarsDiceManager } from '../../gamemanagers/liarsdicemanager';
+import { CmdArgs, GameReactionCollector } from '../../types';
+import { hasFlags, spliceFlag } from '../../util';
 
 const reactionCollectors: GameReactionCollector[] = [];
 
@@ -28,20 +27,16 @@ export class CommandLiarsDice implements Command {
     },
   ];
 
-  async executor(cmdArgs: CmdArgs) {
+  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, flags, args, client } = cmdArgs;
 
-    const manager = new LiarsDiceManager(msg.guild!.id);
+    const manager = new LiarsDiceManager(msg.guild?.id as string);
 
-    const unrecognized = Object.keys(flags).filter(
-      v => !'c|-create|s|-start|n|d|-state|i|-cancel'.split('|').includes(v.substr(1))
-    );
-    if (unrecognized.length > 0)
-      return msg.channel.send(`unrecognized flag(s): \`${unrecognized.join('`, `')}\``);
+    if (unknownFlags(cmdArgs, 'c|-create|s|-start|n|d|-state|i|-cancel')) return;
 
     if (hasFlags(flags, ['--state', '-i'])) {
       try {
-        const state = yaml.dump(manager.liarsDice)
+        const state = yaml.dump(manager.liarsDice);
         const embed = new Embed()
           .setTitle('liars dice state')
           .setDescription('```yaml\n' + state + '\n```');
@@ -53,10 +48,10 @@ export class CommandLiarsDice implements Command {
     }
 
     if (hasFlags(flags, ['--cancel'])) {
-      const code = manager.inGame(msg.author!.id);
+      const code = manager.inGame(msg.author?.id as string);
 
       if (!code) return msg.channel.send('not in game');
-      if (manager.get(code).creatorId !== msg.author!.id)
+      if (manager.get(code).creatorId !== msg.author?.id)
         return msg.channel.send(`only game creator can cancel`);
 
       reactionCollectors.find(c => c.gameCode === code)?.stop('cancel');
@@ -67,20 +62,21 @@ export class CommandLiarsDice implements Command {
     }
 
     if (hasFlags(flags, ['-s', '--start'])) {
-      const code = manager.inGame(msg.author!.id);
+      const code = manager.inGame(msg.author?.id as string);
       if (!code) return msg.channel.send('not in game');
 
       const game = manager.get(code);
-      if (game.creatorId !== msg.author!.id)
+      if (game.creatorId !== msg.author?.id)
         return msg.channel.send(`ask <@!${game.creatorId}> to start the game`);
-      if (Object.keys(game.players).length < 2)
-        return msg.channel.send('need more players');
+      if (Object.keys(game.players).length < 2) return msg.channel.send('need more players');
 
       return reactionCollectors.find(c => c.gameCode === code)?.stop('start');
     }
 
     // create game
-    if (!hasFlags(flags, ['-c', '--create'])) return;
+    if (!hasFlags(flags, ['-c', '--create'])) {
+      return msg.channel.send(`usage: \`${this.docs.map(d => d.usage).join('`, `')}\``);
+    }
 
     let diceAmount = 5;
     let diceSides = 6;
@@ -108,7 +104,7 @@ export class CommandLiarsDice implements Command {
     }
 
     // only include if not in game already
-    if (manager.isInGame(msg.author!.id))
+    if (manager.isInGame(msg.author?.id as string))
       return msg.channel.send('u are smelly and in a game already');
 
     // generate new game
@@ -116,29 +112,33 @@ export class CommandLiarsDice implements Command {
 
     // make embed
     let timeLeft = 120;
-    const playerTags: string[] = [msg.author!.tag];
+    const playerTags: string[] = [msg.author?.tag as string];
 
-    const embedMessage = await msg.channel.send(this.makeJoinEmbed({
-      gameCode: code,
-      timeLeft,
-      playerTags,
-      diceAmount,
-      diceSides,
-    }));
+    const embedMessage = await msg.channel.send(
+      this.makeJoinEmbed({
+        gameCode: code,
+        timeLeft,
+        playerTags,
+        diceAmount,
+        diceSides,
+      })
+    );
 
     embedMessage.react('🎲');
 
-    const updateEmbed = (time = timeLeft) => embedMessage.edit(
-      this.makeJoinEmbed({ gameCode: code, timeLeft: time, playerTags, diceAmount, diceSides })
-    );
+    const updateEmbed = (time = timeLeft) =>
+      embedMessage.edit(
+        this.makeJoinEmbed({ gameCode: code, timeLeft: time, playerTags, diceAmount, diceSides })
+      );
 
     // set 2 min timer
-    const interval = setInterval(() => updateEmbed(timeLeft -= 5), 5000);
+    const interval = setInterval(() => updateEmbed((timeLeft -= 5)), 5000);
 
     // create reaction collector
     const collector = embedMessage.createReactionCollector(
       ({ emoji }, user) =>
-        emoji.name === '🎲' && ![msg.author!.id, client.user!.id].includes(user.id),
+        emoji.name === '🎲' &&
+        ![msg.author?.id as string, client.user?.id as string].includes(user.id),
       { time: 120000, dispose: true }
     ) as GameReactionCollector;
 
@@ -157,22 +157,16 @@ export class CommandLiarsDice implements Command {
         clearInterval(interval);
         updateEmbed(0);
 
-        if (reason === 'cancel') return;
+        if (reason === 'cancel') return manager.delete(code);
 
         const game = manager.get(code);
 
-        if (Object.keys(game.players).length < 2)
+        if (Object.keys(game.players).length < 2) {
+          manager.delete(code);
           return msg.channel.send('not enough players to start, aborting');
+        }
 
-        // do game thing
-        msg.channel.send(`"starting game ${code} now"`);
-        msg.channel.send(
-          Object.keys(game.players)
-            .map(id => `<@!${id}>`)
-            .join(' ')
-        );
-
-        // Object.keys(game.players).forEach() ---------------------------------------------------------------------------
+        manager.startGame(code, msg.channel as TextChannel);
       });
 
     collector.gameCode = code;
@@ -180,9 +174,10 @@ export class CommandLiarsDice implements Command {
     manager.setGame(code, {
       players: {},
       metadata: { diceAmount, diceSides },
-      creatorId: msg.author!.id,
-    })
-    manager.get(code).players[msg.author!.id] = {
+      creatorId: msg.author?.id as string,
+      roundNumber: 0,
+    });
+    manager.get(code).players[msg.author?.id as string] = {
       dice: Dice.array(diceAmount, diceSides),
     };
 
@@ -197,7 +192,7 @@ export class CommandLiarsDice implements Command {
     playerTags: string[];
     diceAmount: number;
     diceSides: number;
-  }) {
+  }): Embed {
     return new Embed()
       .setTitle('liars dice/swindlestones')
       .setDescription('react with 🎲 to join')
@@ -211,12 +206,5 @@ export class CommandLiarsDice implements Command {
       .addField('how 2 play?', 'go to https://en.wikipedia.org/wiki/Liar%27s_dice', false)
       .addField('players', opts.playerTags.join(', '))
       .setFooter('do ctrl + alt + ➡️ or ctrl + k to switch between dms and server channels');
-  }
-
-  async giveHand(guild: Guild, playerId: string, gameStore) {
-    const player = await guild.members.fetch(playerId)
-    const dmChannel = await player.createDM();
-
-    dmChannel.send('poop');
   }
 }

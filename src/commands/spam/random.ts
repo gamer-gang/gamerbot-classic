@@ -1,8 +1,7 @@
 import { Message } from 'discord.js';
 import { Command } from '..';
 import { CmdArgs } from '../../types';
-// @ts-ignore
-import * as randomWords from 'random-words';
+import randomWords from 'random-words';
 
 export class CommandRandom implements Command {
   cmd = 'random';
@@ -29,6 +28,7 @@ export class CommandRandom implements Command {
 
     for (let i = 0; i < amount; i++) {
       let text = '';
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         const append = ' ' + randomWords(1);
         if (text.length + append.length > 2000) break;

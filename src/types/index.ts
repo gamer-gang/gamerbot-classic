@@ -1,6 +1,5 @@
 import * as Discord from 'discord.js';
-// @ts-ignore
-import * as YouTube from 'simple-youtube-api';
+import YouTube from 'simple-youtube-api';
 import { Store } from '../store';
 import { GuildGames } from './games';
 import { GuildQueue } from './youtube';

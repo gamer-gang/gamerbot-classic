@@ -16,7 +16,7 @@ const getEconomy = () => economyStore.get('economy');
 const setEconomy = (economy: Economy) => economyStore.set('economy', economy);
 
 export class EconomyManager {
-  static addToEconomy(playerId: string) {
+  static addToEconomy(playerId: string): void {
     const economy = getEconomy();
 
     economy.members[playerId] = {
@@ -39,7 +39,7 @@ export class EconomyManager {
     return member.coins;
   }
 
-  static setCoins(playerId: string, coins: number) {
+  static setCoins(playerId: string, coins: number): number {
     const economy = getEconomy();
     economy.members[playerId].coins = coins;
     setEconomy(economy);
@@ -55,7 +55,9 @@ export class EconomyManager {
     return this.setCoins(playerId, Math.max(this.getCoins(playerId) - coins, 0));
   }
 
-  static bankrupt(playerId: string) {
+  static bankrupt(playerId: string): boolean {
     if (this.getCoins(playerId) !== 0) return false;
+
+    return false;
   }
 }

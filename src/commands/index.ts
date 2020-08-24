@@ -29,6 +29,19 @@ export interface CommandDocs {
   description: string;
 }
 
+export const unknownFlags = (cmdArgs: CmdArgs, flagString: string, separator = '|'): boolean => {
+  const { msg, flags } = cmdArgs;
+  const unrecognized = Object.keys(flags).filter(
+    v => !flagString.split(separator).includes(v.substr(1))
+  );
+  if (unrecognized.length > 0) {
+    msg.channel.send(`unrecognized flag(s): \`${unrecognized.join('`, `')}\``);
+    return true;
+  }
+
+  return false;
+};
+
 export const commands: Command[] = [
   new CommandAbout(),
   new CommandAllowSpam(),
