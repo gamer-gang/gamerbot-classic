@@ -15,7 +15,6 @@ export interface LiarsDiceGame {
   players: Record<string, LiarsDicePlayer>;
   creatorId: string;
   metadata: LiarsDiceMetadata;
-  reactionCollector?: GameReactionCollector;
 }
 
 export interface LiarsDiceMetadata {

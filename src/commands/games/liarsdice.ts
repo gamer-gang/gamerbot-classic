@@ -1,53 +1,18 @@
-import * as randomstring from 'randomstring';
 import { Command } from '..';
 import { Embed } from '../../embed';
-import { CmdArgs, DiceObject, GameReactionCollector, LiarsDiceGame } from '../../types';
-import { hasFlags, mapToObject, spliceFlag } from '../../util';
+import { CmdArgs, GameReactionCollector } from '../../types';
+import { hasFlags, spliceFlag } from '../../util';
 import { inspect } from 'util';
 import * as yaml from 'js-yaml';
-import _ = require('lodash');
+import * as _ from 'lodash';
+import { User, Guild } from 'discord.js';
+import { LiarsDiceManager } from '../../gamemanagers/liarsdicemanager';
+import { Dice } from '../../gamemanagers/common';
 
-class Dice {
-  value!: number;
-
-  constructor(public sides: number = 6) {
-    this.roll();
-  }
-
-  setSides(n: number) {
-    this.sides = n;
-
-    return this;
-  }
-
-  roll() {
-    this.value = Math.floor(Math.random() * this.sides) + 1;
-    return this.value;
-  }
-
-  static array(amount: number, sides: number) {
-    const output: Dice[] = [];
-
-    for (let i = 0; i < amount; i++) {
-      output.push(new Dice(sides));
-    }
-
-    return output;
-  }
-
-  static fromObject({ sides, value }: DiceObject) {
-    const output = new Dice(sides);
-    output.value = value;
-    return output;
-  }
-
-  toObject(): DiceObject {
-    return { sides: this.sides, value: this.value };
-  }
-}
+const reactionCollectors: GameReactionCollector[] = [];
 
 export class CommandLiarsDice implements Command {
-  cmd = 'liarsdice';
+  cmd = 'dice';
   docs = [
     {
       usage: 'liarsdice -c, --create [-d diceAmount=5] [-n diceSides=6]',
@@ -57,55 +22,26 @@ export class CommandLiarsDice implements Command {
       usage: 'liarsdice -s, --start',
       description: 'start dice game (game creator only)',
     },
+    {
+      usage: 'liarsdice --cancel',
+      description: 'cancel dice game (game creator only)',
+    },
   ];
 
-  makeGameCode(existing: string[]) {
-    let code: string;
-
-    do {
-      code =
-        'ld-' +
-        randomstring.generate({
-          length: 4,
-          charset: '1234567890',
-        });
-    } while (existing.includes(code));
-
-    return code;
-  }
-
-  inGame(games: Record<string, LiarsDiceGame>, playerId: string) {
-    for (const code of Object.keys(games)) {
-      if (Object.keys(games[code].players).some(id => playerId === id)) return code;
-    }
-    return null;
-  }
-
-  isInGame(games: Record<string, LiarsDiceGame>, playerId: string) {
-    for (const code of Object.keys(games)) {
-      if (Object.keys(games[code].players).some(id => playerId === id)) return true;
-    }
-    return false;
-  }
-
   async executor(cmdArgs: CmdArgs) {
-    const { msg, gameStore, flags, args, client } = cmdArgs;
-    const { liarsDice } = gameStore.get(msg.guild!.id);
+    const { msg, flags, args, client } = cmdArgs;
+
+    const manager = new LiarsDiceManager(msg.guild!.id);
 
     const unrecognized = Object.keys(flags).filter(
-      v => !'c|-create|s|-start|n|d|-state'.split('|').includes(v.substr(1))
+      v => !'c|-create|s|-start|n|d|-state|i|-cancel'.split('|').includes(v.substr(1))
     );
     if (unrecognized.length > 0)
       return msg.channel.send(`unrecognized flag(s): \`${unrecognized.join('`, `')}\``);
 
-    if (hasFlags(flags, ['--state'])) {
+    if (hasFlags(flags, ['--state', '-i'])) {
       try {
-        const cloned = _.cloneDeep(liarsDice);
-        for (const key of Object.keys(cloned)) {
-          delete cloned[key].reactionCollector;
-        }
-        console.log(JSON.stringify(cloned));
-        const state = yaml.dump(cloned);
+        const state = yaml.dump(manager.liarsDice)
         const embed = new Embed()
           .setTitle('liars dice state')
           .setDescription('```yaml\n' + state + '\n```');
@@ -116,18 +52,31 @@ export class CommandLiarsDice implements Command {
       }
     }
 
-    if (hasFlags(flags, ['-s', '--start'])) {
-      const gameCode = this.inGame(liarsDice, msg.author!.id);
+    if (hasFlags(flags, ['--cancel'])) {
+      const code = manager.inGame(msg.author!.id);
 
-      if (!gameCode) return msg.channel.send('not in game');
-      if (liarsDice[gameCode].creatorId !== msg.author!.id)
-        return msg.channel.send(`ask <@!${liarsDice[gameCode].creatorId}> to start the game`);
-      if (Object.keys(liarsDice[gameCode].players).length < 2)
-        return msg.channel.send('need more players');
+      if (!code) return msg.channel.send('not in game');
+      if (manager.get(code).creatorId !== msg.author!.id)
+        return msg.channel.send(`only game creator can cancel`);
 
-      liarsDice[gameCode].reactionCollector?.stop('creator called for start');
+      reactionCollectors.find(c => c.gameCode === code)?.stop('cancel');
+
+      msg.channel.send('cancelled');
 
       return;
+    }
+
+    if (hasFlags(flags, ['-s', '--start'])) {
+      const code = manager.inGame(msg.author!.id);
+      if (!code) return msg.channel.send('not in game');
+
+      const game = manager.get(code);
+      if (game.creatorId !== msg.author!.id)
+        return msg.channel.send(`ask <@!${game.creatorId}> to start the game`);
+      if (Object.keys(game.players).length < 2)
+        return msg.channel.send('need more players');
+
+      return reactionCollectors.find(c => c.gameCode === code)?.stop('start');
     }
 
     // create game
@@ -140,7 +89,7 @@ export class CommandLiarsDice implements Command {
       const providedDiceAmount = spliceFlag(flags, args, '-d', true);
       if (!providedDiceAmount) return msg.channel.send('need # of dice after `-d`');
 
-      let parsed = parseInt(providedDiceAmount);
+      const parsed = parseInt(providedDiceAmount);
       if (isNaN(parseInt(providedDiceAmount))) return msg.channel.send('invalid # of dice');
       if (parsed > 10 || parsed < 1) return msg.channel.send('1-10 dice allowed');
 
@@ -151,7 +100,7 @@ export class CommandLiarsDice implements Command {
       const providedDiceSides = spliceFlag(flags, args, '-n', true);
       if (!providedDiceSides) return msg.channel.send('need # of dice sides safter `-n`');
 
-      let parsed = parseInt(providedDiceSides);
+      const parsed = parseInt(providedDiceSides);
       if (isNaN(parsed)) return msg.channel.send('invalid # of sides');
       if (parsed > 8 || parsed < 4) return msg.channel.send('4-8 dice sides allowed');
 
@@ -159,39 +108,32 @@ export class CommandLiarsDice implements Command {
     }
 
     // only include if not in game already
-    if (this.isInGame(liarsDice, msg.author!.id))
+    if (manager.isInGame(msg.author!.id))
       return msg.channel.send('u are smelly and in a game already');
 
     // generate new game
-    const code = this.makeGameCode(Object.keys(liarsDice));
+    const code = manager.makeGameCode();
 
     // make embed
     let timeLeft = 120;
-    const playerTags: string[] = [];
-    playerTags.push(msg.author!.tag);
-    const embed = this.makeJoinEmbed({
+    const playerTags: string[] = [msg.author!.tag];
+
+    const embedMessage = await msg.channel.send(this.makeJoinEmbed({
       gameCode: code,
       timeLeft,
       playerTags,
       diceAmount,
       diceSides,
-    });
+    }));
 
-    const embedMessage = await msg.channel.send(embed);
     embedMessage.react('🎲');
 
+    const updateEmbed = (time = timeLeft) => embedMessage.edit(
+      this.makeJoinEmbed({ gameCode: code, timeLeft: time, playerTags, diceAmount, diceSides })
+    );
+
     // set 2 min timer
-    const interval = setInterval(() => {
-      embedMessage.edit(
-        this.makeJoinEmbed({
-          gameCode: code,
-          timeLeft: timeLeft -= 5,
-          playerTags,
-          diceAmount,
-          diceSides,
-        })
-      );
-    }, 5000);
+    const interval = setInterval(() => updateEmbed(timeLeft -= 5), 5000);
 
     // create reaction collector
     const collector = embedMessage.createReactionCollector(
@@ -200,60 +142,56 @@ export class CommandLiarsDice implements Command {
       { time: 120000, dispose: true }
     ) as GameReactionCollector;
 
-    collector.on('collect', (_, user) => {
-      liarsDice[code].players[user.id] = { dice: Dice.array(diceAmount, diceSides) };
-      playerTags.push(user.tag);
-      embedMessage.edit(
-        this.makeJoinEmbed({ gameCode: code, timeLeft, playerTags, diceAmount, diceSides })
-      );
-    });
+    collector
+      .on('collect', (_, user: User) => {
+        manager.get(code).players[user.id] = { dice: Dice.array(diceAmount, diceSides) };
+        playerTags.push(user.tag);
+        updateEmbed();
+      })
+      .on('remove', (_, user: User) => {
+        delete manager.get(code).players[user.id];
+        playerTags.splice(playerTags.indexOf(user.tag), 1);
+        updateEmbed();
+      })
+      .on('end', (_, reason) => {
+        clearInterval(interval);
+        updateEmbed(0);
 
-    collector.on('remove', (_, user) => {
-      delete liarsDice[code].players[user.id];
-      playerTags.splice(playerTags.indexOf(user.tag), 1);
-      embedMessage.edit(
-        this.makeJoinEmbed({ gameCode: code, timeLeft, playerTags, diceAmount, diceSides })
-      );
-    });
+        if (reason === 'cancel') return;
 
-    collector.on('end', () => {
-      if (Object.keys(liarsDice[code].players).length < 2)
-        return msg.channel.send('not enough players to start, aborting');
+        const game = manager.get(code);
 
-      clearInterval(interval);
-      embedMessage.edit(
-        this.makeJoinEmbed({ gameCode: code, timeLeft: 0, playerTags, diceAmount, diceSides })
-      );
-      // do game thing
-      msg.channel.send(`"starting game ${code} now"`);
-      msg.channel.send(
-        Object.keys(liarsDice[code].players)
-          .map(id => `<@!${id}>`)
-          .join(' ')
-      );
-    });
+        if (Object.keys(game.players).length < 2)
+          return msg.channel.send('not enough players to start, aborting');
+
+        // do game thing
+        msg.channel.send(`"starting game ${code} now"`);
+        msg.channel.send(
+          Object.keys(game.players)
+            .map(id => `<@!${id}>`)
+            .join(' ')
+        );
+
+        // Object.keys(game.players).forEach() ---------------------------------------------------------------------------
+      });
 
     collector.gameCode = code;
 
-    liarsDice[code] = {
+    manager.setGame(code, {
       players: {},
       metadata: { diceAmount, diceSides },
       creatorId: msg.author!.id,
-      reactionCollector: collector,
-    };
-
-    liarsDice[code].players[msg.author!.id] = {
+    })
+    manager.get(code).players[msg.author!.id] = {
       dice: Dice.array(diceAmount, diceSides),
     };
+
+    manager.write();
+
+    reactionCollectors.push(collector);
   }
 
-  makeJoinEmbed({
-    gameCode,
-    timeLeft,
-    playerTags,
-    diceAmount,
-    diceSides,
-  }: {
+  makeJoinEmbed(opts: {
     gameCode: string;
     timeLeft: number;
     playerTags: string[];
@@ -261,17 +199,24 @@ export class CommandLiarsDice implements Command {
     diceSides: number;
   }) {
     return new Embed()
-      .setTitle('liars dice or something idk im not gamer')
+      .setTitle('liars dice/swindlestones')
       .setDescription('react with 🎲 to join')
-      .addField('game code', `\`${gameCode}\``, true)
-      .addField('time to join', `${timeLeft} seconds`, true)
+      .addField('game code', `\`${opts.gameCode}\``, true)
+      .addField('time to join', `${opts.timeLeft} seconds`, true)
       .addField(
         'dice',
-        `${diceAmount} ${diceSides}-sided ${diceAmount === 1 ? 'die' : 'dice'}`,
+        `${opts.diceAmount} ${opts.diceSides}-sided ${opts.diceAmount === 1 ? 'die' : 'dice'}`,
         true
       )
       .addField('how 2 play?', 'go to https://en.wikipedia.org/wiki/Liar%27s_dice', false)
-      .addField('players', playerTags.join(', '))
+      .addField('players', opts.playerTags.join(', '))
       .setFooter('do ctrl + alt + ➡️ or ctrl + k to switch between dms and server channels');
+  }
+
+  async giveHand(guild: Guild, playerId: string, gameStore) {
+    const player = await guild.members.fetch(playerId)
+    const dmChannel = await player.createDM();
+
+    dmChannel.send('poop');
   }
 }

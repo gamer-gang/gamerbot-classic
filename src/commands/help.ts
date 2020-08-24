@@ -20,7 +20,7 @@ export class CommandHelp implements Command {
         Array.isArray(cmd)
           ? cmd.find(v => v.toLowerCase() == search.toLowerCase())
           : cmd.toLowerCase() === search.toLowerCase()
-        )
+      )
       if (find) {
         const [name, desc] = this.makeField(prefix, find)
         const embed = new Embed()
@@ -46,14 +46,14 @@ export class CommandHelp implements Command {
 
   makeField(prefix: string, command: Command): [name: string, value: string, inline: boolean] {
     const fieldName = Array.isArray(command.cmd)
-        ? command.cmd.map(cmd => `\`${prefix}${cmd}\``).join(', ')
-        : `\`${prefix}${command.cmd}\``;
+      ? command.cmd.map(cmd => `\`${prefix}${cmd}\``).join(', ')
+      : `\`${prefix}${command.cmd}\``;
 
-      const fieldValue = Array.isArray(command.docs)
-        ? command.docs.map(this.formatFieldValue).join('\n\n')
-        : this.formatFieldValue(command.docs);
+    const fieldValue = Array.isArray(command.docs)
+      ? command.docs.map(this.formatFieldValue).join('\n\n')
+      : this.formatFieldValue(command.docs);
 
-    return [fieldName, fieldValue + '\n', false]
+    return [fieldName, fieldValue + '\n', false];
   }
 
   formatFieldValue(docs: CommandDocs): string {
