@@ -1,5 +1,5 @@
 import { Message } from 'discord.js';
-import { Command } from '..';
+import { Command, unknownFlags } from '..';
 import { CmdArgs } from '../../types';
 import { hasFlags, hasMentions, spliceFlag } from '../../util';
 
@@ -20,28 +20,24 @@ export class CommandSpam implements Command {
 
     const prefix = configStore.get(msg.guild?.id as string).prefix;
 
-    const unrecognized = Object.keys(flags).filter(
-      v => !'r|m|t|-tts'.split('|').includes(v.substr(1))
-    );
-    if (unrecognized.length > 0)
-      return msg.channel.send(`unrecognized flag(s): \`${unrecognized.join('`, `')}\``);
+    if (unknownFlags(cmdArgs, 'r|m|t|-tts')) return;
 
     let repetitions = 5;
     let messages = 4;
     if (hasFlags(flags, ['-r'])) {
-      let providedReps = parseInt(spliceFlag(flags, args, '-r', true) as string);
+      const providedReps = parseInt(spliceFlag(flags, args, '-r', true) as string);
       if (!isNaN(providedReps)) repetitions = providedReps;
       else return msg.channel.send('invalid repetition count');
     }
     if (hasFlags(flags, ['-m'])) {
-      let providedMsgs = parseInt(spliceFlag(flags, args, '-m', true) as string);
+      const providedMsgs = parseInt(spliceFlag(flags, args, '-m', true) as string);
       if (!isNaN(providedMsgs)) {
         messages = providedMsgs;
         if (providedMsgs > 50) return msg.channel.send('too many messages');
       } else return msg.channel.send('invalid message count');
     }
 
-    if (hasMentions(msg.content!)) return msg.channel.send('yea i aint doin that');
+    if (hasMentions(msg.content as string)) return msg.channel.send('yea i aint doin that');
 
     if (!args[0])
       return msg.channel.send(`no text to send\nusage: \`${prefix}${this.docs.usage}\``);
@@ -54,7 +50,7 @@ export class CommandSpam implements Command {
     }
 
     let output = '';
-    let spamText = args.join(' ');
+    const spamText = args.join(' ');
 
     if (spamText.startsWith(config.cowPrefix) && msg.author?.id !== process.env.OWNER_ID) {
       return msg.channel.send('owner only');

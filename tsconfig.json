@@ -1,14 +1,18 @@
 {
-  "include": ["src"],
+  "include": [
+    "src"
+  ],
   "compilerOptions": {
     "target": "es6",
     "module": "commonjs",
-    "lib": ["ESNext"],
+    "lib": [
+      "ESNext"
+    ],
     "outDir": "dist",
     "strict": true,
     "noImplicitAny": false,
     "moduleResolution": "node",
-    "esModuleInterop": false,
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "downlevelIteration": true,
     "sourceMap": true

@@ -1,6 +1,6 @@
 import { Collection, Message, TextChannel, VoiceChannel, VoiceState } from 'discord.js';
-import * as _ from 'lodash';
-import * as ytdl from 'ytdl-core';
+import _ from 'lodash';
+import ytdl from 'ytdl-core';
 import { Command } from '..';
 import { CmdArgs, Video } from '../../types';
 

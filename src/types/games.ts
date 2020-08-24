@@ -15,6 +15,7 @@ export interface LiarsDiceGame {
   players: Record<string, LiarsDicePlayer>;
   creatorId: string;
   metadata: LiarsDiceMetadata;
+  roundNumber: number;
 }
 
 export interface LiarsDiceMetadata {

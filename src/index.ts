@@ -1,9 +1,7 @@
 import * as Discord from 'discord.js';
 import * as dotenv from 'dotenv';
 import * as fse from 'fs-extra';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import * as YouTube from 'simple-youtube-api';
+import YouTube from 'simple-youtube-api';
 import { inspect } from 'util';
 import { commands } from './commands';
 import { Store } from './store';
@@ -14,8 +12,8 @@ dotenv.config();
 
 fse.mkdirp(resolvePath('data'));
 
-const client = new Discord.Client();
-const youtube = new YouTube(process.env.YT_API_KEY as string);
+export const client = new Discord.Client();
+export const youtube = new YouTube(process.env.YT_API_KEY as string);
 
 export const configStore = new Store<GuildConfig>({
   path: 'data/config.yaml',
@@ -35,7 +33,7 @@ export const gameStore = new Store<GuildGames>({
 });
 
 client.on('message', async (msg: Discord.Message) => {
-  if (msg.author.id == client.user!.id) return;
+  if (msg.author.id == client.user?.id) return;
   // don't respond to DMs
   if (!msg.guild) return;
 
@@ -55,6 +53,8 @@ client.on('message', async (msg: Discord.Message) => {
   });
 
   updateFlags(flags, args);
+
+  console.log(msg.content);
 
   if (!commandClass) return;
 
