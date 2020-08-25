@@ -18,6 +18,7 @@
     "cowsay": "^1.4.0",
     "cross-env": "^7.0.2",
     "discord.js": "^12.3.1",
+    "emoji-regex": "^9.0.0",
     "erlpack": "github:discordapp/erlpack",
     "fs-extra": "^9.0.1",
     "he": "^1.2.0",

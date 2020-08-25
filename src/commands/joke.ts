@@ -1,7 +1,8 @@
 import axios from 'axios';
-import * as cheerio from 'cheerio';
+import cheerio from 'cheerio';
 import { Message } from 'discord.js';
-import * as he from 'he';
+import he from 'he';
+
 import { Command } from '.';
 import { CmdArgs } from '../types';
 import { hasFlags } from '../util';
@@ -24,12 +25,12 @@ export class CommandJoke implements Command {
   ];
   async getCodepenJoke() {
     const response = await axios.get('https://codepen.io/pen/');
-    if (response.status !== 200) throw new Error("response code " + response.status);
+    if (response.status !== 200) throw new Error('response code ' + response.status);
 
     const text = cheerio.load(response.data)('#loading-text').html();
     if (!text) throw new Error('no text in #loading-text');
 
-    return (he.decode(text.replace('\n', '').replace(/<\/?code>/g, '`')));
+    return he.decode(text.replace('\n', '').replace(/<\/?code>/g, '`'));
   }
   async getGenericJoke() {
     const response = await axios.get('https://official-joke-api.appspot.com/jokes/random');

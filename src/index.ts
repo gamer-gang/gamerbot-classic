@@ -1,11 +1,10 @@
-import * as Discord from 'discord.js';
-import * as dotenv from 'dotenv';
-import * as fse from 'fs-extra';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import * as YouTube from 'simple-youtube-api';
-import { inspect } from 'util';
+import Discord from 'discord.js';
+import dotenv from 'dotenv';
+import fse from 'fs-extra';
+import YouTube from 'simple-youtube-api';
+
 import { commands } from './commands';
+import { onMessageReactionAdd, onMessageReactionRemove } from './commands/role';
 import { Store } from './store';
 import { GuildConfig, GuildGames, GuildQueue } from './types';
 import { resolvePath, updateFlags } from './util';
@@ -14,28 +13,34 @@ dotenv.config();
 
 fse.mkdirp(resolvePath('data'));
 
-const client = new Discord.Client();
-const youtube = new YouTube(process.env.YT_API_KEY as string);
+export const client = new Discord.Client({ partials: ['MESSAGE', 'REACTION'] });
+export const youtube = new YouTube(process.env.YT_API_KEY as string);
 
-const configStore = new Store<GuildConfig>({
+export const configStore = new Store<GuildConfig>({
   path: 'data/config.yaml',
   dataLanguage: 'yaml',
   writeOnSet: true,
   readImmediately: true,
 });
-const queueStore = new Store<GuildQueue>({
+export const queueStore = new Store<GuildQueue>({
   path: 'data/queue.yaml',
   dataLanguage: 'yaml',
 });
-const gameStore = new Store<GuildGames>({
+export const gameStore = new Store<GuildGames>({
   path: 'data/games.yaml',
   dataLanguage: 'yaml',
   readImmediately: true,
   writeOnSet: false,
 });
+export const reactionRoleStore = new Store<Record<string, { emoji: string; roleId: string }>>({
+  path: 'data/reactionroles.yaml',
+  dataLanguage: 'yaml',
+  readImmediately: true,
+  writeOnSet: true,
+});
 
 client.on('message', async (msg: Discord.Message) => {
-  if (msg.author.id == client.user!.id) return;
+  if (msg.author.id == client.user?.id) return;
   // don't respond to DMs
   if (!msg.guild) return;
 
@@ -56,6 +61,7 @@ client.on('message', async (msg: Discord.Message) => {
         const money = BigInt(msg.embeds[0].fields[0].value.replace(/[`$]/g, '').trim());
         if (money > 1) {
           // typescript complaining about bigint literal even though it works perfectly
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           msg.channel.send('/cow buy upgrade dino ' + money / 100000000n);
         }
@@ -67,6 +73,7 @@ client.on('message', async (msg: Discord.Message) => {
   configStore.setIfUnset(msg.guild.id, { prefix: '$', allowSpam: false, cowPrefix: '/cow' });
   queueStore.setIfUnset(msg.guild.id, { videos: [], playing: false });
   gameStore.setIfUnset(msg.guild.id, { liarsDice: {} });
+  reactionRoleStore.setIfUnset(msg.guild.id, {});
 
   const config = configStore.get(msg.guild.id);
   if (!msg.content.startsWith(config.prefix)) return;
@@ -113,4 +120,6 @@ client
       },
     });
   })
+  .on('messageReactionAdd', onMessageReactionAdd)
+  .on('messageReactionRemove', onMessageReactionRemove)
   .login(process.env.DISCORD_TOKEN);

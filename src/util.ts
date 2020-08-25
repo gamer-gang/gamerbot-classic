@@ -1,4 +1,4 @@
-import * as path from 'path';
+import path from 'path';
 
 /** Resolve a directory/file from the project root. */
 export function resolvePath(dir: string): string {
@@ -25,7 +25,7 @@ export function objectToMap<T>(obj: { [key: string]: T }): Map<string, T> {
   return map;
 }
 
-export const updateFlags = (flags: Record<string, number>, args: string[]) => {
+export const updateFlags = (flags: Record<string, number>, args: string[]): void => {
   for (const flag in flags) {
     if (Object.prototype.hasOwnProperty.call(flags, flag)) {
       delete flags[flag];
@@ -41,7 +41,7 @@ export const updateFlags = (flags: Record<string, number>, args: string[]) => {
   }
 };
 
-export const hasFlags = (flags: Record<string, number>, names: string[]) => {
+export const hasFlags = (flags: Record<string, number>, names: string[]): boolean => {
   for (const name of names) {
     if (Object.prototype.hasOwnProperty.call(flags, name)) {
       return true;
@@ -55,7 +55,7 @@ export const spliceFlag = (
   args: string[],
   name: string,
   valueAfter = false
-) => {
+): string | undefined => {
   if (flags[name] !== undefined) {
     const index = args.findIndex(v => v === name);
     if (valueAfter) {
@@ -69,7 +69,7 @@ export const spliceFlag = (
   return;
 };
 
-export const hasMentions = (content: string, includeSingleUser = true) =>
+export const hasMentions = (content: string, includeSingleUser = true): boolean =>
   content.includes('@everyone') ||
   content.includes('@here') ||
   (includeSingleUser ? /<@!\d{18}>/g.test(content) : false);
