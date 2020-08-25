@@ -5,10 +5,11 @@ import { CommandAbout } from './about';
 import { CommandCowdos } from './cowdos';
 import { CommandCowsay } from './cowsay';
 import { CommandCowwork } from './cowwork';
-import { CommandLiarsDice } from './games/liarsdice';
+import { CommandEcho } from './echo'
 import { CommandGif } from './gif';
 import { CommandHelp } from './help';
 import { CommandJoke } from './joke';
+import { CommandLiarsDice } from './games/liarsdice';
 import { CommandPrefix } from './prefix';
 import { CommandRole } from './role';
 import { CommandAllowSpam } from './spam/allowspam';
@@ -37,6 +38,7 @@ export const commands: Command[] = [
   new CommandCowsay(),
   new CommandCowdos(),
   new CommandCowwork(),
+  new CommandEcho(),
   new CommandGif(),
   new CommandHelp(),
   new CommandJoke(),
