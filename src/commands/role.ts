@@ -18,14 +18,19 @@ export class CommandRole implements Command {
 
     console.log(msg.content);
 
-    if (!msg.guild?.members.resolve(msg.author as User)?.hasPermission('ADMINISTRATOR'))
-      return msg.channel.send('missing `ADMINISTRATOR` permission');
+    if (!msg.guild?.members.resolve(msg.author as User)?.hasPermission('MANAGE_ROLES'))
+      return msg.channel.send('missing `MANAGE_ROLES` permission');
 
     if (args.length !== 2)
       return msg.channel.send(`expected 2 args\nusage: \`${this.docs.usage}\``);
 
     const role = msg.guild?.roles.resolve(args[0]);
     if (!role) return msg.channel.send('could not resolve role ' + args[0]);
+
+    const authorHighestRole = msg.guild.members.resolve(msg.author?.id as string)?.roles.highest;
+    if (!authorHighestRole) return msg.channel.send('you need a role to use this command');
+    if (role.comparePositionTo(authorHighestRole) < 0)
+      return msg.channel.send('role is higher than your own');
 
     let emoji: GuildEmoji | string = args[1].trim();
     if (/^<:.+:\d{18}>$/.test(emoji)) {
