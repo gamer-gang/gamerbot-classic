@@ -29,7 +29,7 @@ export class CommandRole implements Command {
 
     const authorHighestRole = msg.guild.members.resolve(msg.author?.id as string)?.roles.highest;
     if (!authorHighestRole) return msg.channel.send('you need a role to use this command');
-    if (role.comparePositionTo(authorHighestRole) < 0)
+    if (role.comparePositionTo(authorHighestRole) >= 0)
       return msg.channel.send('role is higher than your own');
 
     let emoji: GuildEmoji | string = args[1].trim();
