@@ -115,7 +115,7 @@ client
     console.log(`${client.user?.tag} ready`);
     client.user?.setPresence({
       activity: {
-        name: 'your mom',
+        name: 'your mom | $help',
         type: 'PLAYING',
       },
     });
