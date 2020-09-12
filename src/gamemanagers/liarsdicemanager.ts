@@ -1,15 +1,17 @@
-import { LiarsDiceGame, GuildGames } from '../types';
-import * as randomstring from 'randomstring';
-import { client, gameStore } from '..';
 import { CategoryChannel, TextChannel } from 'discord.js';
 import { shuffle } from 'lodash/fp';
+import * as randomstring from 'randomstring';
+
+import { client } from '..';
 import { Embed } from '../embed';
+import { GuildGames, LiarsDiceGame, MikroOrmEm } from '../types';
+
 export class LiarsDiceManager {
   games: GuildGames;
   liarsDice: Record<string, LiarsDiceGame>;
 
-  constructor(public guildId: string) {
-    this.games = gameStore.get(guildId);
+  constructor(private em: MikroOrmEm, public guildId: string) {
+    this.games = { liarsDice: {} }; // TODO implement
     this.liarsDice = this.games.liarsDice;
   }
 
@@ -57,8 +59,9 @@ export class LiarsDiceManager {
   }
 
   write(): void {
-    gameStore.set(this.guildId, this.games);
-    gameStore.writeFile();
+    // gameStore.set(this.guildId, this.games);
+    // gameStore.writeFile();
+    // TODO save game
   }
 
   gameCodes(): string[] {
