@@ -8,7 +8,8 @@
     "dev": "cross-env NODE_ENV=development concurrently -r \"tsc -w\" \"nodemon dist/index.js\"",
     "build": "tsc",
     "start": "node dist",
-    "prod": "tsc && cross-env NODE_ENV=production node dist/index"
+    "prod": "tsc && cross-env NODE_ENV=production node dist/index",
+    "clean": "rm -rf dist"
   },
   "mikro-orm": {
     "useTsNode": true,
