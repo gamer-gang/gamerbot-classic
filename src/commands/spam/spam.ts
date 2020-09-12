@@ -1,7 +1,9 @@
 import { Message } from 'discord.js';
+
 import { Command, unknownFlags } from '..';
+import { Config } from '../../entities/Config';
 import { CmdArgs } from '../../types';
-import { hasFlags, hasMentions, spliceFlag } from '../../util';
+import { dbFindOneError, hasFlags, hasMentions, spliceFlag } from '../../util';
 
 export class CommandSpam implements Command {
   cmd = 'spam';
@@ -10,15 +12,19 @@ export class CommandSpam implements Command {
     description: 'make the words appear on the screen',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, configStore, flags } = cmdArgs;
+    const { msg, args, em, flags } = cmdArgs;
 
-    const config = configStore.get(msg.guild?.id as string);
+    const config = await em.findOneOrFail(
+      Config,
+      { guildId: msg.guild?.id as string },
+      { failHandler: dbFindOneError(msg.channel) }
+    );
 
     if (!config.allowSpam) {
       return msg.channel.send('spam commands are off');
     }
 
-    const prefix = configStore.get(msg.guild?.id as string).prefix;
+    const prefix = config.prefix;
 
     if (unknownFlags(cmdArgs, 'r|m|t|-tts')) return;
 
@@ -49,14 +55,15 @@ export class CommandSpam implements Command {
       tts = true;
     }
 
+    const spamText = args.join(' ').trim();
     let output = '';
-    const spamText = args.join(' ');
 
-    if (spamText.startsWith(config.cowPrefix) && msg.author?.id !== process.env.OWNER_ID) {
+    if (spamText.startsWith('/cow') && msg.author?.id !== process.env.OWNER_ID) {
       return msg.channel.send('owner only');
     }
 
     if (args[1] == 'fill') {
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         if (output.length + spamText.length + 1 > 2000) break;
         output += ' ' + spamText;

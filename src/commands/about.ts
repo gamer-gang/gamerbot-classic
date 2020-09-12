@@ -12,7 +12,7 @@ export class CommandAbout implements Command {
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const embed = new Embed().setTitle('about!!!!!!1');
     embed
-      .addField('wheere is source code', 'on my computer')
+      .addField('wheere is source code', 'https://github.com/gamer-gang/gamerbot')
       .addField('nice pfp', 'make by @qqq#0447')
       .addField('a', 'b');
     return cmdArgs.msg.channel.send(embed);

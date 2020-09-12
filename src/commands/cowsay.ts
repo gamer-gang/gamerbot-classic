@@ -1,8 +1,9 @@
+import { say } from 'cowsay';
 import { Message } from 'discord.js';
+import { LoremIpsum } from 'lorem-ipsum';
+
 import { Command } from '.';
 import { CmdArgs } from '../types';
-import { say } from 'cowsay';
-import { LoremIpsum } from 'lorem-ipsum';
 import { hasMentions } from '../util';
 
 export class CommandCowsay implements Command {

@@ -1,6 +1,6 @@
-import { Guild, Message, TextChannel, User } from 'discord.js';
-import { inspect } from 'util';
+import { Message, TextChannel, User } from 'discord.js';
 import * as yaml from 'js-yaml';
+
 import { Command, unknownFlags } from '..';
 import { Embed } from '../../embed';
 import { Dice } from '../../gamemanagers/common';
@@ -28,9 +28,9 @@ export class CommandLiarsDice implements Command {
   ];
 
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, flags, args, client } = cmdArgs;
+    const { msg, flags, args, client, em } = cmdArgs;
 
-    const manager = new LiarsDiceManager(msg.guild?.id as string);
+    const manager = new LiarsDiceManager(em, msg.guild?.id as string);
 
     if (unknownFlags(cmdArgs, 'c|-create|s|-start|n|d|-state|i|-cancel')) return;
 

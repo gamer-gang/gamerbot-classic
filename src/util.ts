@@ -1,4 +1,5 @@
-import * as path from 'path';
+import { DMChannel, NewsChannel, TextChannel } from 'discord.js';
+import path from 'path';
 
 /** Resolve a directory/file from the project root. */
 export function resolvePath(dir: string): string {
@@ -73,3 +74,11 @@ export const hasMentions = (content: string, includeSingleUser = true): boolean 
   content.includes('@everyone') ||
   content.includes('@here') ||
   (includeSingleUser ? /<@!\d{18}>/g.test(content) : false);
+
+export const dbFindOneError = (channel: TextChannel | DMChannel | NewsChannel) => {
+  return (entityName: string, where: unknown): Error => {
+    const errorText = `db error: expected one of ${entityName} where \`${JSON.stringify(where)}\``;
+    channel.send(errorText);
+    return new Error(errorText);
+  };
+};

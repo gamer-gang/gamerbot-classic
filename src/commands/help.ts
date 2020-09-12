@@ -1,7 +1,10 @@
-import { Message, MessageEmbed } from 'discord.js';
+import { Message } from 'discord.js';
+
 import { Command, CommandDocs, commands } from '.';
 import { Embed } from '../embed';
+import { Config } from '../entities/Config';
 import { CmdArgs } from '../types';
+import { dbFindOneError } from '../util';
 
 export class CommandHelp implements Command {
   cmd = ['help', 'h'];
@@ -10,9 +13,13 @@ export class CommandHelp implements Command {
     description: 'Show this message.',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, configStore, args } = cmdArgs;
+    const { msg, args, em } = cmdArgs;
 
-    const { prefix } = configStore.get(msg.guild?.id as string);
+    const { prefix } = await em.findOneOrFail(
+      Config,
+      { guildId: msg.guild?.id as string },
+      { failHandler: dbFindOneError(msg.channel) }
+    );
 
     const search = args[0];
     if (search) {
@@ -20,16 +27,13 @@ export class CommandHelp implements Command {
         Array.isArray(cmd)
           ? cmd.find(v => v.toLowerCase() == search.toLowerCase())
           : cmd.toLowerCase() === search.toLowerCase()
-      )
+      );
       if (find) {
-        const [name, desc] = this.makeField(prefix, find)
-        const embed = new Embed()
-          .setTitle('help: ' + name)
-          .setDescription(desc);
+        const [name, desc] = this.makeField(prefix, find);
+        const embed = new Embed().setTitle('help: ' + name).setDescription(desc);
 
         return msg.channel.send(embed);
-      }
-      else return msg.channel.send('no help found for ' + search)
+      } else return msg.channel.send('no help found for ' + search);
     } else {
       const embed = new Embed().setTitle('help!!!!!!1');
       for (const command of commands) embed.addField(...this.makeField(prefix, command));
@@ -37,7 +41,7 @@ export class CommandHelp implements Command {
       try {
         const dm = await msg.author?.createDM();
         dm?.send(embed);
-        msg.channel.send('yo i dm\'d you the help message gg bro');
+        msg.channel.send("yo i dm'd you the help message gg bro");
       } catch (err) {
         msg.channel.send('lmao i couldnt send the dm, err message:\n```\n' + err + '\n```');
       }

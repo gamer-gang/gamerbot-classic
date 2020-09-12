@@ -2,6 +2,7 @@ import { Message, PartialMessage } from 'discord.js';
 import * as fse from 'fs-extra';
 import * as http from 'http';
 import * as https from 'https';
+
 import { Command, unknownFlags } from '.';
 import { CmdArgs } from '../types';
 import { hasFlags, resolvePath, spliceFlag } from '../util';

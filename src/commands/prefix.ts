@@ -1,6 +1,9 @@
 import { Message } from 'discord.js';
+
 import { Command } from '.';
+import { Config } from '../entities/Config';
 import { CmdArgs } from '../types';
+import { dbFindOneError } from '../util';
 
 export class CommandPrefix implements Command {
   cmd = 'prefix';
@@ -9,8 +12,13 @@ export class CommandPrefix implements Command {
     description: 'set the prefix',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, configStore, args } = cmdArgs;
-    const config = configStore.get(msg.guild?.id as string);
+    const { msg, em, args } = cmdArgs;
+
+    const config = await em.findOneOrFail(
+      Config,
+      { guildId: msg.guild?.id as string },
+      { failHandler: dbFindOneError(msg.channel) }
+    );
 
     if (args.length == 0) {
       msg.channel.send('argument needed');
@@ -33,8 +41,6 @@ export class CommandPrefix implements Command {
     }
 
     if (args[0].length) config.prefix = args[0];
-
-    configStore.set(msg.guild?.id as string, config);
 
     await msg.channel.send(`prefix is now ${config.prefix}`);
   }

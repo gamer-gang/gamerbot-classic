@@ -1,8 +1,9 @@
 import { EventEmitter } from 'events';
-import * as fse from 'fs-extra';
-import * as yaml from 'js-yaml';
+import fse from 'fs-extra';
+import yaml from 'js-yaml';
+import _ from 'lodash/fp';
+
 import { mapToObject, objectToMap } from './util';
-import * as _ from 'lodash/fp';
 
 export interface StoreOptions {
   /** Path to file to store data in. */
