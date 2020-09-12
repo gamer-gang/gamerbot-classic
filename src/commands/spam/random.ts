@@ -1,8 +1,10 @@
 import { Message } from 'discord.js';
+import randomWords from 'random-words';
+
 import { Command } from '..';
+import { Config } from '../../entities/Config';
 import { CmdArgs } from '../../types';
-// @ts-ignore
-import * as randomWords from 'random-words';
+import { dbFindOneError } from '../../util';
 
 export class CommandRandom implements Command {
   cmd = 'random';
@@ -11,9 +13,15 @@ export class CommandRandom implements Command {
     description: 'ok',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, configStore } = cmdArgs;
+    const { msg, args, em } = cmdArgs;
 
-    if (!configStore.get(msg.guild?.id as string).allowSpam) {
+    const config = await em.findOneOrFail(
+      Config,
+      { guildId: msg.guild?.id as string },
+      { failHandler: dbFindOneError(msg.channel) }
+    );
+
+    if (!config.allowSpam) {
       return msg.channel.send('spam commands are off');
     }
 
@@ -29,6 +37,7 @@ export class CommandRandom implements Command {
 
     for (let i = 0; i < amount; i++) {
       let text = '';
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         const append = ' ' + randomWords(1);
         if (text.length + append.length > 2000) break;

@@ -3,8 +3,9 @@ import emojiRegex from 'emoji-regex';
 import { inspect } from 'util';
 
 import { Command } from '.';
-import { client, reactionRoleStore } from '..';
+import { client } from '..';
 import { Embed } from '../embed';
+import { ReactionRole } from '../entities/ReactionRole';
 import { CmdArgs } from '../types';
 
 export class CommandRole implements Command {
@@ -14,7 +15,7 @@ export class CommandRole implements Command {
     description: 'create a role distributor given an emoji',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, client } = cmdArgs;
+    const { msg, args, em } = cmdArgs;
 
     console.log(msg.content);
 
@@ -36,7 +37,6 @@ export class CommandRole implements Command {
     if (/^<:.+:\d{18}>$/.test(emoji)) {
       // custom emoji
       const customId = (emoji as string).replace(/(<:.+:|>)/g, '');
-      console.log(customId);
       emoji = msg.guild.emojis.cache.find(e => e.id == customId) as GuildEmoji;
     } else {
       const exec = emojiRegex().exec(emoji);
@@ -55,10 +55,15 @@ export class CommandRole implements Command {
 
     msg.delete();
 
-    // save message for restarts
-    const reactions = reactionRoleStore.get(msg.guild.id);
-    reactions[embedMessage.id] = { emoji: emoji.toString(), roleId: role.id };
-    reactionRoleStore.set(msg.guild.id, reactions);
+    // save message to db
+    const reaction = em.create(ReactionRole, {
+      messageId: embedMessage.id,
+      guildId: msg.guild?.id,
+      emoji: emoji.toString(),
+      roleId: role.id,
+    });
+
+    em.persist(reaction);
   }
 }
 
@@ -92,7 +97,6 @@ const roleError = async ({
   reaction,
   user,
   listener,
-  role,
 }: {
   reaction: MessageReaction;
   user: User | PartialUser;
@@ -112,7 +116,7 @@ const roleError = async ({
   );
 };
 
-export const onMessageReactionAdd = async (
+export const onMessageReactionAdd = (em: CmdArgs['em']) => async (
   reaction: MessageReaction,
   user: User | PartialUser
 ): Promise<unknown> => {
@@ -120,7 +124,7 @@ export const onMessageReactionAdd = async (
   if (!(await verifyReaction(reaction, user))) return;
   const { message: msg } = reaction;
 
-  const listener = reactionRoleStore.get(msg.guild?.id as string)[msg.id];
+  const listener = await em.findOneOrFail(ReactionRole, { messageId: msg.id });
   if (!listener) return;
 
   if (reaction.emoji.toString() === listener.emoji) {
@@ -136,7 +140,7 @@ export const onMessageReactionAdd = async (
   }
 };
 
-export const onMessageReactionRemove = async (
+export const onMessageReactionRemove = (em: CmdArgs['em']) => async (
   reaction: MessageReaction,
   user: User | PartialUser
 ): Promise<unknown> => {
@@ -144,7 +148,7 @@ export const onMessageReactionRemove = async (
   if (!(await verifyReaction(reaction, user))) return;
   const { message: msg } = reaction;
 
-  const listener = reactionRoleStore.get(msg.guild?.id as string)[msg.id];
+  const listener = await em.findOneOrFail(ReactionRole, { messageId: msg.id });
   if (!listener) return;
 
   if (reaction.emoji.toString() === listener.emoji) {

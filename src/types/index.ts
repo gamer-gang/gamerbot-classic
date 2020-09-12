@@ -1,3 +1,4 @@
+import { Connection, EntityManager, IDatabaseDriver } from '@mikro-orm/core';
 import Discord from 'discord.js';
 import YouTube from 'simple-youtube-api';
 
@@ -9,11 +10,10 @@ export * from './economy';
 export * from './games';
 export * from './youtube';
 
-export interface GuildConfig {
-  prefix: string;
-  allowSpam: boolean;
-  cowPrefix: string;
-}
+// export interface GuildConfig {
+//   prefix: string;
+//   allowSpam: boolean;
+// }
 
 export interface CmdArgs {
   msg: Discord.Message | Discord.PartialMessage;
@@ -22,7 +22,8 @@ export interface CmdArgs {
   cmd: string;
   youtube: YouTube;
   client: Discord.Client;
-  configStore: Store<GuildConfig>;
+  // configStore: Store<GuildConfig>;
   queueStore: Store<GuildQueue>;
   gameStore: Store<GuildGames>;
+  em: EntityManager<IDatabaseDriver<Connection>>;
 }

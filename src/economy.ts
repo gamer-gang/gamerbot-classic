@@ -1,9 +1,8 @@
+import moment from 'moment';
+
 import { Store } from './store';
 import { Economy } from './types';
 import { resolvePath } from './util';
-import * as _ from 'lodash/fp';
-import moment = require('moment');
-import { now } from 'lodash';
 
 export const BANKRUPT_COOLDOWN = 720;
 

@@ -2,12 +2,13 @@ import { Message, PartialMessage } from 'discord.js';
 import * as fse from 'fs-extra';
 import * as http from 'http';
 import * as https from 'https';
+
 import { Command } from '.';
 import { CmdArgs } from '../types';
 import { hasFlags, resolvePath, spliceFlag } from '../util';
 
 const fileRegExp = /^[A-Za-z0-9\-_]+$/;
-const urlRegExp = /^https?:\/\/[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$/;
+const urlRegExp = /^https?:\/\/[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$/;
 const gifDir = 'data/gifs';
 
 export class CommandGif implements Command {
@@ -34,7 +35,7 @@ export class CommandGif implements Command {
       description: 'rename gif',
     },
   ];
-  invalidChars = (msg: Message | PartialMessage) =>
+  invalidChars = (msg: Message | PartialMessage): Promise<Message> =>
     msg.channel.send(
       `invalid chars in filename, allowed chars:\n\`\`\`\n${fileRegExp.toString()}\n\`\`\``
     );
@@ -81,7 +82,7 @@ export class CommandGif implements Command {
 
     return this.show(msg, args);
   }
-  async show(msg: Message | PartialMessage, args: string[]) {
+  async show(msg: Message | PartialMessage, args: string[]): Promise<Message> {
     const name = args[0];
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
     const gifPath = resolvePath(`${gifDir}/${name}.gif`);
@@ -90,7 +91,7 @@ export class CommandGif implements Command {
     return msg.channel.send({ files: [{ attachment: gifPath }] });
   }
 
-  async add(msg: Message | PartialMessage, args: string[]) {
+  async add(msg: Message | PartialMessage, args: string[]): Promise<Message> {
     const files = await this.getGifs();
     const [name, url] = args;
 
@@ -102,7 +103,7 @@ export class CommandGif implements Command {
     return msg.channel.send(await this.downloadGif(name, url));
   }
 
-  async remove(msg: Message | PartialMessage, args: string[]) {
+  async remove(msg: Message | PartialMessage, args: string[]): Promise<Message> {
     const name = args[0];
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
     if (!(await this.getGifs()).includes(name)) return msg.channel.send("file doesn't exist m8");
@@ -110,7 +111,7 @@ export class CommandGif implements Command {
     return msg.channel.send(`deleted gif ${name}`);
   }
 
-  async rename(msg: Message | PartialMessage, args: string[]) {
+  async rename(msg: Message | PartialMessage, args: string[]): Promise<Message> {
     const [name, newName] = args;
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
     if (!(await this.getGifs()).includes(name)) return msg.channel.send("file doesn't exist m8");
