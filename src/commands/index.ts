@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 
 import { CmdArgs } from '../types';
 import { CommandAbout } from './about';
+import { CommandBan } from './ban';
 import { CommandCowsay } from './cowsay';
 import { CommandEcho } from './echo';
 import { CommandLiarsDice } from './games/liarsdice';
@@ -46,6 +47,7 @@ export const unknownFlags = (cmdArgs: CmdArgs, flagString: string, separator = '
 export const commands: Command[] = [
   new CommandAbout(),
   new CommandAllowSpam(),
+  new CommandBan(),
   new CommandCowsay(),
   new CommandEcho(),
   new CommandGif(),
