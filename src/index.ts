@@ -37,6 +37,7 @@ const gameStore = new Store<GuildGames>({
   // init db
   const orm = await MikroORM.init(mikroOrmConfig);
 
+  // do migration
   await orm.getMigrator().up();
 
   client.on('message', async (msg: Discord.Message) => {

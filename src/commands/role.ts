@@ -124,7 +124,7 @@ export const onMessageReactionAdd = (em: CmdArgs['em']) => async (
   if (!(await verifyReaction(reaction, user))) return;
   const { message: msg } = reaction;
 
-  const listener = await em.findOneOrFail(ReactionRole, { messageId: msg.id });
+  const listener = await em.findOne(ReactionRole, { messageId: msg.id });
   if (!listener) return;
 
   if (reaction.emoji.toString() === listener.emoji) {
@@ -148,7 +148,7 @@ export const onMessageReactionRemove = (em: CmdArgs['em']) => async (
   if (!(await verifyReaction(reaction, user))) return;
   const { message: msg } = reaction;
 
-  const listener = await em.findOneOrFail(ReactionRole, { messageId: msg.id });
+  const listener = await em.findOne(ReactionRole, { messageId: msg.id });
   if (!listener) return;
 
   if (reaction.emoji.toString() === listener.emoji) {

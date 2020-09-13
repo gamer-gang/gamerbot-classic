@@ -1,0 +1,24 @@
+# see https://yaml-multiline.info/
+how2play:
+  title: Hey helper, how play game?
+  description: You can't its impossible (just kidding)
+
+  fields:
+    - name: Starting the game
+      value: >-
+        In the beginning, each player gets to roll a certain number of dice (determined by the game
+        maker) that is hidden to everyone else. Each player will then take turns bidding dice.
+
+    - name: Bidding dice
+      value: >-
+        At the start of the game, the first player starts by saying how many instances of a dice
+        they think there will be (like "I think there are five dice that have a face of one"). After the first turn, the
+        next player can either bid a higher quantity of dice or a higher dice value
+        (example: last turn they bid two threes, this turn i can bid three threes or two fours).
+
+    - name: Call!
+      value: >-
+        If you think the last person who bid is lying, you can call them out. After a call,
+        everyone's die will be revealed. If their bid was incorrect, they lose a die. Otherwise, the
+        person who called will lose a die. After someone calls, a new round is started and everyone
+        rolls all their dice again. If you have lost all your die, you lose and should feel bad.

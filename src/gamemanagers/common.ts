@@ -1,13 +1,13 @@
 import { DiceObject } from '../types';
 
-export class Dice {
+export class Die {
   value!: number;
 
   constructor(public sides: number = 6) {
     this.roll();
   }
 
-  setSides(n: number): Dice {
+  setSides(n: number): Die {
     this.sides = n;
 
     return this;
@@ -18,18 +18,18 @@ export class Dice {
     return this.value;
   }
 
-  static array(amount: number, sides: number): Dice[] {
-    const output: Dice[] = [];
+  static array(amount: number, sides: number): Die[] {
+    const output: Die[] = [];
 
     for (let i = 0; i < amount; i++) {
-      output.push(new Dice(sides));
+      output.push(new Die(sides));
     }
 
     return output;
   }
 
-  static fromObject({ sides, value }: DiceObject): Dice {
-    const output = new Dice(sides);
+  static fromObject({ sides, value }: DiceObject): Die {
+    const output = new Die(sides);
     output.value = value;
     return output;
   }
