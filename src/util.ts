@@ -1,4 +1,5 @@
 import { DMChannel, NewsChannel, TextChannel } from 'discord.js';
+import _ from 'lodash';
 import path from 'path';
 
 /** Resolve a directory/file from the project root. */
@@ -84,10 +85,10 @@ export const dbFindOneError = (channel: TextChannel | DMChannel | NewsChannel) =
 };
 
 export const shuffleArray = <T>(array: T[]): T[] => {
-  const output = new Array(array.length);
-  for (let i = array.length - 1; i > 0; i--) {
+  const output = _.clone(array);
+  for (let i = output.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
+    [output[i], output[j]] = [output[j], output[i]];
   }
   return output;
 };

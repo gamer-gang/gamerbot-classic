@@ -2,7 +2,6 @@ import { Message, TextChannel, User } from 'discord.js';
 import fse from 'fs-extra';
 import yaml from 'js-yaml';
 import sharp from 'sharp';
-import { inspect } from 'util';
 
 import { Command, unknownFlags } from '..';
 import { Embed } from '../../embed';
@@ -11,6 +10,8 @@ import { Die } from '../../gamemanagers/common';
 import { LiarsDiceManager } from '../../gamemanagers/liarsdicemanager';
 import { CmdArgs, GameReactionCollector } from '../../types';
 import { hasFlags, resolvePath, shuffleArray, spliceFlag } from '../../util';
+
+type Bid = [quantity: number, value: number];
 
 const reactionCollectors: GameReactionCollector[] = [];
 
@@ -133,16 +134,33 @@ export class CommandLiarsDice implements Command {
 
     embedMessage.react('🎲');
 
-    const game = new LiarsDice();
+    // const game = new LiarsDice();
+    // game.diceAmount = diceAmount;
+    // game.diceSides = diceSides;
+    // game.creatorId = msg.author?.id as string;
+    // game.guildId = msg.guild?.id as string;
+    // game.gameCode = gameCode;
+    // game.playerOrder = [];
 
-    game.diceAmount = diceAmount;
-    game.diceSides = diceSides;
-    game.creatorId = msg.author?.id as string;
-    game.guildId = msg.guild?.id as string;
-    game.gameCode = gameCode;
-    game.playerOrder = [];
+    const game = em.create(LiarsDice, {
+      diceAmount,
+      diceSides,
+      gameCode,
+      playerOrder: [],
+      creatorId: msg.author?.id as string,
+      guildId: msg.guild?.id as string,
+    });
 
     em.persist(game);
+
+    const creator = em.create(LiarsDicePlayer, {
+      game,
+      hand: Die.array(diceAmount, diceSides).map(d => d.value),
+      playerId: msg.author?.id,
+    });
+
+    em.populate(creator, 'game');
+    em.persist(creator);
 
     const updateEmbed = (time = timeLeft) =>
       embedMessage.edit(
@@ -165,6 +183,9 @@ export class CommandLiarsDice implements Command {
         ![msg.author?.id as string, client.user?.id as string].includes(user.id),
       { time: 120000, dispose: true }
     ) as GameReactionCollector;
+
+    collector.gameCode = gameCode;
+    reactionCollectors.push(collector);
 
     collector
       .on('collect', async (_, user: User) => {
@@ -190,46 +211,41 @@ export class CommandLiarsDice implements Command {
         clearInterval(interval);
         updateEmbed(0);
 
-        if (reason === 'cancel') return em.remove(game);
+        if (reason === 'cancel') {
+          console.log('cancelling game');
+          return em.removeAndFlush(game);
+        }
 
         if (game.players.length < 2) {
-          em.remove(game);
+          em.removeAndFlush(game);
+          console.log('not enough players');
           return msg.channel.send('not enough players to start, aborting');
         }
 
-        msg.channel.send(`${playerTags.map(t => `@${t}`).join(' ')} game ${gameCode} starting!`);
+        const players = await game.players.loadItems();
+        const playerIds = players.map(p => p.playerId);
+
+        await msg.channel.send(
+          `${playerIds.map(id => `<@${id}>`).join(' ')} game ${gameCode} starting!`
+        );
 
         setTimeout(async () => {
-          const players = await game.players.loadItems();
-          const playerIds = players.map(p => p.playerId);
-          console.log(playerIds);
+          console.log('initializing game');
 
-          game.playerOrder = shuffleArray(playerIds);
           game.roundNumber = 1;
-          console.log(inspect(game, true, null, true));
 
+          console.log('deciding player order');
+          game.playerOrder = shuffleArray(playerIds);
+
+          console.log('flushing db');
           em.flush();
 
+          console.log('starting first round');
           this.startRound(game, msg.channel as TextChannel, cmdArgs);
         }, 0);
 
         return;
       });
-
-    collector.gameCode = gameCode;
-
-    if (!game) return msg.channel.send('error in executor: game is nul');
-
-    const creator = em.create(LiarsDicePlayer, {
-      game,
-      hand: Die.array(diceAmount, diceSides).map(d => d.value),
-      playerId: msg.author?.id,
-    });
-
-    em.populate(creator, 'game');
-    em.persist(creator);
-
-    reactionCollectors.push(collector);
   }
 
   makeJoinEmbed(opts: {
@@ -255,30 +271,26 @@ export class CommandLiarsDice implements Command {
   }
 
   makeDiceImage(diceValues: number[]): Promise<Buffer> {
-    return new Promise<Buffer>(resolve => {
-      const image = sharp({
-        create: {
-          width: 64 * 5 + 8 * 4,
-          height: 64,
-          background: '#00000000',
-          channels: 4,
-        },
-      });
-
-      diceValues.sort((a, b) => a - b);
-
-      image.composite(
-        diceValues.map((n, i) => ({
-          input: resolvePath(`assets/dice-${n}.smol.png`),
-          top: 0,
-          left: i * 64 + i * 8,
-        }))
-      );
-
-      const path = resolvePath('data/temp.png');
-
-      image.png().toBuffer().then(resolve);
+    const image = sharp({
+      create: {
+        width: 64 * 5 + 8 * 4,
+        height: 64,
+        background: '#00000000',
+        channels: 4,
+      },
     });
+
+    diceValues.sort((a, b) => a - b);
+
+    image.composite(
+      diceValues.map((n, i) => ({
+        input: resolvePath(`assets/dice-${n}.smol.png`),
+        top: 0,
+        left: i * 64 + i * 8,
+      }))
+    );
+
+    return image.png().toBuffer();
   }
 
   async giveHand({
@@ -299,100 +311,158 @@ export class CommandLiarsDice implements Command {
             .setImage('attachment://dice.png')
             .attachFiles([{ attachment: bufer, name: 'dice.png' }]);
 
-          (client.users.resolve(playerId) as User).createDM().then(async dm => {
-            await dm.send(embed);
-            console.log('sent dm');
-            resolve();
-          });
+          (client.users.resolve(playerId) as User).createDM().then(async dm =>
+            dm.send(embed).then(() => {
+              console.log('sent dm');
+              resolve();
+            })
+          );
         });
       });
     });
   }
 
-  bidDice(channel: TextChannel, game: LiarsDice, cmdArgs: CmdArgs): Promise<string> {
-    return new Promise<string>((resolve, reject) => {
-      const { em, client } = cmdArgs;
+  makeBidEmbed({
+    game,
+    timeRemaining,
+    highestBid,
+  }: {
+    game: LiarsDice;
+    timeRemaining: number;
+    highestBid: Bid;
+  }): Embed {
+    const embed = new Embed()
+      .setTitle('Place your bids or call')
+      .setDescription('Say number of dice and faces (ex. "1 4" is 1 dice with side of 4) or "call"')
+      .addField('Turn', `<@!${game.currentBidder}>`, true)
+      .addField('Round #', game.roundNumber)
+      .addField('Code', game.gameCode, true)
+      .addField('Current highest bid', `${highestBid[0]} dice with value ${highestBid[1]}`)
+      .addField('Time remaining', timeRemaining + ' seconds');
+    return embed;
+  }
 
-      const embed = new Embed()
-        .setTitle('Place your bids or call')
-        .setDescription(
-          'Say number of dice and faces (ex. "1 4" is 1 dice with side of 4) or "call"'
-        )
-        .addField('Turn', `<@!${game.currentBidder}>`)
-        .addField('Code', game.gameCode);
+  getBid({
+    channel,
+    game,
+    cmdArgs,
+    highestBid,
+  }: {
+    channel: TextChannel;
+    game: LiarsDice;
+    cmdArgs: CmdArgs;
+    highestBid: Bid;
+  }): Promise<'call' | Bid> {
+    return new Promise<'call' | Bid>((resolve, reject) => {
+      let biddingTime = 60;
 
-      channel.send(embed);
+      channel
+        .send(`<@!${game.currentBidder}>`, {
+          embed: this.makeBidEmbed({ game, timeRemaining: biddingTime, highestBid }),
+        })
+        .then(embedMessage => {
+          const updateEmbed = (newTime: number) => {
+            const embed = this.makeBidEmbed({ game, timeRemaining: newTime, highestBid });
+            embedMessage.edit(`<@!${game.currentBidder}>`, { embed: embed });
+          };
 
-      let input: string;
-      const collector = channel.createMessageCollector(
-        (msg: Message) => msg.author.id !== client.user?.id,
-        { time: 60000 }
-      );
-      collector.on('collect', (msg: Message) => {
-        if (!/^(\d \d|.*call.*)$/i.test(msg.content)) msg.channel.send('stinky syntax, try again');
-        else {
-          input = msg.content;
-          collector.stop();
-        }
-      });
-      collector.on('end', collection => {
-        if (/\d \d/.test(input)) {
-          // _ dice with _ dots
-          const [quantity, value] = input.split(' ').map(v => parseInt(v));
-          channel.send(`You bid ${quantity} dice with value of ${value}`);
-          resolve(input);
-        } else if (/.*call.*/.test(input)) {
-          // call
-          channel.send('You call!');
-          resolve('call');
-        } else {
-          reject();
-        }
-      });
+          const interval = setInterval(() => updateEmbed((biddingTime -= 5)), 5000);
+
+          let input: string;
+          const collector = channel.createMessageCollector(
+            (msg: Message) => msg.author.id === game.currentBidder,
+            { time: 60000 }
+          );
+          collector.on('collect', (msg: Message) => {
+            if (!/^(\d \d|.*call.*)$/i.test(msg.content))
+              msg.channel.send('stinky syntax, try again');
+            else {
+              input = msg.content;
+
+              // check if bid is too low
+              const bidAmount = input.split(' ').map(v => parseInt(v)) as Bid;
+              if (
+                bidAmount[0] <= highestBid[0] &&
+                bidAmount.reduce((a, c) => a * c) <= highestBid.reduce((a, c) => a * c)
+              ) {
+                channel.send(
+                  'bid too low (either higher quantity or greater face value), try again'
+                );
+                return;
+              }
+
+              collector.stop();
+            }
+          });
+          collector.on('end', () => {
+            clearInterval(interval);
+            updateEmbed(0);
+
+            if (/\d \d/.test(input)) {
+              // x dice with n dots
+              const [quantity, value] = input.split(' ').map(v => parseInt(v));
+              channel.send(`You bid ${quantity} dice with value of ${value}`);
+              resolve([quantity, value] as Bid);
+            } else if (/.*call.*/.test(input)) {
+              // call
+              channel.send('You call!');
+              resolve('call');
+            } else {
+              reject('timeout');
+            }
+          });
+        });
     });
   }
 
   async startRound(game: LiarsDice, channel: TextChannel, cmdArgs: CmdArgs): Promise<void> {
-    (await game.players.loadItems()).forEach(
-      async p => await this.giveHand({ playerId: p.playerId, game, cmdArgs })
-    );
+    const { em } = cmdArgs;
+    console.log(`starting round ${game.roundNumber}`);
+    console.log(`player order: ${game.playerOrder.join(', ')}`);
 
-    type Bid = [quantity: number, value: number];
+    (await game.players.loadItems()).forEach(async p => {
+      await this.giveHand({ playerId: p.playerId, game, cmdArgs });
+    });
+
     let highestBid: Bid = [0, 0];
-    console.log(game.playerOrder);
 
-    for (const playerId of game.playerOrder) {
+    console.log('starting bids');
+    for (let playerIndex = 0; playerIndex < game.playerOrder.length; playerIndex++) {
+      const playerId = game.playerOrder[playerIndex];
+
       game.currentBidder = playerId;
-      console.log(playerId);
+      console.log(`asking ${playerId} for their bid`);
 
-      let result: string;
-      while (true) {
-        result = await this.bidDice(channel, game, cmdArgs);
+      try {
+        const output = await this.getBid({ channel, game, cmdArgs, highestBid });
+        if (Array.isArray(output)) {
+          highestBid = output;
 
-        if (result === 'call') {
-          break;
-        } else {
-          const bidAmount = result.split(' ').map(v => parseInt(v)) as Bid;
-          if (
-            bidAmount[0] > highestBid[0] ||
-            bidAmount.reduce((a, c) => a * c) > highestBid.reduce((a, c) => a * c)
-          ) {
-            highestBid = bidAmount;
-            break;
-          } else {
-            // invalid bid, too low
-            channel.send('bid too low (either higher quantity or greater face value)');
-            continue;
-          }
+          // loop
+          if (playerIndex === game.playerOrder.length - 1) playerIndex = -1;
+          continue;
         }
-      }
 
-      if (result === 'call') {
-        // do something
-        channel.send('person has called btw');
+        channel.send(
+          `<@${game.currentBidder}> called <@${game.playerOrder[playerIndex - 1]}> (${
+            (highestBid[0], highestBid[1])
+          })`
+        );
+
+        (await em.find(LiarsDicePlayer, { game })).map();
+
         break;
+      } catch (err) {
+        if (err === 'timeout') {
+          const newBid: Bid =
+            highestBid[1] < game.diceSides
+              ? [highestBid[0], highestBid[1] + 1]
+              : [highestBid[0] + 1, highestBid[1]];
+
+          channel.send(`no bid was made in time, your bid is now ${newBid[0]} ${newBid[1]}`);
+          highestBid = newBid;
+        } else channel.send('caught error: ' + err);
       }
     }
-    return;
   }
 }

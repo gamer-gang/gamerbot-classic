@@ -1,4 +1,5 @@
 import { MikroORM } from '@mikro-orm/core/MikroORM';
+import { SqlEntityManager } from '@mikro-orm/knex';
 import Discord from 'discord.js';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
@@ -7,6 +8,7 @@ import YouTube from 'simple-youtube-api';
 import { commands } from './commands';
 import { onMessageReactionAdd, onMessageReactionRemove } from './commands/role';
 import { Config } from './entities/Config';
+import { LiarsDice, LiarsDicePlayer } from './entities/LiarsDice';
 import mikroOrmConfig from './mikro-orm.config';
 import { Store } from './store';
 import { GuildGames, GuildQueue } from './types';
@@ -39,6 +41,9 @@ const gameStore = new Store<GuildGames>({
 
   // do migration
   await orm.getMigrator().up();
+
+  (orm.em as SqlEntityManager).createQueryBuilder(LiarsDicePlayer).delete().execute();
+  (orm.em as SqlEntityManager).createQueryBuilder(LiarsDice).delete().execute();
 
   client.on('message', async (msg: Discord.Message) => {
     if (msg.author.bot) return;
