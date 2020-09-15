@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 
 import { CmdArgs } from '../types';
 import { CommandAbout } from './about';
+import { CommandBan } from './ban';
 import { CommandCowsay } from './cowsay';
 import { CommandEcho } from './echo';
 import { CommandGif } from './gif';
@@ -14,6 +15,7 @@ import { CommandLorem } from './spam/lorem';
 import { CommandRandom } from './spam/random';
 import { CommandSpam } from './spam/spam';
 import { CommandStats } from './stats/stats';
+import { CommandUnban } from './unban';
 import { CommandPlay } from './youtube/play';
 import { CommandQueue } from './youtube/queue';
 import { CommandSkip } from './youtube/skip';
@@ -33,6 +35,7 @@ export interface CommandDocs {
 export const commands: Command[] = [
   new CommandAbout(),
   new CommandAllowSpam(),
+  new CommandBan(),
   new CommandCowsay(),
   new CommandEcho(),
   new CommandGif(),
@@ -48,6 +51,7 @@ export const commands: Command[] = [
   new CommandRole(),
   new CommandSkip(),
   new CommandSpam(),
+  new CommandUnban(),
   new CommandStats(),
   new CommandStop(),
 ];
