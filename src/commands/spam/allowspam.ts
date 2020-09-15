@@ -1,6 +1,9 @@
 import { Message } from 'discord.js';
+
 import { Command } from '..';
+import { Config } from '../../entities/Config';
 import { CmdArgs } from '../../types';
+import { dbFindOneError } from '../../util';
 
 export class CommandAllowSpam implements Command {
   cmd = 'allowspam';
@@ -9,8 +12,13 @@ export class CommandAllowSpam implements Command {
     description: 'allow spam commands such as `lorem`, `spam`, and `random`',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, configStore, args } = cmdArgs;
-    const config = configStore.get(msg.guild?.id as string);
+    const { msg, em, args } = cmdArgs;
+
+    const config = await em.findOneOrFail(
+      Config,
+      { guildId: msg.guild?.id as string },
+      { failHandler: dbFindOneError(msg.channel) }
+    );
 
     if (!msg.guild?.member(msg.author?.id as string)?.hasPermission('ADMINISTRATOR')) {
       return msg.channel.send('missing `ADMINISTRATOR` permission');
@@ -33,8 +41,6 @@ export class CommandAllowSpam implements Command {
         config.allowSpam = false;
         break;
     }
-
-    configStore.set(msg.guild?.id as string, config);
 
     await msg.channel.send(`spam commands are now ${config.allowSpam ? 'allowed' : 'off'}`);
   }

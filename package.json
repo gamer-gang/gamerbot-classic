@@ -8,12 +8,25 @@
     "dev": "cross-env NODE_ENV=development concurrently -r \"tsc -w\" \"nodemon dist/index.js\"",
     "build": "tsc",
     "start": "node dist",
-    "prod": "tsc && cross-env NODE_ENV=production node dist/index"
+    "prod": "tsc && cross-env NODE_ENV=production node dist/index",
+    "clean": "rm -rf dist"
+  },
+  "mikro-orm": {
+    "useTsNode": true,
+    "configPaths": [
+      "./src/mikro-orm.config.ts",
+      "./dist/mikro-orm.config.js"
+    ]
   },
   "dependencies": {
     "@discordjs/opus": "^0.3.2",
+    "@mikro-orm/cli": "^4.0.2",
+    "@mikro-orm/core": "^4.0.2",
+    "@mikro-orm/migrations": "^4.0.2",
+    "@mikro-orm/postgresql": "^4.0.2",
     "axios": "^0.19.2",
     "bufferutil": "^4.0.1",
+    "canvas": "^2.6.1",
     "cheerio": "^1.0.0-rc.3",
     "cowsay": "^1.4.0",
     "cross-env": "^7.0.2",
@@ -28,6 +41,7 @@
     "lorem-ipsum": "^2.0.3",
     "mime-types": "^2.1.27",
     "moment": "^2.27.0",
+    "pg": "^8.3.3",
     "random-words": "^1.1.1",
     "randomstring": "^1.1.5",
     "simple-youtube-api": "^5.2.1",

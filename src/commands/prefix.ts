@@ -1,6 +1,11 @@
 import { Message } from 'discord.js';
+
 import { Command } from '.';
+import { Config } from '../entities/Config';
 import { CmdArgs } from '../types';
+import { dbFindOneError } from '../util';
+
+const asciiRegExp = /^[ -~]+$/;
 
 export class CommandPrefix implements Command {
   cmd = 'prefix';
@@ -9,33 +14,20 @@ export class CommandPrefix implements Command {
     description: 'set the prefix',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, configStore, args } = cmdArgs;
-    const config = configStore.get(msg.guild?.id as string);
+    const { msg, em, args } = cmdArgs;
 
-    if (args.length == 0) {
-      msg.channel.send('argument needed');
-      return;
-    } else if (args.length > 1) {
-      msg.channel.send('too many arguments');
-      return;
-    }
+    const config = await em.findOneOrFail(
+      Config,
+      { guildId: msg.guild?.id as string },
+      { failHandler: dbFindOneError(msg.channel) }
+    );
 
-    const asciiRegExp = /^[ -~]+$/;
+    if (args.length !== 1) return msg.channel.send('expected 1 arg');
+    if (!asciiRegExp.test(args[0])) return msg.channel.send('only ascii characters allowed');
+    if (args[0].length > 16) return msg.channel.send('too long');
 
-    if (!asciiRegExp.test(args[0])) {
-      msg.channel.send('only ascii characters allowed');
-      return;
-    }
+    config.prefix = args[0];
 
-    if (args[0].length > 30) {
-      msg.channel.send('too long');
-      return;
-    }
-
-    if (args[0].length) config.prefix = args[0];
-
-    configStore.set(msg.guild?.id as string, config);
-
-    await msg.channel.send(`prefix is now ${config.prefix}`);
+    return msg.channel.send(`prefix is now ${config.prefix}`);
   }
 }

@@ -3,20 +3,18 @@ import { Message } from 'discord.js';
 import { CmdArgs } from '../types';
 import { CommandAbout } from './about';
 import { CommandBan } from './ban';
-import { CommandCowdos } from './cowdos';
 import { CommandCowsay } from './cowsay';
-import { CommandCowwork } from './cowwork';
-import { CommandEcho } from './echo'
+import { CommandEcho } from './echo';
 import { CommandGif } from './gif';
 import { CommandHelp } from './help';
 import { CommandJoke } from './joke';
-import { CommandLiarsDice } from './games/liarsdice';
 import { CommandPrefix } from './prefix';
 import { CommandRole } from './role';
 import { CommandAllowSpam } from './spam/allowspam';
 import { CommandLorem } from './spam/lorem';
 import { CommandRandom } from './spam/random';
 import { CommandSpam } from './spam/spam';
+import { CommandStats } from './stats/stats';
 import { CommandUnban } from './unban';
 import { CommandPlay } from './youtube/play';
 import { CommandQueue } from './youtube/queue';
@@ -39,13 +37,12 @@ export const commands: Command[] = [
   new CommandAllowSpam(),
   new CommandBan(),
   new CommandCowsay(),
-  new CommandCowdos(),
-  new CommandCowwork(),
   new CommandEcho(),
   new CommandGif(),
   new CommandHelp(),
   new CommandJoke(),
-  new CommandLiarsDice(),
+  // not don yet
+  // new CommandLiarsDice(),
   new CommandLorem(),
   new CommandPlay(),
   new CommandPrefix(),
@@ -53,7 +50,8 @@ export const commands: Command[] = [
   new CommandRandom(),
   new CommandRole(),
   new CommandSkip(),
-  new CommandStop(),
   new CommandSpam(),
   new CommandUnban(),
+  new CommandStats(),
+  new CommandStop(),
 ];

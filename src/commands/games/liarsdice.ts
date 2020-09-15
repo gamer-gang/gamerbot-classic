@@ -1,11 +1,12 @@
+import { Message } from 'discord.js';
+import * as yaml from 'js-yaml';
+import _ = require('lodash');
 import * as randomstring from 'randomstring';
+
 import { Command } from '..';
 import { Embed } from '../../embed';
 import { CmdArgs, DiceObject, GameReactionCollector, LiarsDiceGame } from '../../types';
-import { hasFlags, mapToObject, spliceFlag } from '../../util';
-import { inspect } from 'util';
-import * as yaml from 'js-yaml';
-import _ = require('lodash');
+import { hasFlags, spliceFlag } from '../../util';
 
 class Dice {
   value!: number;
@@ -59,7 +60,7 @@ export class CommandLiarsDice implements Command {
     },
   ];
 
-  makeGameCode(existing: string[]) {
+  makeGameCode(existing: string[]): string {
     let code: string;
 
     do {
@@ -74,23 +75,23 @@ export class CommandLiarsDice implements Command {
     return code;
   }
 
-  inGame(games: Record<string, LiarsDiceGame>, playerId: string) {
+  inGame(games: Record<string, LiarsDiceGame>, playerId: string): string | null {
     for (const code of Object.keys(games)) {
       if (Object.keys(games[code].players).some(id => playerId === id)) return code;
     }
     return null;
   }
 
-  isInGame(games: Record<string, LiarsDiceGame>, playerId: string) {
+  isInGame(games: Record<string, LiarsDiceGame>, playerId: string): boolean {
     for (const code of Object.keys(games)) {
       if (Object.keys(games[code].players).some(id => playerId === id)) return true;
     }
     return false;
   }
 
-  async executor(cmdArgs: CmdArgs) {
+  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, gameStore, flags, args, client } = cmdArgs;
-    const { liarsDice } = gameStore.get(msg.guild!.id);
+    const { liarsDice } = gameStore.get(msg.guild?.id as string);
 
     const unrecognized = Object.keys(flags).filter(
       v => !'c|-create|s|-start|n|d|-state'.split('|').includes(v.substr(1))
@@ -117,10 +118,10 @@ export class CommandLiarsDice implements Command {
     }
 
     if (hasFlags(flags, ['-s', '--start'])) {
-      const gameCode = this.inGame(liarsDice, msg.author!.id);
+      const gameCode = this.inGame(liarsDice, msg.author?.id as string);
 
       if (!gameCode) return msg.channel.send('not in game');
-      if (liarsDice[gameCode].creatorId !== msg.author!.id)
+      if (liarsDice[gameCode].creatorId !== (msg.author?.id as string))
         return msg.channel.send(`ask <@!${liarsDice[gameCode].creatorId}> to start the game`);
       if (Object.keys(liarsDice[gameCode].players).length < 2)
         return msg.channel.send('need more players');
@@ -140,7 +141,7 @@ export class CommandLiarsDice implements Command {
       const providedDiceAmount = spliceFlag(flags, args, '-d', true);
       if (!providedDiceAmount) return msg.channel.send('need # of dice after `-d`');
 
-      let parsed = parseInt(providedDiceAmount);
+      const parsed = parseInt(providedDiceAmount);
       if (isNaN(parseInt(providedDiceAmount))) return msg.channel.send('invalid # of dice');
       if (parsed > 10 || parsed < 1) return msg.channel.send('1-10 dice allowed');
 
@@ -151,7 +152,7 @@ export class CommandLiarsDice implements Command {
       const providedDiceSides = spliceFlag(flags, args, '-n', true);
       if (!providedDiceSides) return msg.channel.send('need # of dice sides safter `-n`');
 
-      let parsed = parseInt(providedDiceSides);
+      const parsed = parseInt(providedDiceSides);
       if (isNaN(parsed)) return msg.channel.send('invalid # of sides');
       if (parsed > 8 || parsed < 4) return msg.channel.send('4-8 dice sides allowed');
 
@@ -159,7 +160,7 @@ export class CommandLiarsDice implements Command {
     }
 
     // only include if not in game already
-    if (this.isInGame(liarsDice, msg.author!.id))
+    if (this.isInGame(liarsDice, msg.author?.id as string))
       return msg.channel.send('u are smelly and in a game already');
 
     // generate new game
@@ -168,7 +169,7 @@ export class CommandLiarsDice implements Command {
     // make embed
     let timeLeft = 120;
     const playerTags: string[] = [];
-    playerTags.push(msg.author!.tag);
+    playerTags.push(msg.author?.tag as string);
     const embed = this.makeJoinEmbed({
       gameCode: code,
       timeLeft,
@@ -196,7 +197,7 @@ export class CommandLiarsDice implements Command {
     // create reaction collector
     const collector = embedMessage.createReactionCollector(
       ({ emoji }, user) =>
-        emoji.name === '🎲' && ![msg.author!.id, client.user!.id].includes(user.id),
+        emoji.name === '🎲' && ![msg.author?.id, client.user?.id].includes(user.id),
       { time: 120000, dispose: true }
     ) as GameReactionCollector;
 
@@ -238,11 +239,11 @@ export class CommandLiarsDice implements Command {
     liarsDice[code] = {
       players: {},
       metadata: { diceAmount, diceSides },
-      creatorId: msg.author!.id,
+      creatorId: msg.author?.id as string,
       reactionCollector: collector,
     };
 
-    liarsDice[code].players[msg.author!.id] = {
+    liarsDice[code].players[msg.author?.id as string] = {
       dice: Dice.array(diceAmount, diceSides),
     };
   }
@@ -259,7 +260,7 @@ export class CommandLiarsDice implements Command {
     playerTags: string[];
     diceAmount: number;
     diceSides: number;
-  }) {
+  }): Embed {
     return new Embed()
       .setTitle('liars dice or something idk im not gamer')
       .setDescription('react with 🎲 to join')
@@ -270,7 +271,7 @@ export class CommandLiarsDice implements Command {
         `${diceAmount} ${diceSides}-sided ${diceAmount === 1 ? 'die' : 'dice'}`,
         true
       )
-      .addField('how 2 play?', 'go to https://en.wikipedia.org/wiki/Liar%27s_dice', false)
+      .addField('how 2 play?', 'type in `dice -how2play`', false)
       .addField('players', playerTags.join(', '))
       .setFooter('do ctrl + alt + ➡️ or ctrl + k to switch between dms and server channels');
   }

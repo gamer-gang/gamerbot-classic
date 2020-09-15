@@ -23,7 +23,7 @@ export class CommandJoke implements Command {
       description: 'Get a joke from codepen (may take a while)',
     },
   ];
-  async getCodepenJoke() {
+  async getCodepenJoke(): Promise<string> {
     const response = await axios.get('https://codepen.io/pen/');
     if (response.status !== 200) throw new Error('response code ' + response.status);
 
@@ -32,11 +32,11 @@ export class CommandJoke implements Command {
 
     return he.decode(text.replace('\n', '').replace(/<\/?code>/g, '`'));
   }
-  async getGenericJoke() {
+  async getGenericJoke(): Promise<string> {
     const response = await axios.get('https://official-joke-api.appspot.com/jokes/random');
     return `${response.data.setup}\n${response.data.punchline}`;
   }
-  async getProgrammingJoke() {
+  async getProgrammingJoke(): Promise<string> {
     const response = await axios.get(
       'https://official-joke-api.appspot.com/jokes/programming/random'
     );
