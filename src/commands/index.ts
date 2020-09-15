@@ -4,7 +4,6 @@ import { CmdArgs } from '../types';
 import { CommandAbout } from './about';
 import { CommandCowsay } from './cowsay';
 import { CommandEcho } from './echo';
-import { CommandLiarsDice } from './games/liarsdice';
 import { CommandGif } from './gif';
 import { CommandHelp } from './help';
 import { CommandJoke } from './joke';
@@ -14,6 +13,7 @@ import { CommandAllowSpam } from './spam/allowspam';
 import { CommandLorem } from './spam/lorem';
 import { CommandRandom } from './spam/random';
 import { CommandSpam } from './spam/spam';
+import { CommandStats } from './stats/stats';
 import { CommandPlay } from './youtube/play';
 import { CommandQueue } from './youtube/queue';
 import { CommandSkip } from './youtube/skip';
@@ -38,7 +38,8 @@ export const commands: Command[] = [
   new CommandGif(),
   new CommandHelp(),
   new CommandJoke(),
-  new CommandLiarsDice(),
+  // not don yet
+  // new CommandLiarsDice(),
   new CommandLorem(),
   new CommandPlay(),
   new CommandPrefix(),
@@ -46,6 +47,7 @@ export const commands: Command[] = [
   new CommandRandom(),
   new CommandRole(),
   new CommandSkip(),
-  new CommandStop(),
   new CommandSpam(),
+  new CommandStats(),
+  new CommandStop(),
 ];

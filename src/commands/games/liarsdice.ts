@@ -271,7 +271,7 @@ export class CommandLiarsDice implements Command {
         `${diceAmount} ${diceSides}-sided ${diceAmount === 1 ? 'die' : 'dice'}`,
         true
       )
-      .addField('how 2 play?', 'go to https://en.wikipedia.org/wiki/Liar%27s_dice', false)
+      .addField('how 2 play?', 'type in `dice -how2play`', false)
       .addField('players', playerTags.join(', '))
       .setFooter('do ctrl + alt + ➡️ or ctrl + k to switch between dms and server channels');
   }

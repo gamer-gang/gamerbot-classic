@@ -57,6 +57,8 @@ const gameStore = new Store<GuildGames>({
         );
       })());
 
+    if (!msg.content.startsWith(config.prefix)) return;
+
     const [cmd, ...args] = msg.content.slice(config.prefix.length).replace('  ', ' ').split(' ');
     const flags: Record<string, number> = {};
 

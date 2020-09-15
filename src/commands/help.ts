@@ -41,9 +41,9 @@ export class CommandHelp implements Command {
       try {
         const dm = await msg.author?.createDM();
         dm?.send(embed);
-        msg.channel.send("yo i dm'd you the help message gg bro");
+        msg.channel.send('help message sent in DMs');
       } catch (err) {
-        msg.channel.send('lmao i couldnt send the dm, err message:\n```\n' + err + '\n```');
+        msg.channel.send('error sending DM, err message:\n```\n' + err + '\n```');
       }
     }
   }
@@ -61,10 +61,10 @@ export class CommandHelp implements Command {
   }
 
   formatFieldValue(docs: CommandDocs): string {
-    let usage = '`' + docs.usage + '`';
-    if (Array.isArray(docs.usage)) {
-      usage = docs.usage.map(v => '`' + v + '`').join('\n');
-    }
+    const usage = Array.isArray(docs.usage)
+      ? docs.usage.map(v => `\`${v}\``).join('\n')
+      : `\`${docs.usage}\``;
+
     return `${usage}\n${docs.description}`;
   }
 }

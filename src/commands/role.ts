@@ -48,7 +48,7 @@ export class CommandRole implements Command {
 
     const embed = new Embed()
       .setTitle('role: ' + role.name)
-      .setDescription(`react with ${emoji} to receive the \`${role.name}\` role!`);
+      .setDescription(`react with ${emoji} to receive the ${role} role!`);
 
     const embedMessage = await msg.channel.send(embed);
     embedMessage.react(emoji);
