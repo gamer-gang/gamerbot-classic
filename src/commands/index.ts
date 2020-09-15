@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 
 import { CmdArgs } from '../types';
 import { CommandAbout } from './about';
+import { CommandBan } from './ban';
 import { CommandCowdos } from './cowdos';
 import { CommandCowsay } from './cowsay';
 import { CommandCowwork } from './cowwork';
@@ -16,6 +17,7 @@ import { CommandAllowSpam } from './spam/allowspam';
 import { CommandLorem } from './spam/lorem';
 import { CommandRandom } from './spam/random';
 import { CommandSpam } from './spam/spam';
+import { CommandUnban } from './unban';
 import { CommandPlay } from './youtube/play';
 import { CommandQueue } from './youtube/queue';
 import { CommandSkip } from './youtube/skip';
@@ -35,6 +37,7 @@ export interface CommandDocs {
 export const commands: Command[] = [
   new CommandAbout(),
   new CommandAllowSpam(),
+  new CommandBan(),
   new CommandCowsay(),
   new CommandCowdos(),
   new CommandCowwork(),
@@ -52,4 +55,5 @@ export const commands: Command[] = [
   new CommandSkip(),
   new CommandStop(),
   new CommandSpam(),
+  new CommandUnban(),
 ];
