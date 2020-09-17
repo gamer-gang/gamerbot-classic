@@ -106,6 +106,8 @@ export class CommandStats implements Command {
           .attachFiles([{ attachment, name: 'stats.png' }])
       );
     } catch (err) {
+      if ((err.toString() as string).includes('no data'))
+        return channel.send('player has no data for that game');
       return channel.send(`error: \`\`\`${err}\n\n${err.stack}\`\`\``);
     }
   }

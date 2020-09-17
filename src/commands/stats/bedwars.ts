@@ -36,6 +36,8 @@ export const makeBedwarsStats = ({
   playername: string;
   botUserTag: string;
 }): Buffer => {
+  if (!data) throw new Error('no data');
+
   const stats: Record<string, Record<keyof typeof columns, string | number>> = {};
 
   const columns = {
