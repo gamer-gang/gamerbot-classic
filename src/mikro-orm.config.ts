@@ -2,11 +2,11 @@ import { MikroORM } from '@mikro-orm/core';
 import path from 'path';
 
 import { Config } from './entities/Config';
-import { ReactionRole } from './entities/ReactionRole';
+import { ReactionRole, RoleEmoji } from './entities/ReactionRole';
 import { resolvePath } from './util';
 
 export default {
-  entities: [Config, ReactionRole],
+  entities: [Config, ReactionRole, RoleEmoji],
   dbName: 'gamerbot',
   type: 'postgresql',
   debug: process.env.NODE_ENV === 'development',

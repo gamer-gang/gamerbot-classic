@@ -45,6 +45,11 @@ const gameStore = new Store<GuildGames>({
     // don't respond to DMs
     if (!msg.guild) return;
 
+    queueStore.setIfUnset(msg.guild?.id as string, {
+      videos: [],
+      playing: false,
+    });
+
     const config =
       (await orm.em.findOne(Config, { guildId: msg.guild.id as string })) ??
       (await (async () => {
