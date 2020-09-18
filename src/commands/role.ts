@@ -159,7 +159,7 @@ export const onMessageReactionAdd = (em: CmdArgs['em']) => async (
   if (!(await verifyReaction(reaction, user))) return;
   const { message: msg } = reaction;
 
-  const collectorMessage = await em.findOneOrFail(ReactionRole, { messageId: msg.id });
+  const collectorMessage = await em.findOne(ReactionRole, { messageId: msg.id });
   if (!collectorMessage) return;
 
   const collector = (await collectorMessage.roles.loadItems()).find(
@@ -186,7 +186,7 @@ export const onMessageReactionRemove = (em: CmdArgs['em']) => async (
   if (!(await verifyReaction(reaction, user))) return;
   const { message: msg } = reaction;
 
-  const collectorMessage = await em.findOneOrFail(ReactionRole, { messageId: msg.id });
+  const collectorMessage = await em.findOne(ReactionRole, { messageId: msg.id });
   if (!collectorMessage) return;
 
   const collector = (await collectorMessage.roles.loadItems()).find(

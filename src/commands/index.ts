@@ -5,6 +5,7 @@ import { CommandAbout } from './about';
 import { CommandBan } from './ban';
 import { CommandCowsay } from './cowsay';
 import { CommandEcho } from './echo';
+import { CommandEz } from './ez';
 import { CommandGif } from './gif';
 import { CommandHelp } from './help';
 import { CommandJoke } from './joke';
@@ -38,6 +39,7 @@ export const commands: Command[] = [
   new CommandBan(),
   new CommandCowsay(),
   new CommandEcho(),
+  new CommandEz(),
   new CommandGif(),
   new CommandHelp(),
   new CommandJoke(),
