@@ -9,7 +9,7 @@
       "ESNext"
     ],
     "incremental": true,
-    "inlineSourceMap": true,
+    "sourceMap": true,
     "outDir": "dist",
     "strict": true,
     "noImplicitAny": false,
