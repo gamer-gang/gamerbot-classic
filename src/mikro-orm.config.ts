@@ -1,22 +1,31 @@
-import { MikroORM } from '@mikro-orm/core';
-import path from 'path';
+import { MigrationObject, MikroORM } from '@mikro-orm/core';
+import { basename } from 'path';
 
-import { Config } from './entities/Config';
-import { LiarsDice, LiarsDicePlayer } from './entities/LiarsDice';
-import { ReactionRole } from './entities/ReactionRole';
 import { resolvePath } from './util';
 
+const getEntities = () => {
+  const modules = require.context('./entities', true, /\.ts$/);
+
+  return modules
+    .keys()
+    .map(r => modules(r))
+    .flatMap(mod => Object.keys(mod).map(className => mod[className]));
+};
+
+const getMigrations = () => {
+  const modules = require.context('./migrations', false, /\.ts$/);
+
+  return modules
+    .keys()
+    .map(name => <MigrationObject>{ name: basename(name), class: Object.values(modules(name))[0] });
+};
+
 export default {
-  entities: [Config, ReactionRole, LiarsDice, LiarsDicePlayer],
+  entities: getEntities(),
   dbName: 'gamerbot',
   type: 'postgresql',
   debug: process.env.NODE_ENV === 'development',
   baseDir: resolvePath('.'),
-  migrations: {
-    path: path.join(__dirname, './migrations'), // path to the folder with migrations
-    pattern: /^[\w-]+\d+\.[tj]s$/, // regex pattern for the migration files
-  },
-
-  // webpack stuf
   discovery: { disableDynamicFileAccess: true },
+  migrations: { migrationsList: getMigrations() },
 } as Parameters<typeof MikroORM.init>[0];

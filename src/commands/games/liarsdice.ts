@@ -1,6 +1,7 @@
 import { Message, TextChannel, User } from 'discord.js';
 import fse from 'fs-extra';
 import yaml from 'js-yaml';
+import _ from 'lodash';
 import sharp from 'sharp';
 
 import { Command, unknownFlags } from '..';
@@ -9,7 +10,7 @@ import { LiarsDice, LiarsDicePlayer } from '../../entities/LiarsDice';
 import { Die } from '../../gamemanagers/common';
 import { LiarsDiceManager } from '../../gamemanagers/liarsdicemanager';
 import { CmdArgs, GameReactionCollector } from '../../types';
-import { hasFlags, resolvePath, shuffleArray, spliceFlag } from '../../util';
+import { hasFlags, resolvePath, spliceFlag } from '../../util';
 
 type Bid = [quantity: number, value: number];
 
@@ -207,7 +208,7 @@ export class CommandLiarsDice implements Command {
         playerTags.splice(playerTags.indexOf(user.tag), 1);
         updateEmbed();
       })
-      .on('end', async (_, reason) => {
+      .on('end', async (__, reason) => {
         clearInterval(interval);
         updateEmbed(0);
 
@@ -235,7 +236,7 @@ export class CommandLiarsDice implements Command {
           game.roundNumber = 1;
 
           console.log('deciding player order');
-          game.playerOrder = shuffleArray(playerIds);
+          game.playerOrder = _.shuffle(playerIds);
 
           console.log('flushing db');
           em.flush();
@@ -449,7 +450,7 @@ export class CommandLiarsDice implements Command {
           })`
         );
 
-        (await em.find(LiarsDicePlayer, { game })).map();
+        // (await em.find(LiarsDicePlayer, { game })).map();
 
         break;
       } catch (err) {

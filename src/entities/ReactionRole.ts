@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { Collection, Entity, ManyToOne, OneToMany, PrimaryKey, Property } from '@mikro-orm/core';
 
 @Entity()
 export class ReactionRole {
@@ -15,10 +15,28 @@ export class ReactionRole {
   guildId!: string;
 
   @Property({ type: 'text' })
-  roleId!: string;
+  messageId!: string;
+
+  @OneToMany(() => RoleEmoji, roleEmoji => roleEmoji.message)
+  roles = new Collection<RoleEmoji>(this);
+}
+
+@Entity()
+export class RoleEmoji {
+  @PrimaryKey({ type: 'number' })
+  id!: number;
+
+  @Property({ type: 'date' })
+  createdAt = new Date();
+
+  @Property({ type: 'date', onUpdate: () => new Date() })
+  updatedAt = new Date();
+
+  @ManyToOne({ entity: () => ReactionRole })
+  message!: ReactionRole;
 
   @Property({ type: 'text' })
-  messageId!: string;
+  roleId!: string;
 
   @Property({ type: 'text' })
   emoji!: string;

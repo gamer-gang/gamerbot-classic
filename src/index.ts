@@ -51,6 +51,11 @@ const gameStore = new Store<GuildGames>({
     // don't respond to DMs
     if (!msg.guild) return;
 
+    queueStore.setIfUnset(msg.guild?.id as string, {
+      videos: [],
+      playing: false,
+    });
+
     const config =
       (await orm.em.findOne(Config, { guildId: msg.guild.id as string })) ??
       (await (async () => {
@@ -62,6 +67,8 @@ const gameStore = new Store<GuildGames>({
           { failHandler: dbFindOneError(msg.channel) }
         );
       })());
+
+    if (!msg.content.startsWith(config.prefix)) return;
 
     const [cmd, ...args] = msg.content.slice(config.prefix.length).replace('  ', ' ').split(' ');
     const flags: Record<string, number> = {};

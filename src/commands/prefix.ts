@@ -5,6 +5,8 @@ import { Config } from '../entities/Config';
 import { CmdArgs } from '../types';
 import { dbFindOneError } from '../util';
 
+const asciiRegExp = /^[ -~]+$/;
+
 export class CommandPrefix implements Command {
   cmd = 'prefix';
   docs = {
@@ -20,28 +22,12 @@ export class CommandPrefix implements Command {
       { failHandler: dbFindOneError(msg.channel) }
     );
 
-    if (args.length == 0) {
-      msg.channel.send('argument needed');
-      return;
-    } else if (args.length > 1) {
-      msg.channel.send('too many arguments');
-      return;
-    }
+    if (args.length !== 1) return msg.channel.send('expected 1 arg');
+    if (!asciiRegExp.test(args[0])) return msg.channel.send('only ascii characters allowed');
+    if (args[0].length > 16) return msg.channel.send('too long');
 
-    const asciiRegExp = /^[ -~]+$/;
+    config.prefix = args[0];
 
-    if (!asciiRegExp.test(args[0])) {
-      msg.channel.send('only ascii characters allowed');
-      return;
-    }
-
-    if (args[0].length > 30) {
-      msg.channel.send('too long');
-      return;
-    }
-
-    if (args[0].length) config.prefix = args[0];
-
-    await msg.channel.send(`prefix is now ${config.prefix}`);
+    return msg.channel.send(`prefix is now ${config.prefix}`);
   }
 }
