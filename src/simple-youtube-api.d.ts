@@ -1,15 +1,15 @@
 declare module 'simple-youtube-api' {
-  interface Thumbnail {
+  export interface Thumbnail {
     url: string;
     width: number;
     height: number;
   }
-  interface Duration {
+  export interface Duration {
     hours?: number;
     minutes?: number;
     seconds?: number;
   }
-  class Channel {
+  export class Channel {
     constructor(youtube: YouTube, data: Record<string, unknown>);
     commentCount?: number;
     country?: string;
@@ -39,7 +39,7 @@ declare module 'simple-youtube-api' {
     static extractUrl(url: string): string | null;
     fetch(options?: Record<string, unknown>): Channel;
   }
-  class Playlist {
+  export class Playlist {
     constructor(youtube: YouTube, data: Record<string, unknown>);
     channel: Channel;
     channelTitle?: string;
@@ -61,11 +61,11 @@ declare module 'simple-youtube-api' {
     fetch(options?: Record<string, unknown>): Playlist;
     getVideos(limit?: number, options?: Record<string, unknown>): Promise<Video[]>;
   }
-  class Video {
+  export class Video {
     constructor(youtube: YouTube, data: Record<string, unknown>);
     channel: Channel;
     description?: string;
-    duration?: Duration;
+    duration: Duration;
     durationSeconds?: number;
     full: boolean;
     id: string;
@@ -84,13 +84,13 @@ declare module 'simple-youtube-api' {
     fetch(options?: Record<string, unknown>): Video;
   }
 
-  class YouTube {
-    static Video: typeof Video;
-    static Playlist: typeof Playlist;
-    static Channel: typeof Channel;
+  export class YouTube {
+    // static Video: typeof Video;
+    // static Playlist: typeof Playlist;
+    // static Channel: typeof Channel;
     static util: {
       parseUrl(url: string): Record<string, unknown>;
-    }
+    };
 
     constructor(key: string);
     key?: string;
