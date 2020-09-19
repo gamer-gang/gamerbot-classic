@@ -1,9 +1,7 @@
-import { VoiceChannel, TextChannel, VoiceConnection } from 'discord.js';
+import { Message, TextChannel, VoiceChannel, VoiceConnection } from 'discord.js';
+import { Video as YTVideo } from 'simple-youtube-api';
 
-export interface Video {
-  url: string;
-  title: string;
-  lengthSeconds: number;
+export interface Video extends YTVideo {
   requesterId: string;
 }
 
@@ -13,4 +11,5 @@ export interface GuildQueue {
   textChannel?: TextChannel;
   voiceConnection?: VoiceConnection;
   playing: boolean;
+  playingEmbedMessage?: Message;
 }
