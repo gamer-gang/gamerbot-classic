@@ -1,7 +1,10 @@
 import { MigrationObject, MikroORM } from '@mikro-orm/core';
+import dotenv from 'dotenv';
 import { basename } from 'path';
 
 import { resolvePath } from './util';
+
+dotenv.config({ path: resolvePath('.env') });
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getEntities = (): any[] => {
@@ -25,6 +28,9 @@ export default {
   entities: getEntities(),
   dbName: 'gamerbot',
   type: 'postgresql',
+  clientUrl: 'http://localhost:5432',
+  user: 'postgres',
+  password: process.env.POSTGRES_PW,
   debug: process.env.NODE_ENV === 'development',
   baseDir: resolvePath('.'),
   discovery: { disableDynamicFileAccess: true },

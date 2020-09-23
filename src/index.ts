@@ -12,7 +12,7 @@ import { Store } from './store';
 import { GuildGames, GuildQueue } from './types';
 import { dbFindOneError, resolvePath, updateFlags } from './util';
 
-dotenv.config();
+dotenv.config({ path: resolvePath('.env') });
 
 fse.mkdirp(resolvePath('data'));
 
