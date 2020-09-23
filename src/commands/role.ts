@@ -38,7 +38,13 @@ export class CommandRole implements Command {
         (r, i) => r + ' '.repeat(nameWidth + (8 - (nameWidth % 8)) - r.length) + ids[i]
       );
 
-      return msg.channel.send('```\n' + rows.join('\n') + '\n```');
+      const messages = rows
+        .join('\n')
+        .match(/(.|\n){1,1900}\n/g)
+        ?.map(message => '```\n' + message + '\n```') as string[];
+
+      for (const message of messages) await msg.channel.send(message);
+      return;
     }
 
     if (args.length < 1)
@@ -64,21 +70,23 @@ export class CommandRole implements Command {
 
       if (/^<:.+:\d{18}>$/.test(emoji)) {
         // custom emoji
-        const customId = (emoji as string).replace(/(<:.+:|>)/g, '');
+        const customId = (emoji as string).replace(/<:.+:/g, '').replace(/>/g, '');
+        console.log(customId);
         emoji = msg.guild?.emojis.cache.find(e => e.id == customId) as GuildEmoji;
       } else {
         const exec = emojiRegex().exec(emoji);
         // invalid emoji
         if (!exec || exec[0] !== emoji) return msg.channel.send('invalid emoji: ' + emoji);
-        // valid emoji
-        description += `${emoji}: ${role}\n`;
-        roles.push(
-          em.create(RoleEmoji, {
-            emoji,
-            roleId: role.id,
-          })
-        );
+        // valid emoji, nothing to do
       }
+
+      description += `${emoji}: ${role}\n`;
+      roles.push(
+        em.create(RoleEmoji, {
+          emoji: emoji instanceof GuildEmoji ? emoji.id : emoji,
+          roleId: role.id,
+        })
+      );
     });
 
     if (roles.length === 0) return msg.channel.send('nothing to do');
