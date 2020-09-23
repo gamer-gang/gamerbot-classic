@@ -3,7 +3,7 @@ import { Message } from 'discord.js';
 import { Command } from '..';
 import { CmdArgs } from '../../types';
 
-export class CommandStop implements Command {
+export class CommandResume implements Command {
   cmd = 'stop';
   docs = {
     usage: 'stop',
@@ -16,13 +16,11 @@ export class CommandStop implements Command {
     if (!queue.playing) return msg.channel.send('not playing');
 
     try {
-      queue.videos = [];
-      queueStore.set(msg.guild?.id as string, queue);
-      queue.voiceConnection?.dispatcher?.end('stop command');
+      queue.voiceConnection?.dispatcher.resume();
     } catch (err) {
       return msg.channel.send(`error: \n\`\`\`\n${err.stack}\n\`\`\``);
     }
 
-    return msg.channel.send('stopped');
+    return msg.channel.send('resumed');
   }
 }

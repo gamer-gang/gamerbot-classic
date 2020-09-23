@@ -1,7 +1,9 @@
 import { Message } from 'discord.js';
-import * as _ from 'lodash';
+import _ from 'lodash';
+
 import { Command } from '..';
-import { CmdArgs } from '../../types';
+import { CmdArgs, Video } from '../../types';
+import { formatDuration, getPlayingSecondsRemaining } from '../../util';
 
 export class CommandQueue implements Command {
   cmd = ['queue', 'q'];
@@ -30,16 +32,25 @@ export class CommandQueue implements Command {
         );
         break;
       default: {
-        const videos = _.cloneDeep(queue.videos);
+        const videos = _.cloneDeep(queue.videos as Omit<Video, 'youtube'>[]);
         if (!videos.length) return msg.channel.send('nothing playing');
 
         const nowPlaying = videos.shift();
 
         const queueString = videos.length
-          ? `queue: \n` + videos.map((v, i) => i + 1 + '. ' + _.unescape(v.title) + '\n').join('')
+          ? `queue: \n` +
+            videos
+              .map(
+                (v, i) => i + 1 + '. ' + _.unescape(v.title) + `(${formatDuration(v.duration)}) \n`
+              )
+              .join('')
           : 'queue is empty';
 
-        msg.channel.send(`now playing: ${_.unescape(nowPlaying?.title)}\n` + queueString);
+        msg.channel.send(
+          `now playing: ${_.unescape(nowPlaying?.title)} ${formatDuration(
+            getPlayingSecondsRemaining()
+          )}\n` + queueString
+        );
         break;
       }
     }
