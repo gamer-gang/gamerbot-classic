@@ -17,6 +17,7 @@ import { CommandRandom } from './spam/random';
 import { CommandSpam } from './spam/spam';
 import { CommandStats } from './stats/stats';
 import { CommandUnban } from './unban';
+import { CommandUptime } from './uptime';
 import { CommandPlay } from './youtube/play';
 import { CommandQueue } from './youtube/queue';
 import { CommandSkip } from './youtube/skip';
@@ -54,6 +55,7 @@ export const commands: Command[] = [
   new CommandSkip(),
   new CommandSpam(),
   new CommandUnban(),
+  new CommandUptime(),
   new CommandStats(),
   new CommandStop(),
 ];

@@ -16,4 +16,4 @@ COPY . .
 
 RUN yarn build:prod
 
-CMD [ "yarn", "prod" ]
+CMD [ "yarn", "start:prod" ]

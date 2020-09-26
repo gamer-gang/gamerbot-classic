@@ -24,7 +24,10 @@ export class CommandRole implements Command {
     const { msg, args, em, flags } = cmdArgs;
 
     if (!msg.guild?.members.resolve(msg.author as User)?.hasPermission('MANAGE_ROLES'))
-      return msg.channel.send('missing `MANAGE_ROLES` permission');
+      return msg.channel.send('you are missing `MANAGE_ROLES` permission');
+
+    if (!msg.guild?.members.resolve(client.user?.id as string)?.hasPermission('MANAGE_ROLES'))
+      return msg.channel.send('bot is missing `MANAGE_ROLES` permission');
 
     if (hasFlags(flags, ['-l'])) {
       const manager = await msg.guild.roles.fetch();
@@ -171,9 +174,16 @@ export const onMessageReactionAdd = (em: CmdArgs['em']) => async (
   if (!collectorMessage) return;
 
   const collector = (await collectorMessage.roles.loadItems()).find(
-    e => e.emoji === reaction.emoji.toString()
+    e => e.emoji === reaction.emoji.toString() || e.emoji === reaction.emoji.id
   );
   if (!collector) return;
+
+  if (!msg.guild?.members.resolve(client.user?.id as string)?.hasPermission('MANAGE_ROLES')) {
+    msg.channel.send(
+      `${user}: can't give you that role as the bot is missing the \`MANAGE_ROLES\` permission. ` +
+        `please contact a server admin for help.`
+    );
+  }
 
   const role = msg.guild?.roles.resolve(collector.roleId);
   if (!role) return roleError({ reaction, user, collector, role });
@@ -198,9 +208,16 @@ export const onMessageReactionRemove = (em: CmdArgs['em']) => async (
   if (!collectorMessage) return;
 
   const collector = (await collectorMessage.roles.loadItems()).find(
-    e => e.emoji === reaction.emoji.toString()
+    e => e.emoji === reaction.emoji.toString() || e.emoji === reaction.emoji.id
   );
   if (!collector) return;
+
+  if (!msg.guild?.members.resolve(client.user?.id as string)?.hasPermission('MANAGE_ROLES')) {
+    msg.channel.send(
+      `${user}: can't remove that role as the bot is missing the \`MANAGE_ROLES\` permission. ` +
+        `please contact a server admin for help.`
+    );
+  }
 
   const role = msg.guild?.roles.resolve(collector.roleId);
   if (!role) return roleError({ reaction, user, collector, role });
