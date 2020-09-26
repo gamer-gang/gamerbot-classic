@@ -26,11 +26,12 @@ const getMigrations = () => {
 
 export default {
   entities: getEntities(),
-  dbName: 'gamerbot',
   type: 'postgresql',
-  clientUrl: 'http://localhost:5432',
-  user: 'postgres',
-  password: process.env.POSTGRES_PW,
+  host: 'db',
+  port: 5432,
+  dbName: process.env.POSTGRES_DB,
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
   debug: process.env.NODE_ENV === 'development',
   baseDir: resolvePath('.'),
   discovery: { disableDynamicFileAccess: true },

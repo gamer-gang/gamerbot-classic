@@ -22,7 +22,11 @@ export default <webpack.Configuration>{
     extensions: ['.ts', '.js'],
     symlinks: false,
   },
-  plugins: [new ProgressPlugin({}), new NodemonPlugin(), new ForkTsCheckerPlugin()],
+  plugins: [
+    ...(process.env.DOCKER ? [] : [new ProgressPlugin({})]),
+    new NodemonPlugin(),
+    new ForkTsCheckerPlugin(),
+  ],
   externals: [nodeExternals()],
   target: 'node',
   experiments: {
