@@ -18,25 +18,17 @@ export class CommandUptime implements Command {
 
     const uptime = moment.duration(Math.round(process.uptime()), 'seconds');
 
-    msg.channel.send(`uptime: ${this.makeDurationString(uptime)}`);
+    return msg.channel.send(`uptime: ${this.makeDurationString(uptime)}`);
   }
 
   makeDurationString(duration: moment.Duration): string {
-    const years = duration.years();
-    const months = duration.months();
-    const days = duration.days();
-    const hours = duration.hours();
-    const minutes = duration.minutes();
-    const seconds = duration.seconds();
+    const units = ['years', 'months', 'days', 'hours', 'minutes', 'seconds'] as const;
 
-    const segments = [
-      years && `${years} year${years > 1 ? 's' : ''}`,
-      months && `${months} month${months > 1 ? 's' : ''}`,
-      days && `${days} day${days > 1 ? 's' : ''}`,
-      hours && `${hours} hour${hours > 1 ? 's' : ''}`,
-      minutes && `${minutes} minute${minutes > 1 ? 's' : ''}`,
-      seconds && `${seconds} second${seconds > 1 ? 's' : ''}`,
-    ];
+    const segments = units.map(unit => {
+      const count = duration[unit]();
+      return count && `${count} ${unit.replace(/s$/, '')}${count > 1 ? 's' : ''}`;
+    });
+
     return segments.filter(v => !!v).join(', ');
   }
 }

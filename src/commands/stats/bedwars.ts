@@ -174,7 +174,8 @@ class BedwarsExp {
       level++;
       expWithoutPrestiges -= expForEasyLevel;
     }
-    level += Math.floor(expWithoutPrestiges / 5000);
+
+    level += expWithoutPrestiges / 5000;
 
     return level;
   }
