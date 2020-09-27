@@ -17,7 +17,7 @@ export class CommandStats implements Command {
   cmd = 'stats';
   docs = {
     usage: 'stats <username|uuid> [game]',
-    description: 'hypixel stats',
+    description: 'hypixel stats (game defaults to bedwars)',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args } = cmdArgs;
@@ -86,17 +86,17 @@ export class CommandStats implements Command {
           makeBedwarsStats({
             data: (playerData.stats as { Bedwars }).Bedwars,
             playername: playerData.playername as string,
-            botUserTag: client.user?.tag as string,
+            clientTag: client.user?.tag as string,
           }),
       } as Record<string, () => Buffer>;
 
       const exec = new RegExp(`(${Object.keys(gamemodes).join('|')})`, 'gi').exec(type);
-      if (!exec)
+      if (!exec && type !== undefined)
         return channel.send(
           'invalid game type, supported types: ' + Object.keys(gamemodes).join(', ')
         );
 
-      attachment = gamemodes[exec[1]]();
+      attachment = gamemodes[exec ? exec[1] : 'bedwars']();
 
       if (!attachment) throw new Error('invalid state: attatchment is null after regexp exec');
 
