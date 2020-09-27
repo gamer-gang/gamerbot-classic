@@ -54,8 +54,8 @@ export const commands: Command[] = [
   new CommandRole(),
   new CommandSkip(),
   new CommandSpam(),
-  new CommandUnban(),
-  new CommandUptime(),
   new CommandStats(),
   new CommandStop(),
+  new CommandUnban(),
+  new CommandUptime(),
 ];

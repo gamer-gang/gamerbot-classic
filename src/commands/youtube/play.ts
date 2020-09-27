@@ -162,7 +162,7 @@ export class CommandPlay implements Command {
   }
 
   async playVideo(cmdArgs: CmdArgs): Promise<void> {
-    const { msg, queueStore, client } = cmdArgs;
+    const { msg, queueStore } = cmdArgs;
 
     const queue = queueStore.get(msg.guild?.id as string);
 
@@ -192,7 +192,7 @@ export class CommandPlay implements Command {
     queue.playingEmbedMessage ??= await msg.channel.send('loading...');
 
     const durationSeconds = toDurationSeconds(video.duration as Duration);
-    const sliderLength = Math.ceil(durationSeconds / 5) + 1;
+    const sliderLength = Math.min(Math.ceil(durationSeconds / 5) + 1, 40);
 
     let thumbPosition = 0;
     queue.playingEmbedMessage.edit(
@@ -216,6 +216,7 @@ export class CommandPlay implements Command {
 
       const queue = queueStore.get(msg.guild?.id as string);
       queue.videos.shift();
+      queue.playingEmbedMessage = undefined;
       queueStore.set(msg.guild?.id as string, queue);
 
       this.playVideo(cmdArgs);
@@ -262,9 +263,9 @@ export class CommandPlay implements Command {
   }
 }
 
-type EmbedArgs = {
+interface EmbedArgs {
   video: Video;
   thumbPosition: number;
   sliderLength: number;
   cmdArgs: CmdArgs;
-};
+}

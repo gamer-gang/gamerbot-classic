@@ -18,6 +18,7 @@ export class CommandStop implements Command {
     try {
       queue.videos = [];
       queueStore.set(msg.guild?.id as string, queue);
+      queue.playingEmbedMessage = undefined;
       queue.voiceConnection?.dispatcher?.end('stop command');
     } catch (err) {
       return msg.channel.send(`error: \n\`\`\`\n${err.stack}\n\`\`\``);
