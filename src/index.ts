@@ -1,4 +1,5 @@
 import { MikroORM } from '@mikro-orm/core/MikroORM';
+import { registerFont } from 'canvas';
 import Discord from 'discord.js';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
@@ -31,6 +32,37 @@ const gameStore = new Store<GuildGames>({
   writeOnSet: true,
   readImmediately: true,
   dataLanguage: 'yaml',
+});
+
+// register fonts for canvas
+const fonts: Record<
+  string,
+  {
+    family: string;
+    weight?: string;
+    style?: string;
+  }
+> = {
+  'FiraSans-Regular.ttf': {
+    family: 'Fira Sans',
+  },
+  'FiraSans-Italic.ttf': {
+    family: 'Fira Sans',
+    style: 'italic',
+  },
+  'FiraSans-Bold.ttf': {
+    family: 'Fira Sans',
+    weight: 'bold',
+  },
+  'FiraSans-BoldItalic.ttf': {
+    family: 'Fira Sans',
+    weight: 'bold',
+    style: 'italic',
+  },
+};
+
+Object.keys(fonts).forEach(filename => {
+  registerFont(resolvePath('assets/fonts/' + filename), fonts[filename]);
 });
 
 (async () => {
