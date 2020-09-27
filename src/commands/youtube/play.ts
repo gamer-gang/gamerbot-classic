@@ -189,8 +189,6 @@ export class CommandPlay implements Command {
       queueStore.set(msg.guild?.id as string, queue);
     }
 
-    console.log(video);
-
     queue.playingEmbedMessage ??= await msg.channel.send('loading...');
 
     const durationSeconds = toDurationSeconds(video.duration as Duration);
@@ -212,8 +210,6 @@ export class CommandPlay implements Command {
         this.updateVideoEmbed({ video, thumbPosition, sliderLength, cmdArgs })
       );
     }, (durationSeconds * 1000) / sliderLength);
-
-    console.log('now playing', video.id);
 
     connection?.play(ytdl(video.id)).on('finish', (info: unknown) => {
       console.info(`video "${video.title}" ended with info ${info}`);

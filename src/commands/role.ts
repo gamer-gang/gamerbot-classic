@@ -74,7 +74,6 @@ export class CommandRole implements Command {
       if (/^<:.+:\d{18}>$/.test(emoji)) {
         // custom emoji
         const customId = (emoji as string).replace(/<:.+:/g, '').replace(/>/g, '');
-        console.log(customId);
         emoji = msg.guild?.emojis.cache.find(e => e.id == customId) as GuildEmoji;
       } else {
         const exec = emojiRegex().exec(emoji);

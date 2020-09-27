@@ -105,7 +105,6 @@ export class CommandLiarsDice implements Command {
         for (const key of Object.keys(cloned)) {
           delete cloned[key].reactionCollector;
         }
-        console.log(JSON.stringify(cloned));
         const state = yaml.dump(cloned);
         const embed = new Embed()
           .setTitle('liars dice state')
