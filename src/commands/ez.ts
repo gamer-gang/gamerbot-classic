@@ -24,9 +24,9 @@ export class CommandEz implements Command {
     msg.delete();
     return msg.channel.send(
       `*${(guildMember?.nickname ?? guildMember?.user.username)
-        ?.replace('*', '\\*')
-        .replace('_', '\\_')
-        .replace('`', '\\`')} says:* ${replacement}`
+        ?.replace(/\*/g, '\\*')
+        .replace(/_/g, '\\_')
+        .replace(/`/g, '\\`')} says:* ${replacement}`
     );
   }
 }
