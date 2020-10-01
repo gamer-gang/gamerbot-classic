@@ -1,38 +1,31 @@
 import { say } from 'cowsay';
 import { Message } from 'discord.js';
-import { LoremIpsum } from 'lorem-ipsum';
 
 import { Command } from '.';
 import { CmdArgs } from '../types';
-import { hasMentions } from '../util';
+import { hasFlags, spliceFlag } from '../util';
 
 export class CommandCowsay implements Command {
   cmd = 'cowsay';
   docs = {
-    usage: 'cowsay <...msg>',
-    description: 'you know what it does',
+    usage: 'cowsay [-d] <...msg>',
+    description: 'you know what it does (`-d` deletes source command)',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+    const { msg, args, flags } = cmdArgs;
 
-    if (args.length == 0 || /^\s+$/.test(args.join(' '))) {
-      msg.channel.send('nothing to say');
-      return;
+    if (hasFlags(flags, ['-d'])) {
+      spliceFlag(flags, args, '-d');
+      msg.deletable && msg.delete();
     }
 
-    if (hasMentions(msg.content as string)) return msg.channel.send('yea i aint doin that');
-
-    let cowtext = args.join(' ');
-
-    if (args[0] == '$lorem') {
-      cowtext = new LoremIpsum().generateParagraphs(1);
-    }
+    if (args.length == 0 || /^\s+$/.test(args.join(' '))) return msg.channel.send('nothing to say');
 
     await msg.channel.send(
       `\`\`\`\n${say({
-        text: cowtext,
+        text: args.join(' '),
         W: 48,
-      })}\n\`\`\`\n`
+      })}\n\`\`\``
     );
   }
 }
