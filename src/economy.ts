@@ -1,8 +1,8 @@
 import moment from 'moment';
 
-import { Store } from './store';
 import { Economy } from './types';
 import { resolvePath } from './util';
+import { Store } from './util/store';
 
 export const BANKRUPT_COOLDOWN = 720;
 

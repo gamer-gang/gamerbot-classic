@@ -3,13 +3,6 @@ import { Duration } from 'simple-youtube-api';
 
 import { GuildQueue } from '../types';
 
-let currentVideoSecondsRemaining = 0;
-
-export const getPlayingSecondsRemaining = (): number => currentVideoSecondsRemaining;
-export const setPlayingSecondsRemaining = (value: number): void => {
-  currentVideoSecondsRemaining = value;
-};
-
 const isDuration = (value: Duration | number): value is Duration => {
   return (
     (value as Duration).seconds !== undefined &&
@@ -30,17 +23,15 @@ export function formatDuration(length: Duration | number): string {
     duration = {
       hours: len.hours(),
       minutes: len.minutes(),
-      seconds: len.seconds(),
+      seconds: len.seconds()
     };
   }
 
-  return (
-    (duration.hours
-      ? duration.hours + ':' + `${duration.minutes}`.padStart(2, '0')
-      : duration.minutes) +
-    ':' +
-    `${duration.minutes}`.padStart(2, '0')
-  );
+  return [
+    duration.hours ?? '',
+    (duration.minutes ?? 0).toString().padStart(2, '0'),
+    (duration.seconds ?? 0).toString().padStart(2, '0')
+  ].join(':');
 }
 
 export const toDurationSeconds = (duration: Duration): number => {
@@ -49,12 +40,13 @@ export const toDurationSeconds = (duration: Duration): number => {
 };
 
 export const getQueueLength = (queue: GuildQueue, includeCurrent = false): string => {
+  if (queue.videos.slice(includeCurrent ? 0 : 1).find(v => v.livestream)) return '?';
   const totalDurationSeconds =
     queue.videos
       .slice(1)
       .map(v => toDurationSeconds(v.duration as Duration))
       .reduce((a, b) => a + Math.round(b), 0) +
-    (includeCurrent ? currentVideoSecondsRemaining ?? 0 : 0);
+    (includeCurrent ? queue.currentVideoSecondsRemaining ?? 0 : 0);
 
   const totalDuration = formatDuration(totalDurationSeconds);
 

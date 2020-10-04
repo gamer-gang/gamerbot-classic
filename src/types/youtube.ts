@@ -3,6 +3,7 @@ import { Video as YTVideo } from 'simple-youtube-api';
 
 export interface Video extends YTVideo {
   requesterId: string;
+  livestream: boolean;
 }
 
 export interface GuildQueue {
@@ -12,4 +13,6 @@ export interface GuildQueue {
   voiceConnection?: VoiceConnection;
   playing: boolean;
   playingEmbedMessage?: Message;
+  playingEmbedMessageInterval?: NodeJS.Timeout;
+  currentVideoSecondsRemaining: number;
 }
