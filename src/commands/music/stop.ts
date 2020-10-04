@@ -7,10 +7,10 @@ export class CommandStop implements Command {
   cmd = 'stop';
   docs = {
     usage: 'stop',
-    description: 'stops playback',
+    description: 'stops playback'
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, queueStore, client } = cmdArgs;
+    const { msg, queueStore } = cmdArgs;
     const queue = queueStore.get(msg.guild?.id as string);
 
     if (!queue.playing) return msg.channel.send('not playing');

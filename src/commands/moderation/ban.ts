@@ -1,16 +1,17 @@
 import { Message } from 'discord.js';
 
 import { Command } from '..';
+import { client } from '../..';
 import { CmdArgs } from '../../types';
 
 export class CommandBan implements Command {
   cmd = 'ban';
   docs = {
     usage: 'ban <user> <...reason>',
-    description: 'bans',
+    description: 'bans'
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, client } = cmdArgs;
+    const { msg, args } = cmdArgs;
     if (!msg.guild?.members.resolve(msg.author?.id as string)?.hasPermission('BAN_MEMBERS'))
       return msg.channel.send('you are missing `BAN_MEMBERS` permission');
 

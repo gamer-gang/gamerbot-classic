@@ -7,10 +7,10 @@ export class CommandResume implements Command {
   cmd = 'resume';
   docs = {
     usage: 'resume',
-    description: 'resumes playback',
+    description: 'resumes playback'
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, queueStore, client } = cmdArgs;
+    const { msg, queueStore } = cmdArgs;
     const queue = queueStore.get(msg.guild?.id as string);
 
     if (!queue.playing) return msg.channel.send('not playing');

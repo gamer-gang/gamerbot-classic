@@ -4,6 +4,7 @@ import _ = require('lodash');
 import * as randomstring from 'randomstring';
 
 import { Command } from '..';
+import { client } from '../..';
 import { Embed } from '../../embed';
 import { CmdArgs, DiceObject, GameReactionCollector, LiarsDiceGame } from '../../types';
 import { hasFlags, spliceFlag } from '../../util';
@@ -52,12 +53,12 @@ export class CommandLiarsDice implements Command {
   docs = [
     {
       usage: 'liarsdice -c, --create [-d diceAmount=5] [-n diceSides=6]',
-      description: 'create dice game',
+      description: 'create dice game'
     },
     {
       usage: 'liarsdice -s, --start',
-      description: 'start dice game (game creator only)',
-    },
+      description: 'start dice game (game creator only)'
+    }
   ];
 
   makeGameCode(existing: string[]): string {
@@ -68,7 +69,7 @@ export class CommandLiarsDice implements Command {
         'ld-' +
         randomstring.generate({
           length: 4,
-          charset: '1234567890',
+          charset: '1234567890'
         });
     } while (existing.includes(code));
 
@@ -90,7 +91,7 @@ export class CommandLiarsDice implements Command {
   }
 
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, gameStore, flags, args, client } = cmdArgs;
+    const { msg, gameStore, flags, args } = cmdArgs;
     const { liarsDice } = gameStore.get(msg.guild?.id as string);
 
     const unrecognized = Object.keys(flags).filter(
@@ -174,7 +175,7 @@ export class CommandLiarsDice implements Command {
       timeLeft,
       playerTags,
       diceAmount,
-      diceSides,
+      diceSides
     });
 
     const embedMessage = await msg.channel.send(embed);
@@ -188,7 +189,7 @@ export class CommandLiarsDice implements Command {
           timeLeft: timeLeft -= 5,
           playerTags,
           diceAmount,
-          diceSides,
+          diceSides
         })
       );
     }, 5000);
@@ -239,11 +240,11 @@ export class CommandLiarsDice implements Command {
       players: {},
       metadata: { diceAmount, diceSides },
       creatorId: msg.author?.id as string,
-      reactionCollector: collector,
+      reactionCollector: collector
     };
 
     liarsDice[code].players[msg.author?.id as string] = {
-      dice: Dice.array(diceAmount, diceSides),
+      dice: Dice.array(diceAmount, diceSides)
     };
   }
 
@@ -252,7 +253,7 @@ export class CommandLiarsDice implements Command {
     timeLeft,
     playerTags,
     diceAmount,
-    diceSides,
+    diceSides
   }: {
     gameCode: string;
     timeLeft: number;

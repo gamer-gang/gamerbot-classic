@@ -1,16 +1,17 @@
 import { Message } from 'discord.js';
 
 import { Command } from '..';
+import { client } from '../..';
 import { CmdArgs } from '../../types';
 
 export class CommandUnban implements Command {
   cmd = 'unban';
   docs = {
     usage: 'unban <user>',
-    description: 'unbans',
+    description: 'unbans'
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, client } = cmdArgs;
+    const { msg, args } = cmdArgs;
     if (!msg.guild?.members.resolve(msg.author?.id as string)?.hasPermission('BAN_MEMBERS'))
       return msg.channel.send('you are missing `BAN_MEMBERS` permission');
     if (args.length !== 1) return msg.channel.send('expected 1 arg');
