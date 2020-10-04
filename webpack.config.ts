@@ -16,17 +16,35 @@ export default <webpack.Configuration>{
     libraryTarget: 'commonjs',
     chunkFilename: '[name].js',
     publicPath: path.resolve(__dirname, 'dist'),
+    devtoolModuleFilenameTemplate: '[absolute-resource-path]',
+    devtoolFallbackModuleFilenameTemplate: '[absolute-resource-path]?[hash]',
   },
-  devtool: devMode ? 'eval-cheap-module-source-map' : 'source-map',
+  devtool: devMode
+    ? process.env.NODEMON
+      ? 'eval-cheap-module-source-map'
+      : 'inline-source-map'
+    : 'source-map',
   resolve: {
     extensions: ['.ts', '.js'],
     symlinks: false,
   },
   plugins: [
     ...(process.env.DOCKER ? [] : [new ProgressPlugin({})]),
-    new NodemonPlugin(),
-    new ForkTsCheckerPlugin(),
+    ...(process.env.NODEMON ? [new NodemonPlugin()] : []),
+
+    new ForkTsCheckerPlugin({
+      eslint: {
+        enabled: true,
+        files: './src/**/*.{ts,tsx,js,jsx}',
+      },
+      logger: {
+        devServer: false,
+        infrastructure: 'silent',
+        issues: 'webpack-infrastructure',
+      },
+    }),
   ],
+  stats: { preset: 'normal', colors: true },
   externals: [nodeExternals()],
   target: 'node',
   experiments: {
