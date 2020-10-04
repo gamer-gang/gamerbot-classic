@@ -1,10 +1,10 @@
 import { Message } from 'discord.js';
 
-import { Command, CommandDocs, commands } from '.';
-import { Embed } from '../embed';
-import { Config } from '../entities/Config';
-import { CmdArgs } from '../types';
-import { dbFindOneError } from '../util';
+import { Command, CommandDocs, commands } from '..';
+import { Embed } from '../../embed';
+import { Config } from '../../entities/Config';
+import { CmdArgs } from '../../types';
+import { dbFindOneError } from '../../util';
 
 export class CommandHelp implements Command {
   cmd = ['help', 'h'];

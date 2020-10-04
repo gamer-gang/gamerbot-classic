@@ -7,7 +7,7 @@ export class CommandStop implements Command {
   cmd = 'stop';
   docs = {
     usage: 'stop',
-    description: 'the music is hurting my ears please stop it',
+    description: 'stops playback',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, queueStore, client } = cmdArgs;

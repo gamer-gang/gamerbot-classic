@@ -1,27 +1,29 @@
 import { Message } from 'discord.js';
 
 import { CmdArgs } from '../types';
-import { CommandAbout } from './about';
-import { CommandBan } from './ban';
-import { CommandCowsay } from './cowsay';
-import { CommandEcho } from './echo';
-import { CommandEz } from './ez';
-import { CommandGif } from './gif';
-import { CommandHelp } from './help';
-import { CommandJoke } from './joke';
-import { CommandPrefix } from './prefix';
-import { CommandRole } from './role';
+import { CommandAbout } from './general/about';
+import { CommandHelp } from './general/help';
+import { CommandUptime } from './general/uptime';
+import { CommandGif } from './media/gif';
+import { CommandCowsay } from './messages/cowsay';
+import { CommandEcho } from './messages/echo';
+import { CommandEz } from './messages/ez';
+import { CommandJoke } from './messages/joke';
+import { CommandBan } from './moderation/ban';
+import { CommandPrefix } from './moderation/prefix';
+import { CommandRole } from './moderation/role';
+import { CommandUnban } from './moderation/unban';
+import { CommandPause } from './music/pause';
+import { CommandPlay } from './music/play';
+import { CommandQueue } from './music/queue';
+import { CommandResume } from './music/resume';
+import { CommandSkip } from './music/skip';
+import { CommandStop } from './music/stop';
 import { CommandAllowSpam } from './spam/allowspam';
 import { CommandLorem } from './spam/lorem';
 import { CommandRandom } from './spam/random';
 import { CommandSpam } from './spam/spam';
 import { CommandStats } from './stats/stats';
-import { CommandUnban } from './unban';
-import { CommandUptime } from './uptime';
-import { CommandPlay } from './youtube/play';
-import { CommandQueue } from './youtube/queue';
-import { CommandSkip } from './youtube/skip';
-import { CommandStop } from './youtube/stop';
 
 export interface Command {
   cmd: string | string[];
@@ -35,27 +37,43 @@ export interface CommandDocs {
 }
 
 export const commands: Command[] = [
+  // general
   new CommandAbout(),
+  new CommandHelp(),
+  new CommandUptime(),
+
+  // moderation
   new CommandAllowSpam(),
+  new CommandPrefix(),
   new CommandBan(),
+  new CommandUnban(),
+  new CommandRole(),
+
+  // messages
   new CommandCowsay(),
   new CommandEcho(),
   new CommandEz(),
-  new CommandGif(),
-  new CommandHelp(),
   new CommandJoke(),
-  // not don yet
-  // new CommandLiarsDice(),
+
+  // spammable
   new CommandLorem(),
-  new CommandPlay(),
-  new CommandPrefix(),
-  new CommandQueue(),
   new CommandRandom(),
-  new CommandRole(),
-  new CommandSkip(),
   new CommandSpam(),
+
+  // media
+  new CommandGif(),
+
+  // stats
   new CommandStats(),
+
+  // music
+  new CommandPlay(),
+  new CommandPause(),
+  new CommandQueue(),
+  new CommandSkip(),
   new CommandStop(),
-  new CommandUnban(),
-  new CommandUptime(),
+  new CommandResume(),
+
+  // games
+  // new CommandLiarsDice(),
 ];

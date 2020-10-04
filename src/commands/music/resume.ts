@@ -4,10 +4,10 @@ import { Command } from '..';
 import { CmdArgs } from '../../types';
 
 export class CommandResume implements Command {
-  cmd = 'stop';
+  cmd = 'resume';
   docs = {
-    usage: 'stop',
-    description: 'the music is hurting my ears please stop it',
+    usage: 'resume',
+    description: 'resumes playback',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, queueStore, client } = cmdArgs;
@@ -18,7 +18,7 @@ export class CommandResume implements Command {
     try {
       queue.voiceConnection?.dispatcher.resume();
     } catch (err) {
-      return msg.channel.send(`error: \n\`\`\`\n${err.stack}\n\`\`\``);
+      return msg.channel.send(`error:\n\`\`\`\n${err.stack}\n\`\`\``);
     }
 
     return msg.channel.send('resumed');

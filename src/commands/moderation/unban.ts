@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 
-import { Command } from '.';
-import { CmdArgs } from '../types';
+import { Command } from '..';
+import { CmdArgs } from '../../types';
 
 export class CommandUnban implements Command {
   cmd = 'unban';

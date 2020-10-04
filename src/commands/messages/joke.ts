@@ -3,9 +3,9 @@ import cheerio from 'cheerio';
 import { Message } from 'discord.js';
 import he from 'he';
 
-import { Command } from '.';
-import { CmdArgs } from '../types';
-import { hasFlags } from '../util';
+import { Command } from '..';
+import { CmdArgs } from '../../types';
+import { hasFlags } from '../../util';
 
 export class CommandJoke implements Command {
   cmd = 'joke';

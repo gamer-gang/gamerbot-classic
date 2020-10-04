@@ -1,9 +1,9 @@
 import { Message } from 'discord.js';
 
-import { Command } from '.';
-import { Config } from '../entities/Config';
-import { CmdArgs } from '../types';
-import { dbFindOneError } from '../util';
+import { Command } from '..';
+import { Config } from '../../entities/Config';
+import { CmdArgs } from '../../types';
+import { dbFindOneError } from '../../util';
 
 const asciiRegExp = /^[ -~]+$/;
 

@@ -3,19 +3,19 @@ import _ from 'lodash';
 
 import { Command } from '..';
 import { CmdArgs, Video } from '../../types';
-import { formatDuration, getPlayingSecondsRemaining } from '../../util';
+import { formatDuration, getQueueLength } from '../../util';
 
 export class CommandQueue implements Command {
   cmd = ['queue', 'q'];
   docs = [
     {
       usage: ['queue'],
-      description: `list the things!!!`,
+      description: `list the things!!!`
     },
     {
       usage: ['queue remove <index>', 'queue rm <index>'],
-      description: 'remove video at <index> from queue',
-    },
+      description: 'remove video at <index> from queue'
+    }
   ];
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args, queueStore } = cmdArgs;
@@ -28,11 +28,11 @@ export class CommandQueue implements Command {
         if (parseInt(args[1]) === 0 || parseInt(args[1]) > queue.videos.length - 1)
           return msg.channel.send('invalid index');
         msg.channel.send(
-          `ok removed "${queue.videos.splice(parseInt(args[1]), 1)[0].title}" from the queue`
+          `removed "${queue.videos.splice(parseInt(args[1]), 1)[0].title}" from the queue`
         );
         break;
       default: {
-        const videos = _.cloneDeep(queue.videos as Omit<Video, 'youtube'>[]);
+        const videos = _.cloneDeep(queue.videos.map(v => v as Omit<Video, 'youtube'>));
         if (!videos.length) return msg.channel.send('nothing playing');
 
         const nowPlaying = videos.shift();
@@ -41,15 +41,22 @@ export class CommandQueue implements Command {
           ? `queue: \n` +
             videos
               .map(
-                (v, i) => i + 1 + '. ' + _.unescape(v.title) + `(${formatDuration(v.duration)}) \n`
+                (v, i) =>
+                  `${i + 1}. ${_.unescape(v.title)}${` (${
+                    v.livestream ? 'livestream' : formatDuration(v.duration)
+                  })`}`
               )
-              .join('')
+              .join('\n')
           : 'queue is empty';
 
         msg.channel.send(
-          `now playing: ${_.unescape(nowPlaying?.title)} ${formatDuration(
-            getPlayingSecondsRemaining()
-          )}\n` + queueString
+          `total queue length: ${getQueueLength(queue, true)}\n` +
+            `now playing: ${_.unescape(nowPlaying?.title)} (${
+              nowPlaying?.livestream
+                ? 'livestream'
+                : formatDuration(queue.currentVideoSecondsRemaining) + ' remaining'
+            })${queue.voiceConnection?.dispatcher.paused ? ' (paused)' : ''}\n` +
+            queueString
         );
         break;
       }

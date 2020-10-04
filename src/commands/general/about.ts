@@ -1,7 +1,8 @@
 import { Message } from 'discord.js';
-import { Command, commands } from '.';
-import { Embed } from '../embed';
-import { CmdArgs } from '../types';
+
+import { Command } from '..';
+import { Embed } from '../../embed';
+import { CmdArgs } from '../../types';
 
 export class CommandAbout implements Command {
   cmd = 'about';

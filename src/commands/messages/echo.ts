@@ -1,8 +1,8 @@
 import { Message } from 'discord.js';
 
-import { Command } from '.';
-import { CmdArgs } from '../types';
-import { hasFlags, spliceFlag } from '../util';
+import { Command } from '..';
+import { CmdArgs } from '../../types';
+import { hasFlags, spliceFlag } from '../../util';
 
 export class CommandEcho implements Command {
   cmd = 'echo';

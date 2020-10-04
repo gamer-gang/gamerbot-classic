@@ -3,9 +3,9 @@ import * as fse from 'fs-extra';
 import * as http from 'http';
 import * as https from 'https';
 
-import { Command } from '.';
-import { CmdArgs } from '../types';
-import { hasFlags, resolvePath, spliceFlag } from '../util';
+import { Command } from '..';
+import { CmdArgs } from '../../types';
+import { hasFlags, resolvePath, spliceFlag } from '../../util';
 
 const fileRegExp = /^[A-Za-z0-9\-_]+$/;
 const urlRegExp = /^https?:\/\/[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$/;

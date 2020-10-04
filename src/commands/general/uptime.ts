@@ -1,8 +1,8 @@
 import { Message } from 'discord.js';
 import moment from 'moment';
 
-import { Command } from '.';
-import { CmdArgs } from '../types';
+import { Command } from '..';
+import { CmdArgs } from '../../types';
 
 export class CommandUptime implements Command {
   cmd = 'uptime';

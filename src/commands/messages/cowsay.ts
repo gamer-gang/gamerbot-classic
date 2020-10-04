@@ -1,9 +1,9 @@
 import { say } from 'cowsay';
 import { Message } from 'discord.js';
 
-import { Command } from '.';
-import { CmdArgs } from '../types';
-import { hasFlags, spliceFlag } from '../util';
+import { Command } from '..';
+import { CmdArgs } from '../../types';
+import { hasFlags, spliceFlag } from '../../util';
 
 export class CommandCowsay implements Command {
   cmd = 'cowsay';
