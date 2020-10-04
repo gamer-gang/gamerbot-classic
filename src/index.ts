@@ -6,28 +6,32 @@ import fse from 'fs-extra';
 import YouTube from 'simple-youtube-api';
 
 import { commands } from './commands';
-import { onMessageReactionAdd, onMessageReactionRemove } from './commands/role';
 import { Config } from './entities/Config';
 import mikroOrmConfig from './mikro-orm.config';
-import { Store } from './store';
+import { onMessageReactionAdd, onMessageReactionRemove } from './reactions';
 import { GuildGames, GuildQueue } from './types';
 import { dbFindOneError, resolvePath, updateFlags } from './util';
+import { Store } from './util/store';
+import { onVoiceStateUpdate } from './voice';
 
 dotenv.config({ path: resolvePath('.env') });
 
 fse.mkdirp(resolvePath('data'));
 
-export const client = new Discord.Client({ partials: ['MESSAGE', 'REACTION'] });
+export const client = new Discord.Client({
+  partials: ['MESSAGE', 'REACTION'],
+  disableMentions: 'everyone',
+});
 export const youtube = new YouTube(process.env.YT_API_KEY as string);
 
-const queueStore = new Store<GuildQueue>({
+export const queueStore = new Store<GuildQueue>({
   path: 'data/queue.yaml',
   writeOnSet: false,
   readImmediately: false,
   dataLanguage: 'yaml',
 });
 
-const gameStore = new Store<GuildGames>({
+export const gameStore = new Store<GuildGames>({
   path: 'data/games.yaml',
   writeOnSet: true,
   readImmediately: true,
@@ -80,6 +84,7 @@ Object.keys(fonts).forEach(filename => {
     queueStore.setIfUnset(msg.guild?.id as string, {
       videos: [],
       playing: false,
+      currentVideoSecondsRemaining: 0,
     });
 
     const config =
@@ -116,8 +121,6 @@ Object.keys(fonts).forEach(filename => {
       cmd,
       args,
       flags,
-      client,
-      youtube,
       em: orm.em,
       queueStore,
       gameStore,
@@ -132,13 +135,18 @@ Object.keys(fonts).forEach(filename => {
     .on('disconnect', () => console.log('client disconnected'))
     .on('ready', () => {
       console.log(`${client.user?.tag} ready`);
-      client.user?.setPresence({
-        activity: {
-          name: 'your mom | $help',
-          type: 'PLAYING',
-        },
-      });
+      const setPresence = () => {
+        client.user?.setPresence({
+          activity: {
+            name: 'your mom | $help',
+            type: 'PLAYING',
+          },
+        });
+      };
+      setPresence();
+      setInterval(setPresence, 1000 * 60 * 10);
     })
+    .on('voiceStateUpdate', onVoiceStateUpdate())
     .on('messageReactionAdd', onMessageReactionAdd(orm.em))
     .on('messageReactionRemove', onMessageReactionRemove(orm.em))
     .login(process.env.DISCORD_TOKEN);
