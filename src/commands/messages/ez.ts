@@ -13,7 +13,7 @@ export class CommandEz implements Command {
   cmd = 'ez';
   docs = {
     usage: 'ez',
-    description: 'ez',
+    description: 'ez'
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg } = cmdArgs;
@@ -24,7 +24,8 @@ export class CommandEz implements Command {
     msg.delete();
     return msg.channel.send(
       `*${(guildMember?.nickname ?? guildMember?.user.username)
-        ?.replace(/\*/g, '\\*')
+        ?.replace(/\\/g, '\\\\')
+        .replace(/\*/g, '\\*')
         .replace(/_/g, '\\_')
         .replace(/`/g, '\\`')} says:* ${replacement}`
     );
