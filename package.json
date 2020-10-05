@@ -30,7 +30,7 @@
     "bufferutil": "^4.0.1",
     "canvas": "^2.6.1",
     "cheerio": "^1.0.0-rc.3",
-    "cowsay": "^1.4.0",
+    "cowsay": "github:piuccio/cowsay",
     "cross-env": "^7.0.2",
     "discord.js": "^12.3.1",
     "dotenv": "^8.2.0",
