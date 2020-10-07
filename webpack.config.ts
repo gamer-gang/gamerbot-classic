@@ -2,7 +2,7 @@ import ForkTsCheckerPlugin from 'fork-ts-checker-webpack-plugin';
 import NodemonPlugin from 'nodemon-webpack-plugin';
 import path from 'path';
 import TerserPlugin from 'terser-webpack-plugin';
-import webpack, { ProgressPlugin } from 'webpack';
+import webpack, { EnvironmentPlugin, ProgressPlugin } from 'webpack';
 import nodeExternals from 'webpack-node-externals';
 
 const devMode = process.env.NODE_ENV !== 'production';
@@ -31,7 +31,7 @@ export default <webpack.Configuration>{
   plugins: [
     ...(process.env.DOCKER ? [] : [new ProgressPlugin({})]),
     ...(process.env.NODEMON ? [new NodemonPlugin()] : []),
-
+    new EnvironmentPlugin({ WEBPACK: true }),
     new ForkTsCheckerPlugin({
       eslint: {
         enabled: true,
