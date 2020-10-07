@@ -5,7 +5,7 @@ import path, { basename } from 'path';
 
 import { resolvePath } from './util';
 
-dotenv.config({ path: resolvePath('.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const getEntities = () => {
   let modules;
