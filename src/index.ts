@@ -14,6 +14,10 @@ import { dbFindOneError, resolvePath, updateFlags } from './util';
 import { Store } from './util/store';
 import { onVoiceStateUpdate } from './voice';
 
+fse.ensureFileSync(resolvePath('data/eggcount.txt'));
+let eggCount: number = 0;
+fse.readFile(resolvePath('data/eggcount.txt'), (err, data) => { eggCount = parseInt(data.toString()) });
+
 dotenv.config({ path: resolvePath('.env') });
 
 fse.mkdirp(resolvePath('data'));
@@ -99,6 +103,12 @@ Object.keys(fonts).forEach(filename => {
         );
       })());
 
+    if (config.egg && msg.content.toLowerCase().includes("egg")) {
+      msg.react('🥚');
+      eggCount++;
+      fse.writeFile(resolvePath('data/eggcount.txt'), eggCount.toString())
+    }
+
     if (!msg.content.startsWith(config.prefix)) return;
 
     const [cmd, ...args] = msg.content.slice(config.prefix.length).replace('  ', ' ').split(' ');
@@ -138,7 +148,7 @@ Object.keys(fonts).forEach(filename => {
       const setPresence = () => {
         client.user?.setPresence({
           activity: {
-            name: 'your mom | $help',
+            name: 'your mom | $help | ' + eggCount + 'eggs',
             type: 'PLAYING',
           },
         });
