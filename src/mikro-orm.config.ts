@@ -5,7 +5,7 @@ import path, { basename } from 'path';
 
 import { resolvePath } from './util';
 
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: resolvePath('.env') });
 
 const getEntities = () => {
   let modules;
@@ -14,7 +14,7 @@ const getEntities = () => {
     modules = modules.keys().map(r => modules(r));
   } else {
     modules = fs
-      .readdirSync(path.resolve(__dirname, 'entities'))
+      .readdirSync(resolvePath('src/entities'))
       .map(file => require(`./entities/${file}`));
   }
 
@@ -32,7 +32,7 @@ const getMigrations = () => {
       );
   } else {
     const modules = fs
-      .readdirSync(path.resolve(__dirname, 'migrations'))
+      .readdirSync(resolvePath('src/migrations'))
       .map(file => require(`./migrations/${file}`));
 
     return Object.keys(modules).map(
@@ -44,7 +44,7 @@ const getMigrations = () => {
 export default {
   entities: getEntities(),
   type: 'postgresql',
-  host: 'localhost',
+  host: process.env.POSTGRES_HOST,
   port: 5432,
   dbName: process.env.POSTGRES_DB,
   user: process.env.POSTGRES_USER,

@@ -47,6 +47,7 @@ export default <webpack.Configuration>{
   stats: { preset: 'normal', colors: true },
   externals: [nodeExternals()],
   target: 'node',
+  node: { __dirname: true },
   experiments: {
     topLevelAwait: true,
   },
