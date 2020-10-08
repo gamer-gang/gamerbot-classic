@@ -10,8 +10,11 @@ services:
       - POSTGRES_PASSWORD
   app:
     build: .
+    volumes:
+      - app-data:/app/data
     depends_on:
       - db
 
 volumes:
+  app-data: {}
   db-data: {}
