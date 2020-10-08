@@ -7,6 +7,7 @@ import { CommandUptime } from './general/uptime';
 import { CommandGif } from './media/gif';
 import { CommandCowsay } from './messages/cowsay';
 import { CommandEcho } from './messages/echo';
+import { CommandEgg } from './messages/egg';
 import { CommandEz } from './messages/ez';
 import { CommandJoke } from './messages/joke';
 import { CommandBan } from './moderation/ban';
@@ -52,6 +53,7 @@ export const commands: Command[] = [
   // messages
   new CommandCowsay(),
   new CommandEcho(),
+  new CommandEgg(),
   new CommandEz(),
   new CommandJoke(),
 

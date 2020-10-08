@@ -20,4 +20,7 @@ export class Config {
 
   @Property({ type: 'boolean', default: false })
   allowSpam!: boolean;
+
+  @Property({ type: 'boolean', default: true })
+  egg!: boolean
 }
