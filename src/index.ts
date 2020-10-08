@@ -7,26 +7,22 @@ import YouTube from 'simple-youtube-api';
 
 import { commands } from './commands';
 import { Config } from './entities/Config';
+import * as eggs from './listeners/eggs';
+import * as reactions from './listeners/reactions';
+import * as voice from './listeners/voice';
 import mikroOrmConfig from './mikro-orm.config';
-import { onMessageReactionAdd, onMessageReactionRemove } from './reactions';
 import { GuildGames, GuildQueue } from './types';
 import { dbFindOneError, resolvePath, updateFlags } from './util';
 import { Store } from './util/store';
-import { onVoiceStateUpdate } from './voice';
 
 dotenv.config({ path: resolvePath('.env') });
 
 fse.mkdirp(resolvePath('data'));
 
-const EGGFILE = resolvePath('data/eggcount.txt');
-
-fse.ensureFileSync(EGGFILE);
-let eggCount: number = parseInt(fse.readFileSync(EGGFILE).toString('utf-8')) || 0;
-
-const setPresence = () => {
+export const setPresence = (): void => {
   client.user?.setPresence({
     activity: {
-      name: `with ${eggCount} egg${eggCount === 1 ? '' : 's'}  | $help`,
+      name: `with ${eggs.getEggs()} egg${eggs.getEggs() === 1 ? '' : 's'}  | $help`,
       type: 'PLAYING',
     },
   });
@@ -67,14 +63,12 @@ Object.keys(fonts).forEach(filename =>
 (async () => {
   // init db
   const orm = await MikroORM.init(mikroOrmConfig);
-
   await orm.getMigrator().up();
 
   client.on('message', async (msg: Discord.Message) => {
     if (msg.author.bot) return;
     if (msg.author.id == client.user?.id) return;
-    // don't respond to DMs
-    if (!msg.guild) return;
+    if (!msg.guild) return; // don't respond to DMs
 
     queueStore.setIfUnset(msg.guild?.id as string, {
       videos: [],
@@ -94,16 +88,7 @@ Object.keys(fonts).forEach(filename =>
         );
       })());
 
-    if (
-      config.egg &&
-      msg.content.toLowerCase().includes('egg') &&
-      !msg.content.startsWith('$egg')
-    ) {
-      msg.react('🥚');
-      eggCount++;
-      fse.writeFile(EGGFILE, eggCount.toString());
-      setPresence();
-    }
+    eggs.onMessage(msg, config)();
 
     if (!msg.content.startsWith(config.prefix)) return;
 
@@ -111,20 +96,15 @@ Object.keys(fonts).forEach(filename =>
       .slice(config.prefix.length)
       .replace('  ', ' ')
       .split(' ');
-
     const flags: Record<string, number> = {};
 
     const commandClass = commands.find(v => {
       if (Array.isArray(v.cmd)) return v.cmd.some(c => c.toLowerCase() === cmd.toLowerCase());
       else return v.cmd.toLowerCase() === cmd.toLowerCase();
     });
-
-    updateFlags(flags, args);
-
     if (!commandClass) return;
 
-    // console.debug(inspect(cmd, true, null, true));
-    // console.debug(inspect(args, true, null, true));
+    updateFlags(flags, args);
 
     await commandClass.executor({
       msg,
@@ -141,15 +121,16 @@ Object.keys(fonts).forEach(filename =>
   client
     .on('warn', console.warn)
     .on('error', console.error)
-    // .on('debug', console.info)
     .on('disconnect', () => console.log('client disconnected'))
     .on('ready', () => {
       console.log(`${client.user?.tag} ready`);
       setPresence();
       setInterval(setPresence, 1000 * 60 * 10);
     })
-    .on('voiceStateUpdate', onVoiceStateUpdate())
-    .on('messageReactionAdd', onMessageReactionAdd(orm.em))
-    .on('messageReactionRemove', onMessageReactionRemove(orm.em))
+    .on('messageDelete', eggs.onMessageDelete(orm.em))
+    .on('messageUpdate', eggs.onMessageUpdate(orm.em))
+    .on('voiceStateUpdate', voice.onVoiceStateUpdate())
+    .on('messageReactionAdd', reactions.onMessageReactionAdd(orm.em))
+    .on('messageReactionRemove', reactions.onMessageReactionRemove(orm.em))
     .login(process.env.DISCORD_TOKEN);
 })().catch(console.error);

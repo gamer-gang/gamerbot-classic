@@ -1,6 +1,6 @@
 import { VoiceState } from 'discord.js';
 
-import { client, queueStore } from '.';
+import { client, queueStore } from '..';
 
 export const onVoiceStateUpdate = () => (oldState: VoiceState, newState: VoiceState): void => {
   if (oldState.id === client.user?.id && newState.id === client.user?.id) {

@@ -1,9 +1,9 @@
 import { MessageReaction, PartialUser, Role, User } from 'discord.js';
 
-import { client } from '.';
-import { Embed } from './embed';
-import { ReactionRole, RoleEmoji } from './entities/ReactionRole';
-import { CmdArgs } from './types';
+import { client } from '..';
+import { Embed } from '../embed';
+import { ReactionRole, RoleEmoji } from '../entities/ReactionRole';
+import { CmdArgs } from '../types';
 
 const verifyReaction = async (
   reaction: MessageReaction,
