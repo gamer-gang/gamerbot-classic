@@ -10,8 +10,10 @@ import { CommandEcho } from './messages/echo';
 import { CommandEgg } from './messages/egg';
 import { CommandEz } from './messages/ez';
 import { CommandJoke } from './messages/joke';
+import { CommandAllowSpam } from './moderation/allowspam';
 import { CommandBan } from './moderation/ban';
 import { CommandPrefix } from './moderation/prefix';
+import { CommandPurge } from './moderation/purge';
 import { CommandRole } from './moderation/role';
 import { CommandUnban } from './moderation/unban';
 import { CommandPause } from './music/pause';
@@ -20,7 +22,6 @@ import { CommandQueue } from './music/queue';
 import { CommandResume } from './music/resume';
 import { CommandSkip } from './music/skip';
 import { CommandStop } from './music/stop';
-import { CommandAllowSpam } from './spam/allowspam';
 import { CommandLorem } from './spam/lorem';
 import { CommandRandom } from './spam/random';
 import { CommandSpam } from './spam/spam';
@@ -45,10 +46,11 @@ export const commands: Command[] = [
 
   // moderation
   new CommandAllowSpam(),
-  new CommandPrefix(),
   new CommandBan(),
-  new CommandUnban(),
+  new CommandPrefix(),
+  new CommandPurge(),
   new CommandRole(),
+  new CommandUnban(),
 
   // messages
   new CommandCowsay(),
