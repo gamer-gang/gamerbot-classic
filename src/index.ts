@@ -14,13 +14,23 @@ import { dbFindOneError, resolvePath, updateFlags } from './util';
 import { Store } from './util/store';
 import { onVoiceStateUpdate } from './voice';
 
-fse.ensureFileSync(resolvePath('data/eggcount.txt'));
-let eggCount: number = 0;
-fse.readFile(resolvePath('data/eggcount.txt'), (err, data) => { eggCount = parseInt(data.toString()) });
-
 dotenv.config({ path: resolvePath('.env') });
 
 fse.mkdirp(resolvePath('data'));
+
+const EGGFILE = resolvePath('data/eggcount.txt');
+
+fse.ensureFileSync(EGGFILE);
+let eggCount: number = parseInt(fse.readFileSync(EGGFILE).toString('utf-8')) || 0;
+
+const setPresence = () => {
+  client.user?.setPresence({
+    activity: {
+      name: `with ${eggCount} egg${eggCount === 1 ? '' : 's'}  | $help`,
+      type: 'PLAYING',
+    },
+  });
+};
 
 export const client = new Discord.Client({
   partials: ['MESSAGE', 'REACTION'],
@@ -43,35 +53,16 @@ export const gameStore = new Store<GuildGames>({
 });
 
 // register fonts for canvas
-const fonts: Record<
-  string,
-  {
-    family: string;
-    weight?: string;
-    style?: string;
-  }
-> = {
-  'FiraSans-Regular.ttf': {
-    family: 'Fira Sans',
-  },
-  'FiraSans-Italic.ttf': {
-    family: 'Fira Sans',
-    style: 'italic',
-  },
-  'FiraSans-Bold.ttf': {
-    family: 'Fira Sans',
-    weight: 'bold',
-  },
-  'FiraSans-BoldItalic.ttf': {
-    family: 'Fira Sans',
-    weight: 'bold',
-    style: 'italic',
-  },
+const fonts: Record<string, { family: string; weight?: string; style?: string }> = {
+  'FiraSans-Regular.ttf': { family: 'Fira Sans' },
+  'FiraSans-Italic.ttf': { family: 'Fira Sans', style: 'italic' },
+  'FiraSans-Bold.ttf': { family: 'Fira Sans', weight: 'bold' },
+  'FiraSans-BoldItalic.ttf': { family: 'Fira Sans', weight: 'bold', style: 'italic' },
 };
 
-Object.keys(fonts).forEach(filename => {
-  registerFont(resolvePath('assets/fonts/' + filename), fonts[filename]);
-});
+Object.keys(fonts).forEach(filename =>
+  registerFont(resolvePath('assets/fonts/' + filename), fonts[filename])
+);
 
 (async () => {
   // init db
@@ -103,15 +94,24 @@ Object.keys(fonts).forEach(filename => {
         );
       })());
 
-    if (config.egg && msg.content.toLowerCase().includes("egg")) {
+    if (
+      config.egg &&
+      msg.content.toLowerCase().includes('egg') &&
+      !msg.content.startsWith('$egg')
+    ) {
       msg.react('🥚');
       eggCount++;
-      fse.writeFile(resolvePath('data/eggcount.txt'), eggCount.toString())
+      fse.writeFile(EGGFILE, eggCount.toString());
+      setPresence();
     }
 
     if (!msg.content.startsWith(config.prefix)) return;
 
-    const [cmd, ...args] = msg.content.slice(config.prefix.length).replace('  ', ' ').split(' ');
+    const [cmd, ...args] = msg.content
+      .slice(config.prefix.length)
+      .replace('  ', ' ')
+      .split(' ');
+
     const flags: Record<string, number> = {};
 
     const commandClass = commands.find(v => {
@@ -145,14 +145,6 @@ Object.keys(fonts).forEach(filename => {
     .on('disconnect', () => console.log('client disconnected'))
     .on('ready', () => {
       console.log(`${client.user?.tag} ready`);
-      const setPresence = () => {
-        client.user?.setPresence({
-          activity: {
-            name: 'your mom | $help | ' + eggCount + 'eggs',
-            type: 'PLAYING',
-          },
-        });
-      };
       setPresence();
       setInterval(setPresence, 1000 * 60 * 10);
     })
