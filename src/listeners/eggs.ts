@@ -6,73 +6,60 @@ import { Config } from '../entities/Config';
 import { CmdArgs } from '../types';
 import { resolvePath } from '../util';
 
+type EventMessage = Message | PartialMessage;
+
+/** case insensitive */
+const include = (msg: EventMessage, content: string) =>
+  msg.content?.toLowerCase().includes(content);
+
 const EGGFILE = resolvePath('data/eggcount.txt');
 
 fse.ensureFileSync(EGGFILE);
 let eggCount: number = parseInt(fse.readFileSync(EGGFILE).toString('utf-8')) || 0;
 
-export const getEggs = (): number => eggCount;
-export const setEggs = (count: number): number => (eggCount = count);
+export const get = (): number => eggCount;
+export const increment = (deltaEggs: number): void => set(eggCount + deltaEggs);
+export const set = (count: number): void => {
+  if (eggCount === count) return;
+  eggCount = count;
+  fse.writeFile(EGGFILE, eggCount.toString());
+  setPresence();
+};
 
-export const onMessage = (msg: Message | PartialMessage, config: Config) => (): void => {
+export const onMessage = (msg: EventMessage, config: Config) => (): void => {
   if (
     config.egg &&
     msg.content?.toLowerCase().includes('egg') &&
     !msg.content?.startsWith('$egg')
   ) {
     msg.react('🥚');
-    eggCount++;
-    fse.writeFile(EGGFILE, eggCount.toString());
-    setPresence();
+    increment(1);
   }
 };
 
-export const onMessageDelete = (em: CmdArgs['em']) => async (
-  msg: Message | PartialMessage
-): Promise<void> => {
+export const onMessageDelete = (em: CmdArgs['em']) => async (msg: EventMessage): Promise<void> => {
   const config = await em.findOne(Config, { guildId: msg.guild?.id as string });
-  if (!config) return; // whatever
-  if (msg.author?.bot) return;
-  if (!config.egg) return;
-  if (
-    config.egg &&
-    msg.content?.toLowerCase().includes('egg') &&
-    !msg.content?.startsWith('$egg')
-  ) {
-    eggCount--;
-    fse.writeFile(EGGFILE, eggCount.toString());
-    setPresence();
-  }
+  if (!config || msg.author?.bot || !config.egg) return;
+
+  if (config.egg && include(msg, 'egg') && !msg.content?.startsWith('$egg')) increment(-1);
 };
 
 export const onMessageUpdate = (em: CmdArgs['em']) => async (
-  oldState: Message | PartialMessage,
-  newState: Message | PartialMessage
+  prev: EventMessage,
+  next: EventMessage
 ): Promise<void> => {
-  const config = await em.findOne(Config, { guildId: newState.guild?.id as string });
-  if (!config) return; // whatever
-  if (newState.author?.bot) return;
-  if (!config.egg) return;
-  if (
-    !oldState.content?.toLowerCase().includes('egg') &&
-    newState.content?.toLowerCase().includes('egg') &&
-    !newState.content?.startsWith('$egg')
-  ) {
-    newState.react('🥚');
-    eggCount++;
-    fse.writeFile(EGGFILE, eggCount.toString());
-    setPresence();
-  } else if (
-    oldState.content?.toLowerCase().includes('egg') &&
-    !newState.content?.toLowerCase().includes('egg')
-  ) {
+  const config = await em.findOne(Config, { guildId: next.guild?.id as string });
+  if (!config || next.author?.bot || !config.egg) return;
+
+  if (!include(prev, 'egg') && include(next, 'egg') && !next.content?.startsWith('$egg')) {
+    next.react('🥚');
+    increment(1);
+  } else if (include(prev, 'egg') && !include(next, 'egg')) {
     try {
-      newState.reactions.cache.get('🥚')?.remove();
-      eggCount--;
-      fse.writeFile(EGGFILE, eggCount.toString());
-      setPresence();
+      next.reactions.cache.get('🥚')?.remove();
+      increment(-1);
     } catch {
-      // whatever, extra feature anyway
+      // no
     }
   }
 };

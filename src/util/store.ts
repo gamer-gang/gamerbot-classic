@@ -28,8 +28,11 @@ export interface StoreOptions {
   dataLanguage?: 'json' | 'yaml';
 }
 
+/** Map wrapper just because */
 export class Store<T> extends EventEmitter {
   private map = new Map<string, T>();
+
+  options: StoreOptions;
 
   defaultOptions: StoreOptions = {
     readImmediately: false,
@@ -37,15 +40,14 @@ export class Store<T> extends EventEmitter {
     dataLanguage: 'yaml',
   };
 
-  constructor(public options: StoreOptions) {
+  constructor(options: StoreOptions) {
     super();
+
     options = _.merge(this.defaultOptions, options);
+    this.options = options;
+
     options.readImmediately && this.readFile();
-    if (options.writeOnSet) {
-      this.addListener('set', () => {
-        this.writeFile();
-      });
-    }
+    if (options.writeOnSet) this.addListener('set', () => this.writeFile());
   }
   /**
    * Read the contents of `this.path` and interpret as JSON/YAML;

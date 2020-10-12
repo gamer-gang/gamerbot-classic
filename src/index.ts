@@ -1,6 +1,6 @@
 import { MikroORM } from '@mikro-orm/core/MikroORM';
 import { registerFont } from 'canvas';
-import Discord from 'discord.js';
+import { Client, Message } from 'discord.js';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import YouTube from 'simple-youtube-api';
@@ -20,15 +20,17 @@ dotenv.config({ path: resolvePath('.env') });
 fse.mkdirp(resolvePath('data'));
 
 export const setPresence = (): void => {
+  const num = eggs.get();
+  const s = num === 1 ? '' : 's';
   client.user?.setPresence({
     activity: {
-      name: `with ${eggs.getEggs()} egg${eggs.getEggs() === 1 ? '' : 's'}  | $help`,
+      name: `with ${num.toLocaleString()} egg${s} | $help`,
       type: 'PLAYING',
     },
   });
 };
 
-export const client = new Discord.Client({
+export const client = new Client({
   partials: ['MESSAGE', 'REACTION'],
   disableMentions: 'everyone',
 });
@@ -65,7 +67,7 @@ Object.keys(fonts).forEach(filename =>
   const orm = await MikroORM.init(mikroOrmConfig);
   await orm.getMigrator().up();
 
-  client.on('message', async (msg: Discord.Message) => {
+  client.on('message', async (msg: Message) => {
     if (msg.author.bot) return;
     if (msg.author.id == client.user?.id) return;
     if (!msg.guild) return; // don't respond to DMs
@@ -76,25 +78,26 @@ Object.keys(fonts).forEach(filename =>
       currentVideoSecondsRemaining: 0,
     });
 
-    const config =
-      (await orm.em.findOne(Config, { guildId: msg.guild.id as string })) ??
-      (await (async () => {
-        const config = orm.em.create(Config, { guildId: msg.guild?.id as string });
-        await orm.em.persistAndFlush(config);
-        return await orm.em.findOneOrFail(
-          Config,
-          { guildId: msg.guild?.id as string },
-          { failHandler: dbFindOneError(msg.channel) }
-        );
-      })());
+    const config = await (async () => {
+      const existing = await orm.em.findOne(Config, { guildId: msg.guild?.id as string });
+      if (existing) return existing;
+
+      const fresh = orm.em.create(Config, { guildId: msg.guild?.id as string });
+      await orm.em.persistAndFlush(fresh);
+      return await orm.em.findOneOrFail(
+        Config,
+        { guildId: msg.guild?.id as string },
+        { failHandler: dbFindOneError(msg.channel) }
+      );
+    })();
 
     eggs.onMessage(msg, config)();
 
-    if (!msg.content.startsWith(config.prefix)) return;
+    if (!msg.cleanContent.startsWith(config.prefix)) return;
 
-    const [cmd, ...args] = msg.content
+    const [cmd, ...args] = msg.cleanContent
       .slice(config.prefix.length)
-      .replace('  ', ' ')
+      .replace(/ +/g, ' ')
       .split(' ');
     const flags: Record<string, number> = {};
 
@@ -106,27 +109,21 @@ Object.keys(fonts).forEach(filename =>
 
     updateFlags(flags, args);
 
-    await commandClass.executor({
-      msg,
-      cmd,
-      args,
-      flags,
-      em: orm.em,
-      queueStore,
-      gameStore,
-    });
+    await commandClass.executor({ msg, cmd, args, flags, em: orm.em, queueStore, gameStore });
 
     orm.em.flush();
   });
+
+  client.on('ready', () => {
+    console.log(`${client.user?.tag} ready`);
+    setPresence();
+    setInterval(setPresence, 1000 * 60 * 10);
+  });
+
   client
     .on('warn', console.warn)
     .on('error', console.error)
     .on('disconnect', () => console.log('client disconnected'))
-    .on('ready', () => {
-      console.log(`${client.user?.tag} ready`);
-      setPresence();
-      setInterval(setPresence, 1000 * 60 * 10);
-    })
     .on('messageDelete', eggs.onMessageDelete(orm.em))
     .on('messageUpdate', eggs.onMessageUpdate(orm.em))
     .on('voiceStateUpdate', voice.onVoiceStateUpdate())
