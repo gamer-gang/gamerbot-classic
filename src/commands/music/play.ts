@@ -6,8 +6,9 @@ import ytdl from 'ytdl-core';
 import { Command } from '..';
 import { client, youtube } from '../..';
 import { Embed } from '../../embed';
+import { Config } from '../../entities/Config';
 import { CmdArgs, Video } from '../../types';
-import { formatDuration, getQueueLength, toDurationSeconds } from '../../util';
+import { dbFindOneError, formatDuration, getQueueLength, toDurationSeconds } from '../../util';
 
 export class CommandPlay implements Command {
   cmd = ['play', 'p'];
@@ -94,7 +95,13 @@ export class CommandPlay implements Command {
   }
 
   async searchVideo(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+    const { msg, args, em } = cmdArgs;
+
+    const config = await em.findOneOrFail(
+      Config,
+      { guildId: msg.guild?.id as string },
+      { failHandler: dbFindOneError(msg.channel) }
+    );
 
     try {
       const searchMessage = await msg.channel.send('loading...');
@@ -126,6 +133,12 @@ export class CommandPlay implements Command {
 
       let index: number;
       collector.on('collect', (message: Message) => {
+        if (message.content.startsWith(`${config.prefix}cancel`))
+          return collector.stop('canceled')
+
+        if (message.content.startsWith(`${config.prefix}play`))
+          return collector.stop('playcmd');
+
         const i = parseInt(message.content);
         if (Number.isNaN(i) || i < 1 || i > 5)
           return msg.channel.send('invalid selection, try again');
@@ -134,7 +147,9 @@ export class CommandPlay implements Command {
         collector.stop();
       });
 
-      collector.on('end', async collected => {
+      collector.on('end', async (collected, reason) => {
+        if (reason === 'playcmd') return;
+        if (reason === 'canceled') return msg.channel.send('ok');
         if (!index || Number.isNaN(index) || index < 1 || index > 5)
           return msg.channel.send("invalid selection, time's up");
 
