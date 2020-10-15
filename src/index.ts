@@ -10,6 +10,7 @@ import { Config } from './entities/Config';
 import * as eggs from './listeners/eggs';
 import * as reactions from './listeners/reactions';
 import * as voice from './listeners/voice';
+import * as welcome from './listeners/welcome';
 import mikroOrmConfig from './mikro-orm.config';
 import { GuildGames, GuildQueue } from './types';
 import { dbFindOneError, resolvePath, updateFlags } from './util';
@@ -32,7 +33,7 @@ export const setPresence = (): void => {
 
 export const client = new Client({
   partials: ['MESSAGE', 'REACTION'],
-  disableMentions: 'everyone',
+  // disableMentions: 'everyone',
 });
 export const youtube = new YouTube(process.env.YT_API_KEY as string);
 
@@ -93,12 +94,9 @@ Object.keys(fonts).forEach(filename =>
 
     eggs.onMessage(msg, config)();
 
-    if (!msg.cleanContent.startsWith(config.prefix)) return;
+    if (!msg.content.startsWith(config.prefix)) return;
 
-    const [cmd, ...args] = msg.cleanContent
-      .slice(config.prefix.length)
-      .replace(/ +/g, ' ')
-      .split(' ');
+    const [cmd, ...args] = msg.content.slice(config.prefix.length).replace(/ +/g, ' ').split(' ');
     const flags: Record<string, number> = {};
 
     const commandClass = commands.find(v => {
@@ -124,6 +122,15 @@ Object.keys(fonts).forEach(filename =>
     .on('warn', console.warn)
     .on('error', console.error)
     .on('disconnect', () => console.log('client disconnected'))
+    .on('guildCreate', async guild => {
+      const fresh = orm.em.create(Config, { guildId: guild.id });
+      await orm.em.persistAndFlush(fresh);
+    })
+    .on('guildDelete', async guild => {
+      const config = await orm.em.findOne(Config, { guildId: guild.id });
+      config && (await orm.em.removeAndFlush(config));
+    })
+    .on('guildMemberAdd', welcome.onGuildMemberAdd(orm.em))
     .on('messageDelete', eggs.onMessageDelete(orm.em))
     .on('messageUpdate', eggs.onMessageUpdate(orm.em))
     .on('voiceStateUpdate', voice.onVoiceStateUpdate())

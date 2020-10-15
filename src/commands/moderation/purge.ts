@@ -3,8 +3,6 @@ import { Message, TextChannel } from 'discord.js';
 import { Command } from '..';
 import { CmdArgs } from '../../types';
 
-const asciiRegExp = /^[ -~]+$/;
-
 export class CommandPurge implements Command {
   cmd = 'purge';
   docs = {

@@ -5,10 +5,9 @@ import * as https from 'https';
 
 import { Command } from '..';
 import { CmdArgs } from '../../types';
-import { hasFlags, resolvePath, spliceFlag } from '../../util';
+import { hasFlags, resolvePath, spliceFlag, urlRegExp } from '../../util';
 
 const fileRegExp = /^[A-Za-z0-9\-_]+$/;
-const urlRegExp = /^https?:\/\/[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$/;
 const gifDir = 'data/gifs';
 
 export class CommandGif implements Command {

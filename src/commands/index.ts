@@ -5,14 +5,13 @@ import { CommandAbout } from './general/about';
 import { CommandHelp } from './general/help';
 import { CommandUptime } from './general/uptime';
 import { CommandGif } from './media/gif';
+import { CommandApiMessage } from './messages/apimessage';
 import { CommandCowsay } from './messages/cowsay';
 import { CommandEcho } from './messages/echo';
-import { CommandEgg } from './messages/egg';
 import { CommandEz } from './messages/ez';
 import { CommandJoke } from './messages/joke';
-import { CommandAllowSpam } from './moderation/allowspam';
 import { CommandBan } from './moderation/ban';
-import { CommandPrefix } from './moderation/prefix';
+import { CommandConfig } from './moderation/config/config';
 import { CommandPurge } from './moderation/purge';
 import { CommandRole } from './moderation/role';
 import { CommandUnban } from './moderation/unban';
@@ -45,17 +44,16 @@ export const commands: Command[] = [
   new CommandUptime(),
 
   // moderation
-  new CommandAllowSpam(),
   new CommandBan(),
-  new CommandPrefix(),
+  new CommandConfig(),
   new CommandPurge(),
   new CommandRole(),
   new CommandUnban(),
 
   // messages
+  new CommandApiMessage(),
   new CommandCowsay(),
   new CommandEcho(),
-  new CommandEgg(),
   new CommandEz(),
   new CommandJoke(),
 

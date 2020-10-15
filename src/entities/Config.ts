@@ -22,5 +22,11 @@ export class Config {
   allowSpam!: boolean;
 
   @Property({ type: 'boolean', default: true })
-  egg!: boolean
+  egg!: boolean;
+
+  @Property({ type: 'text', nullable: true })
+  welcomeJson?: string;
+
+  @Property({ type: 'text', nullable: true })
+  welcomeChannelId?: string;
 }
