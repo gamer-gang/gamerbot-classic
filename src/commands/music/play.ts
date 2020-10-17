@@ -5,7 +5,6 @@ import _ from 'lodash';
 import moment from 'moment';
 import * as mm from 'music-metadata';
 import { Duration } from 'simple-youtube-api';
-import temp from 'temp';
 import ytdl from 'ytdl-core';
 
 import { Command, CommandDocs } from '..';
@@ -311,8 +310,6 @@ export class CommandPlay implements Command {
       }, (durationSeconds * 1000) / sliderLength));
 
     const callback = (info: unknown) => {
-      temp.cleanup();
-
       console.info(`video "${track.data.title}" ended with info ${info}`);
 
       const queue = queueStore.get(msg.guild?.id as string);

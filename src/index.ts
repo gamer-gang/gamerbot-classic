@@ -5,7 +5,6 @@ import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import _ from 'lodash/fp';
 import YouTube from 'simple-youtube-api';
-import temp from 'temp';
 import yargsParser from 'yargs-parser';
 
 import { commands } from './commands';
@@ -18,8 +17,6 @@ import mikroOrmConfig from './mikro-orm.config';
 import { GuildGames, GuildQueue } from './types';
 import { dbFindOneError, resolvePath } from './util';
 import { Store } from './util/store';
-
-temp.track();
 
 dotenv.config({ path: resolvePath('.env') });
 
@@ -104,10 +101,7 @@ Object.keys(fonts).forEach(filename =>
 
     if (!msg.content.startsWith(config.prefix)) return;
 
-    const [cmd, ...argv] = msg.content
-      .slice(config.prefix.length)
-      .replace(/ +/g, ' ')
-      .split(' ');
+    const [cmd, ...argv] = msg.content.slice(config.prefix.length).replace(/ +/g, ' ').split(' ');
 
     const commandClass = commands.find(v => {
       if (Array.isArray(v.cmd)) return v.cmd.some(c => c.toLowerCase() === cmd.toLowerCase());
