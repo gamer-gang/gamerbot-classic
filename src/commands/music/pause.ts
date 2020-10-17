@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 
 import { Command, CommandDocs } from '..';
 import { CmdArgs } from '../../types';
+import { updateVideoEmbed } from '../../util/music';
 
 export class CommandPause implements Command {
   cmd = 'pause';
@@ -17,6 +18,7 @@ export class CommandPause implements Command {
 
     try {
       queue.voiceConnection?.dispatcher?.pause(true);
+      updateVideoEmbed({ playing: false });
     } catch (err) {
       return msg.channel.send(`error:\n\`\`\`\n${err.stack}\n\`\`\``);
     }

@@ -1,30 +1,75 @@
 import { Message, TextChannel, VoiceChannel, VoiceState } from 'discord.js';
+import fse from 'fs-extra';
 import he from 'he';
+import https from 'https';
+import _ from 'lodash';
+import moment from 'moment';
+import * as mm from 'music-metadata';
 import { Duration } from 'simple-youtube-api';
+import temp from 'temp';
+import { inspect } from 'util';
 import ytdl from 'ytdl-core';
 
 import { Command, CommandDocs } from '..';
 import { client, youtube } from '../..';
-import { Embed } from '../../embed';
-import { CmdArgs, Video } from '../../types';
-import { formatDuration, getQueueLength, toDurationSeconds } from '../../util';
+import { CmdArgs, Track, TrackType } from '../../types';
+import {
+  formatDuration,
+  getQueueLength,
+  toDurationSeconds,
+  youtubePlaylistRegExp,
+  youtubeVideoRegExp,
+} from '../../util';
+import { updateVideoEmbed } from '../../util/music';
 
 export class CommandPlay implements Command {
   cmd = ['play', 'p'];
   docs : CommandDocs = [
     {
-      usage: 'play <url>',
-      description: 'play youtube video from a video/playlist url; must not be private'
+      usage: ['play <url>'],
+      description: 'play youtube video from a video/playlist url; must not be private',
     },
     {
-      usage: 'play <...searchString>',
-      description: 'search for a video, and choose from the top 5 results.'
-    }
+      usage: ['play <...searchString>'],
+      description: 'search for a video, and choose from the top 5 results.',
+    },
   ];
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args } = cmdArgs;
 
-    if (!args._[0]) return msg.channel.send('err: expected at least one arg');
+    if (!args._[0]) {
+      // check for local files
+      if (msg.attachments.size) {
+        console.log(inspect(msg.attachments.array(), false, 2, true));
+        const attachment = msg.attachments.array()[0];
+        https.get(attachment.url, async res => {
+          const metadata = await mm.parseStream(res);
+          console.log(inspect(metadata, false, 2, true));
+
+          const duration = moment.duration(metadata.format.duration, 'seconds');
+          this.queueVideo(
+            {
+              requesterId: msg.author?.id as string,
+              type: TrackType.FILE,
+              data: {
+                title: attachment.name || _.last(attachment.url.split('/')),
+                url: attachment.url,
+                duration: {
+                  hours: duration.hours(),
+                  minutes: duration.minutes(),
+                  seconds: duration.seconds(),
+                },
+              },
+            } as Track,
+            cmdArgs
+          );
+        });
+
+        return;
+      }
+
+      return msg.channel.send('err: expected at least one arg');
+    }
 
     const voice = msg.member?.voice;
     if (!voice?.channel) return msg.channel.send('err: not in voice channel');
@@ -33,11 +78,8 @@ export class CommandPlay implements Command {
     if (!permissions?.has('CONNECT')) return msg.channel.send("err: can't connect to channel");
     if (!permissions?.has('SPEAK')) return msg.channel.send("err: can't speak in that channel");
 
-    const playlistRegExp = /^https?:\/\/((www\.|music\.|)youtube.com)\/playlist(.+)$/;
-    const videoRegExp = /^https?:\/\/(((www\.|music\.|)youtube\.com)\/watch\?v=(.+)|youtu\.be\/.+)$/;
-
-    if (playlistRegExp.test(args._[0])) return this.getPlaylist(cmdArgs);
-    else if (videoRegExp.test(args._[0])) return this.getVideo(cmdArgs);
+    if (youtubePlaylistRegExp.test(args._[0])) return this.getPlaylist(cmdArgs);
+    else if (youtubeVideoRegExp.test(args._[0])) return this.getVideo(cmdArgs);
     else return this.searchVideo(cmdArgs);
   }
 
@@ -55,19 +97,20 @@ export class CommandPlay implements Command {
         const fullVideo = await youtube.getVideoByID(video.id);
         this.queueVideo(
           {
-            ...fullVideo,
-            requesterId: msg.author?.id
-          } as Video,
+            type: TrackType.YOUTUBE,
+            data: fullVideo,
+            requesterId: msg.author?.id,
+          } as Track,
           cmdArgs,
           { silent: true }
         );
       }
       msg.channel.send(`added ${videos.length.toString()} videos to the queue`);
       const queue = queueStore.get(msg.guild?.id as string);
-      if (queue.playingEmbedMessage) queue.playingEmbedMessage.edit(this.updateVideoEmbed());
+      if (queue.current.embed) queue.current.embed.edit(updateVideoEmbed());
     } catch (err) {
       console.error(err);
-      if ('' + err === 'Error: resource youtube#playlistListResponse not found')
+      if (err.toString() === 'Error: resource youtube#playlistListResponse not found')
         return msg.channel.send(
           "err: playlist not found (either it doesn't exist or it's private)"
         );
@@ -83,10 +126,13 @@ export class CommandPlay implements Command {
       const video = await youtube.getVideo(args._[0]);
       if (!video)
         return msg.channel.send("err: video not found (either it doesn't exist or it's private)");
-      this.queueVideo({ ...video, requesterId: msg.author?.id as string } as Video, cmdArgs);
+      this.queueVideo(
+        { data: video, requesterId: msg.author?.id as string, type: TrackType.YOUTUBE } as Track,
+        cmdArgs
+      );
     } catch (err) {
       console.error(err);
-      if ('' + err === 'Error: resource youtube#videoListResponse not found')
+      if (err.toString() === 'Error: resource youtube#videoListResponse not found')
         return msg.channel.send("err: video not found (either it doesn't exist or it's private)");
 
       return msg.channel.send(`error:\n\`\`\`\n${err}\n\`\`\``);
@@ -98,21 +144,32 @@ export class CommandPlay implements Command {
 
     try {
       const searchMessage = await msg.channel.send('loading...');
-      const videos = (await Promise.all(
-        (await youtube.searchVideos(args._.join(' '))).map(v => youtube.getVideoByID(v.id))
-      )) as (Video & { livestream: boolean })[];
-
-      videos.forEach(v => {
-        v.livestream = (v.raw.snippet as Record<string, string>).liveBroadcastContent === 'live';
-      });
+      const videos = (
+        await Promise.all(
+          (await youtube.searchVideos(args.join(' '))).map(v => youtube.getVideoByID(v.id))
+        )
+      )
+        .flatMap(v => {
+          if (!v) return [];
+          return {
+            ...v,
+            livestream: (v.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
+          };
+        })
+        .map(
+          data =>
+            ({ type: TrackType.YOUTUBE, requesterId: msg.author?.id as string, data } as Track)
+        );
 
       searchMessage.edit(
         'choose a video: \n' +
           videos
             .map((v, i) =>
               v
-                ? `${i + 1}. ${he.decode(v.title)} (${
-                    v.livestream ? 'livestream' : formatDuration(v.duration)
+                ? `${i + 1}. ${he.decode(v.data.title)} (${
+                    v.type === TrackType.YOUTUBE && v.data.livestream
+                      ? 'livestream'
+                      : formatDuration(v.data.duration)
                   })`
                 : ''
             )
@@ -121,16 +178,21 @@ export class CommandPlay implements Command {
 
       const collector = msg.channel.createMessageCollector(
         (message: Message) => message.author.id === msg.author?.id,
-        { time: 15000 }
+        { idle: 15000 }
       );
+
+      enum StopReason {
+        CANCEL = 'cancel',
+        PLAYCMD = 'playcmd',
+      }
 
       let index: number;
       collector.on('collect', (message: Message) => {
         if (message.content.startsWith(`${prefix}cancel`))
-          return collector.stop('canceled')
+          return collector.stop(StopReason.CANCEL);
 
         if (message.content.startsWith(`${prefix}play`))
-          return collector.stop('playcmd');
+          return collector.stop(StopReason.PLAYCMD);
 
         const i = parseInt(message.content);
         if (Number.isNaN(i) || i < 1 || i > 5)
@@ -141,8 +203,8 @@ export class CommandPlay implements Command {
       });
 
       collector.on('end', async (collected, reason) => {
-        if (reason === 'playcmd') return;
-        if (reason === 'canceled') return msg.channel.send('ok');
+        if (reason === StopReason.PLAYCMD) return;
+        if (reason === StopReason.CANCEL) return msg.channel.send('ok');
         if (!index || Number.isNaN(index) || index < 1 || index > 5)
           return msg.channel.send("invalid selection, time's up");
 
@@ -150,14 +212,7 @@ export class CommandPlay implements Command {
         if (!video)
           throw new Error('invalid state: video is null after selecting valid returned search');
 
-        this.queueVideo(
-          {
-            ...video,
-            requesterId: msg.author?.id as string,
-            livestream: video.livestream
-          } as Video,
-          cmdArgs
-        );
+        this.queueVideo(video, cmdArgs);
       });
     } catch (err) {
       console.error(err);
@@ -165,21 +220,22 @@ export class CommandPlay implements Command {
     }
   }
 
-  queueVideo(video: Video, cmdArgs: CmdArgs, options?: { silent?: boolean }): void {
+  queueVideo(video: Track, cmdArgs: CmdArgs, options?: { silent?: boolean }): void {
     const { msg, queueStore } = cmdArgs;
 
     const queue = queueStore.get(msg.guild?.id as string);
-    queue.videos.push(video);
+    queue.tracks.push(video);
     queue.textChannel = msg.channel as TextChannel;
     queueStore.set(msg.guild?.id as string, queue);
 
     if (!queue.playing) this.playVideo(cmdArgs);
     else if (!options?.silent) {
       msg.channel.send(
-        `added "${video.title}" to queue position ${queue.videos.length -
-          1} (approx. ${getQueueLength(queue, true)} until playing)`
+        `added "${video.data.title}" to queue position ${
+          queue.tracks.length - 1
+        } (approx. ${getQueueLength(queue, { first: true, last: false })} until playing)`
       );
-      this.updateVideoEmbed();
+      updateVideoEmbed();
     }
   }
 
@@ -190,9 +246,9 @@ export class CommandPlay implements Command {
 
     let connection = queue.voiceConnection;
 
-    const video = queue.videos[0];
+    const track = queue.tracks[0];
 
-    if (!video) {
+    if (!track) {
       // no more in queue
       connection?.disconnect();
       queue.playing = false;
@@ -211,89 +267,66 @@ export class CommandPlay implements Command {
       queueStore.set(msg.guild?.id as string, queue);
     }
 
-    queue.playingEmbedMessage ??= await msg.channel.send('loading...');
+    queue.current.embed ??= await msg.channel.send('loading...');
 
-    const durationSeconds = toDurationSeconds(video.duration as Duration);
+    const durationSeconds = toDurationSeconds(track.data.duration as Duration);
     const sliderLength = Math.min(Math.ceil(durationSeconds / 5) + 1, 40);
 
     let thumbPosition = 0;
-    queue.playingEmbedMessage.edit(
-      '',
-      this.updateVideoEmbed({ video, thumbPosition: 0, sliderLength, cmdArgs })
-    );
-    queue.playingEmbedMessageInterval = setInterval(() => {
+
+    updateVideoEmbed({
+      video: track,
+      thumbPosition: 0,
+      sliderLength,
+      cmdArgs,
+      playing: true,
+    });
+
+    queue.current.embedInterval = setInterval(() => {
       thumbPosition++;
       if (thumbPosition > sliderLength - 1) {
-        queue.playingEmbedMessage = undefined;
-        queue.playingEmbedMessageInterval ?? clearInterval(queue.playingEmbedMessageInterval);
-        delete queue.playingEmbedMessageInterval;
+        updateVideoEmbed({ playing: false });
+        queue.current.embed = undefined;
+
+        queue.current.embedInterval ?? clearInterval(queue.current.embedInterval);
+        delete queue.current.embedInterval;
       }
-      queue.playingEmbedMessage?.edit(
-        '',
-        this.updateVideoEmbed({ video, thumbPosition, sliderLength, cmdArgs })
-      );
+      updateVideoEmbed({ thumbPosition });
     }, (durationSeconds * 1000) / sliderLength);
 
-    connection?.play(ytdl(video.id)).on('finish', (info: unknown) => {
-      console.info(`video "${video.title}" ended with info ${info}`);
+    const callback = (info: unknown) => {
+      temp.cleanup();
+
+      console.info(`video "${track.data.title}" ended with info ${info}`);
 
       const queue = queueStore.get(msg.guild?.id as string);
-      queue.videos.shift();
-      delete queue.playingEmbedMessage;
-      queue.playingEmbedMessageInterval ?? clearInterval(queue.playingEmbedMessageInterval);
-      delete queue.playingEmbedMessageInterval;
+      queue.tracks.shift();
+
+      updateVideoEmbed({ playing: false });
+      delete queue.current.embed;
+
+      queue.current.embedInterval && clearInterval(queue.current.embedInterval);
+      delete queue.current.embedInterval;
+
       queueStore.set(msg.guild?.id as string, queue);
 
       this.playVideo(cmdArgs);
-    });
-  }
-
-  private embedCache?: EmbedArgs;
-
-  updateVideoEmbed(opts?: Partial<EmbedArgs>): Embed {
-    this.embedCache ??= opts as EmbedArgs;
-    this.embedCache = {
-      cmdArgs: opts?.cmdArgs ?? this.embedCache?.cmdArgs,
-      sliderLength: opts?.sliderLength ?? this.embedCache?.sliderLength,
-      thumbPosition: opts?.thumbPosition ?? this.embedCache?.thumbPosition,
-      video: opts?.video ?? this.embedCache?.video
     };
 
-    const { video, thumbPosition, sliderLength, cmdArgs } = this.embedCache;
-
-    const { queueStore, msg } = cmdArgs;
-
-    const queue = queueStore.get(msg.guild?.id as string);
-
-    const seconds = toDurationSeconds(video.duration);
-    const duration = formatDuration(seconds);
-
-    queue.currentVideoSecondsRemaining = seconds - (thumbPosition / sliderLength) * seconds;
-
-    return new Embed()
-      .setAuthor('gamerbot80: now playing', 'attachment://hexagon.png')
-      .setTitle(`${video.title}`)
-      .setDescription(
-        `\`${'='.repeat(thumbPosition)}` +
-          '⚪' +
-          `${'='.repeat(sliderLength - (thumbPosition + 1))}\`` +
-          ` (${
-            video.livestream
-              ? 'livestream'
-              : `${formatDuration(queue.currentVideoSecondsRemaining)}/${duration}`
-          })`
-      )
-      .setThumbnail(video.thumbnails.high.url)
-      .setURL(`https://youtu.be/${video.id}`)
-      .addField('channel', video.channel.title, true)
-      .addField('requester', `<@!${video.requesterId}>`, true)
-      .addField('queue length', getQueueLength(queue), true);
+    if (track.type === TrackType.YOUTUBE) {
+      connection?.play(ytdl(track.data.id)).on('finish', callback);
+    } else {
+      const stream = temp.openSync('gamerbot-localfile');
+      https.get(track.data.url, res => {
+        console.log(stream.path);
+        res.pipe(fse.createWriteStream(stream.path));
+        res.on('close', () =>
+          connection?.play(fse.createReadStream(stream.path)).on('finish', info => {
+            temp.cleanup();
+            callback(info);
+          })
+        );
+      });
+    }
   }
-}
-
-interface EmbedArgs {
-  video: Video;
-  thumbPosition: number;
-  sliderLength: number;
-  cmdArgs: CmdArgs;
 }

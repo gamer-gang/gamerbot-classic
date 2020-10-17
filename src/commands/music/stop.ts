@@ -16,9 +16,8 @@ export class CommandStop implements Command {
     if (!queue.playing) return msg.channel.send('not playing');
 
     try {
-      queue.videos = [];
+      queue.tracks = [];
       queueStore.set(msg.guild?.id as string, queue);
-      queue.playingEmbedMessage = undefined;
       queue.voiceConnection?.dispatcher?.end('stop command');
     } catch (err) {
       return msg.channel.send(`error: \n\`\`\`\n${err.stack}\n\`\`\``);

@@ -1,7 +1,8 @@
+import _ from 'lodash';
 import moment from 'moment';
 import { Duration } from 'simple-youtube-api';
 
-import { GuildQueue } from '../types';
+import { GuildQueue, TrackType } from '../types';
 
 const isDuration = (value: Duration | number): value is Duration => {
   return (
@@ -23,14 +24,14 @@ export function formatDuration(length: Duration | number): string {
     duration = {
       hours: len.hours(),
       minutes: len.minutes(),
-      seconds: len.seconds()
+      seconds: len.seconds(),
     };
   }
 
   return [
     duration.hours ?? '',
     (duration.minutes ?? 0).toString().padStart(2, '0'),
-    (duration.seconds ?? 0).toString().padStart(2, '0')
+    (duration.seconds ?? 0).toString().padStart(2, '0'),
   ].join(':');
 }
 
@@ -39,14 +40,19 @@ export const toDurationSeconds = (duration: Duration): number => {
   return (hours ?? 0) * 60 * 60 + (minutes ?? 0) * 60 + (seconds ?? 0);
 };
 
-export const getQueueLength = (queue: GuildQueue, includeCurrent = false): string => {
-  if (queue.videos.slice(includeCurrent ? 0 : 1).find(v => v.livestream)) return '?';
+export const getQueueLength = (
+  queue: GuildQueue,
+  include?: { first?: boolean; last?: boolean }
+): string => {
+  const tracks = _.dropRight(queue.tracks, include?.last ?? true ? 0 : 1);
+
+  if (tracks.find(v => v.type === TrackType.YOUTUBE && v.data.livestream)) return '?';
+
   const totalDurationSeconds =
-    queue.videos
-      .slice(1)
-      .map(v => toDurationSeconds(v.duration as Duration))
+    _.drop(tracks, 1)
+      .map(t => toDurationSeconds(t.data.duration as Duration))
       .reduce((a, b) => a + Math.round(b), 0) +
-    (includeCurrent ? queue.currentVideoSecondsRemaining ?? 0 : 0);
+    (include?.first ?? false ? queue.current.secondsRemaining : 0);
 
   const totalDuration = formatDuration(totalDurationSeconds);
 

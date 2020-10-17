@@ -5,11 +5,11 @@ import yargsParser from 'yargs-parser';
 import { Config } from '../entities/Config';
 import { Store } from '../util/store';
 import { GuildGames } from './games';
-import { GuildQueue } from './youtube';
+import { GuildQueue } from './music';
 
 export * from './economy';
 export * from './games';
-export * from './youtube';
+export * from './music';
 
 export interface CmdArgs {
   msg: Discord.Message | Discord.PartialMessage;

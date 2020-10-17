@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import _ from 'lodash/fp';
 import YouTube from 'simple-youtube-api';
+import temp from 'temp';
 import yargsParser from 'yargs-parser';
 
 import { commands } from './commands';
@@ -17,6 +18,8 @@ import mikroOrmConfig from './mikro-orm.config';
 import { GuildGames, GuildQueue } from './types';
 import { dbFindOneError, resolvePath } from './util';
 import { Store } from './util/store';
+
+temp.track();
 
 dotenv.config({ path: resolvePath('.env') });
 
@@ -77,9 +80,11 @@ Object.keys(fonts).forEach(filename =>
     if (!msg.guild) return; // don't respond to DMs
 
     queueStore.setIfUnset(msg.guild?.id as string, {
-      videos: [],
+      tracks: [],
       playing: false,
-      currentVideoSecondsRemaining: 0,
+      current: {
+        secondsRemaining: 0,
+      },
     });
 
     const config = await (async () => {

@@ -9,11 +9,12 @@ export const onVoiceStateUpdate = () => (oldState: VoiceState, newState: VoiceSt
       // disconnected
       console.log('bot was disconnected');
       const queue = queueStore.get(newState.guild.id);
+      if (!queue) return;
       delete queue.voiceChannel;
       delete queue.voiceConnection;
       delete queue.textChannel;
-      delete queue.playingEmbedMessage;
-      queue.videos = [];
+      delete queue.current.embed;
+      queue.tracks = [];
       queue.playing = false;
     } else if (oldState.channelID == null && newState.channelID != null) {
       // joined

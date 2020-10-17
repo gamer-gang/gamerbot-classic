@@ -3,7 +3,7 @@ import _ from 'lodash';
 import yargsParser from 'yargs-parser';
 
 import { Command, CommandDocs } from '..';
-import { CmdArgs, Video } from '../../types';
+import { CmdArgs, Track, TrackType } from '../../types';
 import { formatDuration, getQueueLength } from '../../util';
 
 export class CommandQueue implements Command {
@@ -35,9 +35,9 @@ export class CommandQueue implements Command {
     const queue = queueStore.get(msg.guild?.id as string);
 
     if (args.clear) {
-      if (!queue.videos.length) return msg.channel.send('nothing playing');
+      if (!queue.tracks.length) return msg.channel.send('nothing playing');
 
-      queue.videos = [_.head(queue.videos) as Video];
+      queue.tracks = [_.head(queue.tracks) as Track];
 
       return msg.channel.send('cleared queue');
     }
@@ -45,35 +45,39 @@ export class CommandQueue implements Command {
     if (args.remove != null) {
       const index = args.remove;
 
-      if (isNaN(index) || !index || index === 0 || index > queue.videos.length - 1)
+      if (isNaN(index) || !index || index === 0 || index > queue.tracks.length - 1)
         return msg.channel.send('invalid remove index');
 
-      return msg.channel.send(`removed "${queue.videos.splice(index, 1)[0].title}" from the queue`);
+      return msg.channel.send(
+        `removed "${queue.tracks.splice(index, 1)[0].data.title}" from the queue`
+      );
     }
 
-    const videos = _.cloneDeep(queue.videos.map(v => v as Omit<Video, 'youtube'>));
-    if (!videos.length) return msg.channel.send('nothing playing');
+    const tracks = _.cloneDeep(queue.tracks);
+    if (!tracks.length) return msg.channel.send('nothing playing');
 
-    const nowPlaying = videos.shift();
+    const nowPlaying = tracks.shift();
 
-    const queueString = videos.length
+    const queueString = tracks.length
       ? `queue: \n` +
-        videos
+        tracks
           .map(
             (v, i) =>
-              `${i + 1}. ${_.unescape(v.title)}${` (${
-                v.livestream ? 'livestream' : formatDuration(v.duration)
+              `${i + 1}. ${_.unescape(v.data.title)}${` (${
+                v.type === TrackType.YOUTUBE && v.data.livestream
+                  ? 'livestream'
+                  : formatDuration(v.data.duration)
               })`}`
           )
           .join('\n')
       : 'queue is empty';
 
     msg.channel.send(
-      `total queue length: ${getQueueLength(queue, true)}\n` +
-        `now playing: ${_.unescape(nowPlaying?.title)} (${
-          nowPlaying?.livestream
+      `total queue length: ${getQueueLength(queue, { first: true })}\n` +
+        `now playing: ${_.unescape(nowPlaying?.data.title)} (${
+          nowPlaying?.type === TrackType.YOUTUBE && nowPlaying?.data.livestream
             ? 'livestream'
-            : formatDuration(queue.currentVideoSecondsRemaining) + ' remaining'
+            : formatDuration(queue.current.secondsRemaining) + ' remaining'
         })${queue.voiceConnection?.dispatcher.paused ? ' (paused)' : ''}\n` +
         queueString
     );
