@@ -296,17 +296,19 @@ export class CommandPlay implements Command {
       playing: true,
     });
 
-    queue.current.embedInterval = setInterval(() => {
-      thumbPosition++;
-      if (thumbPosition > sliderLength - 1) {
-        updatePlayingEmbed({ playing: false, thumbPosition: sliderLength });
-        queue.current.embed = undefined;
+    ((track.type === TrackType.YOUTUBE && !track.data.livestream) ||
+      track.type === TrackType.FILE) &&
+      (queue.current.embedInterval = setInterval(() => {
+        thumbPosition++;
+        if (thumbPosition > sliderLength - 1) {
+          updatePlayingEmbed({ playing: false, thumbPosition: sliderLength });
+          queue.current.embed = undefined;
 
-        clearInterval(queue.current.embedInterval as NodeJS.Timeout);
-        delete queue.current.embedInterval;
-      }
-      updatePlayingEmbed({ thumbPosition });
-    }, (durationSeconds * 1000) / sliderLength);
+          clearInterval(queue.current.embedInterval as NodeJS.Timeout);
+          delete queue.current.embedInterval;
+        }
+        updatePlayingEmbed({ thumbPosition });
+      }, (durationSeconds * 1000) / sliderLength));
 
     const callback = (info: unknown) => {
       temp.cleanup();
