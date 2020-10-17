@@ -1,10 +1,9 @@
 import { Message } from 'discord.js';
+import _ from 'lodash';
 
 import { Command, CommandDocs, commands } from '..';
 import { Embed } from '../../embed';
-import { Config } from '../../entities/Config';
 import { CmdArgs } from '../../types';
-import { dbFindOneError } from '../../util';
 
 export class CommandHelp implements Command {
   cmd = ['help', 'h'];
@@ -13,15 +12,9 @@ export class CommandHelp implements Command {
     description: 'Show this message.',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, em } = cmdArgs;
+    const { msg, args, em, config: { prefix } } = cmdArgs;
 
-    const { prefix } = await em.findOneOrFail(
-      Config,
-      { guildId: msg.guild?.id as string },
-      { failHandler: dbFindOneError(msg.channel) }
-    );
-
-    const search = args[0];
+    const search = args._[0];
     if (search) {
       const find = commands.find(({ cmd }) =>
         Array.isArray(cmd)
@@ -36,6 +29,11 @@ export class CommandHelp implements Command {
       } else return msg.channel.send('no help found for ' + search);
     } else {
       const embed = new Embed().setTitle('help!!!!!!1');
+      _.clone(commands).sort((a, b) => {
+        const cmdA = (Array.isArray(a.cmd) ? a.cmd[0] : a.cmd).toLowerCase();
+        const cmdB = (Array.isArray(b.cmd) ? b.cmd[0] : b.cmd).toLowerCase();
+        return cmdA < cmdB ? -1 : cmdA > cmdB ? 1 : 0;
+      });
       for (const command of commands) embed.addField(...this.makeField(prefix, command));
 
       try {
@@ -60,7 +58,7 @@ export class CommandHelp implements Command {
     return [fieldName, fieldValue + '\n', false];
   }
 
-  formatFieldValue(docs: CommandDocs): string {
+  formatFieldValue(docs: Exclude<CommandDocs, unknown[]>): string {
     const usage = Array.isArray(docs.usage)
       ? docs.usage.map(v => `\`${v}\``).join('\n')
       : `\`${docs.usage}\``;

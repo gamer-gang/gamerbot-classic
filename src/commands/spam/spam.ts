@@ -1,73 +1,56 @@
 import { Message } from 'discord.js';
+import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
-import { Config } from '../../entities/Config';
 import { CmdArgs } from '../../types';
-import { dbFindOneError, hasFlags, hasMentions, spliceFlag } from '../../util';
+import { hasMentions } from '../../util';
 
 export class CommandSpam implements Command {
   cmd = 'spam';
+  yargsSchema: yargsParser.Options = {
+    alias: {
+      repetitions: 'r',
+      messages: 'm',
+      tts: 't',
+      fill: 'f',
+    },
+    boolean: ['tts', 'fill'],
+    number: ['repetitions', 'messages'],
+    default: {
+      repetitions: 5,
+      messages: 4,
+      fill: false,
+      tts: false,
+    },
+  };
   docs = {
-    usage: 'spam [-r reptitions=5] [-m messages=4] <...text>',
+    usage: 'spam [-r, --repetitions <int>] [-m, --messages <int>] [-t, --tts] <...text>',
     description: 'make the words appear on the screen',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, em, flags } = cmdArgs;
+    const {
+      msg,
+      args,
+      config: { allowSpam },
+    } = cmdArgs;
 
-    const config = await em.findOneOrFail(
-      Config,
-      { guildId: msg.guild?.id as string },
-      { failHandler: dbFindOneError(msg.channel) }
-    );
+    if (!allowSpam) return msg.channel.send('spam commands are off');
+    if (hasMentions(args._.join(' ') as string)) return msg.channel.send('no');
 
-    if (!config.allowSpam) {
-      return msg.channel.send('spam commands are off');
-    }
+    const { tts, repetitions, messages } = args;
 
-    const prefix = config.prefix;
+    const errors: string[] = [];
 
-    const unrecognized = Object.keys(flags).filter(
-      v => !'r|m|t|-tts'.split('|').includes(v.substr(1))
-    );
-    if (unrecognized.length > 0)
-      return msg.channel.send(`unrecognized flag(s): \`${unrecognized.join('`, `')}\``);
+    if (isNaN(repetitions) || !repetitions) errors.push('invalid repetition count');
+    if (isNaN(messages) || !messages) errors.push('invalid message count');
+    if (!args._[0]) errors.push(`no text to send`);
 
-    let repetitions = 5;
-    let messages = 4;
-    if (hasFlags(flags, ['-r'])) {
-      const providedReps = parseInt(spliceFlag(flags, args, '-r', true) as string);
-      if (!isNaN(providedReps)) repetitions = providedReps;
-      else return msg.channel.send('invalid repetition count');
-    }
-    if (hasFlags(flags, ['-m'])) {
-      const providedMsgs = parseInt(spliceFlag(flags, args, '-m', true) as string);
-      if (!isNaN(providedMsgs)) {
-        messages = providedMsgs;
-        if (providedMsgs > 50) return msg.channel.send('too many messages');
-      } else return msg.channel.send('invalid message count');
-    }
+    if (errors.length) return msg.channel.send(errors.join('\n'));
 
-    if (hasMentions(msg.content as string)) return msg.channel.send('yea i aint doin that');
-
-    if (!args[0])
-      return msg.channel.send(`no text to send\nusage: \`${prefix}${this.docs.usage}\``);
-
-    let tts = false;
-    if (hasFlags(flags, ['-t', '--ts'])) {
-      spliceFlag(flags, args, '-t');
-      spliceFlag(flags, args, '--tts');
-      tts = true;
-    }
-
-    const spamText = args.join(' ').trim();
+    const spamText = args._.join(' ').trim();
     let output = '';
 
-    if (spamText.startsWith('/cow') && msg.author?.id !== process.env.OWNER_ID) {
-      return msg.channel.send('owner only');
-    }
-
-    if (args[1] == 'fill') {
-      // eslint-disable-next-line no-constant-condition
+    if (args.fill) {
       while (true) {
         if (output.length + spamText.length + 1 > 2000) break;
         output += ' ' + spamText;

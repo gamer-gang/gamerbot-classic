@@ -3,7 +3,9 @@ import { registerFont } from 'canvas';
 import { Client, Message } from 'discord.js';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
+import _ from 'lodash/fp';
 import YouTube from 'simple-youtube-api';
+import yargsParser from 'yargs-parser';
 
 import { commands } from './commands';
 import { Config } from './entities/Config';
@@ -13,12 +15,13 @@ import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
 import mikroOrmConfig from './mikro-orm.config';
 import { GuildGames, GuildQueue } from './types';
-import { dbFindOneError, resolvePath, updateFlags } from './util';
+import { dbFindOneError, resolvePath } from './util';
 import { Store } from './util/store';
 
 dotenv.config({ path: resolvePath('.env') });
 
 fse.mkdirp(resolvePath('data'));
+fse.mkdirp(resolvePath('data/gifs'));
 
 export const setPresence = (): void => {
   const num = eggs.get();
@@ -96,8 +99,10 @@ Object.keys(fonts).forEach(filename =>
 
     if (!msg.content.startsWith(config.prefix)) return;
 
-    const [cmd, ...args] = msg.content.slice(config.prefix.length).replace(/ +/g, ' ').split(' ');
-    const flags: Record<string, number> = {};
+    const [cmd, ...argv] = msg.content
+      .slice(config.prefix.length)
+      .replace(/ +/g, ' ')
+      .split(' ');
 
     const commandClass = commands.find(v => {
       if (Array.isArray(v.cmd)) return v.cmd.some(c => c.toLowerCase() === cmd.toLowerCase());
@@ -105,9 +110,24 @@ Object.keys(fonts).forEach(filename =>
     });
     if (!commandClass) return;
 
-    updateFlags(flags, args);
+    const args = yargsParser.detailed(
+      argv,
+      _.merge(commandClass.yargsSchema ?? {}, {
+        configuration: { 'flatten-duplicate-arrays': false },
+      } as yargsParser.Options)
+    );
 
-    await commandClass.executor({ msg, cmd, args, flags, em: orm.em, queueStore, gameStore });
+    if (args.error) msg.channel.send('warning: \n```\n' + args.error + '\n```');
+
+    await commandClass.executor({
+      msg,
+      cmd,
+      args: args.argv,
+      em: orm.em,
+      config,
+      queueStore,
+      gameStore,
+    });
 
     orm.em.flush();
   });

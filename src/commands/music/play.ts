@@ -3,29 +3,28 @@ import he from 'he';
 import { Duration } from 'simple-youtube-api';
 import ytdl from 'ytdl-core';
 
-import { Command } from '..';
+import { Command, CommandDocs } from '..';
 import { client, youtube } from '../..';
 import { Embed } from '../../embed';
-import { Config } from '../../entities/Config';
 import { CmdArgs, Video } from '../../types';
-import { dbFindOneError, formatDuration, getQueueLength, toDurationSeconds } from '../../util';
+import { formatDuration, getQueueLength, toDurationSeconds } from '../../util';
 
 export class CommandPlay implements Command {
   cmd = ['play', 'p'];
-  docs = [
+  docs : CommandDocs = [
     {
-      usage: ['play <url>'],
+      usage: 'play <url>',
       description: 'play youtube video from a video/playlist url; must not be private'
     },
     {
-      usage: ['play <...searchString>'],
+      usage: 'play <...searchString>',
       description: 'search for a video, and choose from the top 5 results.'
     }
   ];
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args } = cmdArgs;
 
-    if (!args[0]) return msg.channel.send('err: expected at least one arg');
+    if (!args._[0]) return msg.channel.send('err: expected at least one arg');
 
     const voice = msg.member?.voice;
     if (!voice?.channel) return msg.channel.send('err: not in voice channel');
@@ -37,15 +36,15 @@ export class CommandPlay implements Command {
     const playlistRegExp = /^https?:\/\/((www\.|music\.|)youtube.com)\/playlist(.+)$/;
     const videoRegExp = /^https?:\/\/(((www\.|music\.|)youtube\.com)\/watch\?v=(.+)|youtu\.be\/.+)$/;
 
-    if (playlistRegExp.test(args[0])) return this.getPlaylist(cmdArgs);
-    else if (videoRegExp.test(args[0])) return this.getVideo(cmdArgs);
+    if (playlistRegExp.test(args._[0])) return this.getPlaylist(cmdArgs);
+    else if (videoRegExp.test(args._[0])) return this.getVideo(cmdArgs);
     else return this.searchVideo(cmdArgs);
   }
 
   async getPlaylist(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args, queueStore } = cmdArgs;
     try {
-      const playlist = await youtube.getPlaylist(args[0]);
+      const playlist = await youtube.getPlaylist(args._[0]);
       if (!playlist)
         return msg.channel.send(
           "err: playlist not found (either it doesn't exist or it's private)"
@@ -81,7 +80,7 @@ export class CommandPlay implements Command {
     const { msg, args } = cmdArgs;
 
     try {
-      const video = await youtube.getVideo(args[0]);
+      const video = await youtube.getVideo(args._[0]);
       if (!video)
         return msg.channel.send("err: video not found (either it doesn't exist or it's private)");
       this.queueVideo({ ...video, requesterId: msg.author?.id as string } as Video, cmdArgs);
@@ -95,18 +94,12 @@ export class CommandPlay implements Command {
   }
 
   async searchVideo(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, em } = cmdArgs;
-
-    const config = await em.findOneOrFail(
-      Config,
-      { guildId: msg.guild?.id as string },
-      { failHandler: dbFindOneError(msg.channel) }
-    );
+    const { msg, args, config: { prefix } } = cmdArgs;
 
     try {
       const searchMessage = await msg.channel.send('loading...');
       const videos = (await Promise.all(
-        (await youtube.searchVideos(args.join(' '))).map(v => youtube.getVideoByID(v.id))
+        (await youtube.searchVideos(args._.join(' '))).map(v => youtube.getVideoByID(v.id))
       )) as (Video & { livestream: boolean })[];
 
       videos.forEach(v => {
@@ -133,10 +126,10 @@ export class CommandPlay implements Command {
 
       let index: number;
       collector.on('collect', (message: Message) => {
-        if (message.content.startsWith(`${config.prefix}cancel`))
+        if (message.content.startsWith(`${prefix}cancel`))
           return collector.stop('canceled')
 
-        if (message.content.startsWith(`${config.prefix}play`))
+        if (message.content.startsWith(`${prefix}play`))
           return collector.stop('playcmd');
 
         const i = parseInt(message.content);

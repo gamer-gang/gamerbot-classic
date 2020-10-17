@@ -1,14 +1,14 @@
 import { Message } from 'discord.js';
 
-import { Command } from '..';
+import { Command, CommandDocs } from '..';
 import { client } from '../..';
 import { CmdArgs } from '../../types';
 
 export class CommandBan implements Command {
   cmd = 'ban';
-  docs = {
+  docs: CommandDocs = {
     usage: 'ban <user> <...reason>',
-    description: 'bans'
+    description: 'bans',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args } = cmdArgs;
@@ -21,7 +21,7 @@ export class CommandBan implements Command {
       return msg.channel.send('bot is missing `BAN_MEMBERS` permission');
 
     try {
-      const member = msg.guild.members.resolve(args[0].replace(/(<@!|>)/g, ''));
+      const member = msg.guild.members.resolve(args._[0].replace(/(<@!|>)/g, ''));
 
       if (!member) return msg.channel.send("couldn't resolve member");
       if (!member.bannable) return msg.channel.send('`user.bannable` is false');

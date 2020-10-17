@@ -1,29 +1,36 @@
 import { say } from 'cowsay';
 import { Message } from 'discord.js';
+import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
 import { CmdArgs } from '../../types';
-import { hasFlags, spliceFlag } from '../../util';
 
 export class CommandCowsay implements Command {
   cmd = 'cowsay';
+  yargsSchema: yargsParser.Options = {
+    boolean: ['delete'],
+    alias: {
+      delete: 'd',
+    },
+    default: {
+      delete: false,
+    },
+  };
   docs = {
-    usage: 'cowsay [-d] <...msg>',
-    description: 'you know what it does (`-d` deletes source command)',
+    usage: 'cowsay [-d, --delete] <...msg>',
+    description: 'you know what it does (`--delete` deletes source command)',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, flags } = cmdArgs;
+    const { msg, args } = cmdArgs;
 
-    if (hasFlags(flags, ['-d'])) {
-      spliceFlag(flags, args, '-d');
-      msg.deletable && msg.delete();
-    }
+    if (args._.length == 0 || /^\s+$/.test(args._.join(' ')))
+      return msg.channel.send('nothing to say');
 
-    if (args.length == 0 || /^\s+$/.test(args.join(' '))) return msg.channel.send('nothing to say');
+    args.delete && msg.deletable && msg.delete();
 
-    await msg.channel.send(
+    return msg.channel.send(
       `\`\`\`\n${say({
-        text: args.join(' '),
+        text: args._.join(' '),
         W: 48,
       })}\n\`\`\``
     );

@@ -1,11 +1,11 @@
 import { Message } from 'discord.js';
 
-import { Command } from '..';
+import { Command, CommandDocs } from '..';
 import { CmdArgs } from '../../types';
 
 export class CommandPause implements Command {
   cmd = 'pause';
-  docs = {
+  docs: CommandDocs = {
     usage: 'pause',
     description: 'pauses playback',
   };

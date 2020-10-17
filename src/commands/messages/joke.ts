@@ -2,25 +2,32 @@ import axios from 'axios';
 import cheerio from 'cheerio';
 import { Message } from 'discord.js';
 import he from 'he';
+import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
 import { CmdArgs } from '../../types';
-import { hasFlags } from '../../util';
 
 export class CommandJoke implements Command {
   cmd = 'joke';
+  yargsSchema: yargsParser.Options = {
+    boolean: ['codepen', 'programming'],
+    alias: {
+      codepen: 'c',
+      programming: 'p'
+    }
+  }
   docs = [
     {
       usage: 'joke',
-      description: 'get a progamming joke from https://github.com/15Dkatz/official_joke_api',
+      description: 'get a joke from https://github.com/15Dkatz/official_joke_api',
     },
     {
-      usage: 'joke -g',
-      description: 'get a generic joke from https://github.com/15Dkatz/official_joke_api',
+      usage: 'joke -p',
+      description: 'get a programming joke from https://github.com/15Dkatz/official_joke_api',
     },
     {
       usage: 'joke -c',
-      description: 'Get a joke from codepen (may take a while)',
+      description: 'get a joke from codepen (may take a while)',
     },
   ];
   async getCodepenJoke(): Promise<string> {
@@ -42,13 +49,14 @@ export class CommandJoke implements Command {
     );
     return `${response.data[0].setup}\n${response.data[0].punchline}`;
   }
-  async executor({ msg, flags }: CmdArgs): Promise<void | Message> {
+  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
+    const { msg, args } = cmdArgs;
     try {
       let joke: string;
 
-      hasFlags(flags, ['-c', '--codepen']) && (joke ??= await this.getCodepenJoke());
-      hasFlags(flags, ['-g', '--generic']) && (joke ??= await this.getGenericJoke());
-      joke ??= await this.getProgrammingJoke();
+      args.codepen && (joke ??= await this.getCodepenJoke());
+      args.programming && (joke ??= await this.getProgrammingJoke());
+      joke ??= await this.getGenericJoke();
 
       return msg.channel.send(joke);
     } catch (err) {

@@ -1,16 +1,27 @@
 import { GuildEmoji, Message, User } from 'discord.js';
 import emojiRegex from 'emoji-regex';
+import yargsParser from 'yargs-parser';
 
-import { Command } from '..';
+import { Command, CommandDocs } from '..';
 import { client } from '../..';
 import { Embed } from '../../embed';
 import { ReactionRole, RoleEmoji } from '../../entities/ReactionRole';
 import { CmdArgs } from '../../types';
-import { hasFlags } from '../../util';
 
 export class CommandRole implements Command {
   cmd = 'role';
-  docs = [
+  yargsSchema: yargsParser.Options = {
+    array: ['role'],
+    boolean: ['list'],
+    alias: {
+      list: 'l',
+      role: 'r',
+    },
+    default: {
+      list: false,
+    },
+  };
+  docs: CommandDocs = [
     {
       usage: 'role <roleId>,<emoji> [...<roleId>,<emoji>]',
       description: 'create a role distributor given an emoji',
@@ -21,7 +32,7 @@ export class CommandRole implements Command {
     },
   ];
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, em, flags } = cmdArgs;
+    const { msg, args, em } = cmdArgs;
 
     if (!msg.guild?.members.resolve(msg.author as User)?.hasPermission('MANAGE_ROLES'))
       return msg.channel.send('you are missing `MANAGE_ROLES` permission');
@@ -29,7 +40,7 @@ export class CommandRole implements Command {
     if (!msg.guild?.members.resolve(client.user?.id as string)?.hasPermission('MANAGE_ROLES'))
       return msg.channel.send('bot is missing `MANAGE_ROLES` permission');
 
-    if (hasFlags(flags, ['-l'])) {
+    if (args.list) {
       const manager = await msg.guild.roles.fetch();
       const roles = manager.cache.filter(r => r.id !== manager.everyone.id);
 
@@ -38,7 +49,7 @@ export class CommandRole implements Command {
 
       const nameWidth = Math.max(...rows.map(r => r.length));
       rows = rows.map(
-        (r, i) => r + ' '.repeat(nameWidth + (8 - (nameWidth % 8)) - r.length) + ids[i]
+        (r, i) => r + ' '.repeat(nameWidth + (3 - (nameWidth % 3)) - r.length) + ids[i]
       );
 
       const messages = rows
@@ -57,7 +68,7 @@ export class CommandRole implements Command {
     let description = 'react with the emoji for a role:\n';
     const roles: RoleEmoji[] = [];
 
-    args.forEach((arg, i) => {
+    args._.forEach((arg, i) => {
       const parts = arg.split(',');
       if (parts.length !== 2) return msg.channel.send(`syntax error in argument #${i}`);
       const roleId = parts[0].trim();
@@ -71,12 +82,12 @@ export class CommandRole implements Command {
       if (role.comparePositionTo(authorHighestRole) >= 0)
         return msg.channel.send(`role \`${role.name}\` is higher than your own highest role`);
 
-      if (/^<:.+:\d{18}>$/.test(emoji)) {
+      if (/^<:.+:\d{18}>$/.test(emoji.toString())) {
         // custom emoji
         const customId = (emoji as string).replace(/<:.+:/g, '').replace(/>/g, '');
         emoji = msg.guild?.emojis.cache.find(e => e.id == customId) as GuildEmoji;
       } else {
-        const exec = emojiRegex().exec(emoji);
+        const exec = emojiRegex().exec(emoji.toString());
         // invalid emoji
         if (!exec || exec[0] !== emoji) return msg.channel.send('invalid emoji: ' + emoji);
         // valid emoji, nothing to do

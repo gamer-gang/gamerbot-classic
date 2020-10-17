@@ -1,4 +1,5 @@
 import { Message } from 'discord.js';
+import yargsParser from 'yargs-parser';
 
 import { CmdArgs } from '../types';
 import { CommandAbout } from './general/about';
@@ -28,11 +29,14 @@ import { CommandStats } from './stats/stats';
 
 export interface Command {
   cmd: string | string[];
+  yargsSchema?: yargsParser.Options;
+  docs: CommandDocs;
   executor: (args: CmdArgs) => Promise<void | Message>;
-  docs: CommandDocs | CommandDocs[];
 }
 
-export interface CommandDocs {
+export type CommandDocs = Docs | Docs[];
+
+interface Docs {
   usage: string | string[];
   description: string;
 }

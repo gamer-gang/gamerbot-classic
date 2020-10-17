@@ -1,13 +1,13 @@
 import { Message } from 'discord.js';
 
-import { Command } from '..';
+import { Command, CommandDocs } from '..';
 import { CmdArgs } from '../../types';
 
 export class CommandSkip implements Command {
   cmd = 'skip';
-  docs = {
+  docs: CommandDocs = {
     usage: 'skip',
-    description: 'skip current video'
+    description: 'skip current video',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, queueStore } = cmdArgs;

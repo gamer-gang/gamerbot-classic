@@ -1,13 +1,13 @@
 import { Message } from 'discord.js';
 
-import { Command } from '..';
+import { Command, CommandDocs } from '..';
 import { CmdArgs } from '../../types';
 
 export class CommandResume implements Command {
   cmd = 'resume';
-  docs = {
+  docs: CommandDocs = {
     usage: 'resume',
-    description: 'resumes playback'
+    description: 'resumes playback',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, queueStore } = cmdArgs;

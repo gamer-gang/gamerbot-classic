@@ -1,11 +1,11 @@
 import { Message, TextChannel } from 'discord.js';
 
-import { Command } from '..';
+import { Command, CommandDocs } from '..';
 import { CmdArgs } from '../../types';
 
 export class CommandPurge implements Command {
   cmd = 'purge';
-  docs = {
+  docs: CommandDocs = {
     usage: 'purge <number>',
     description:
       'delete last `number` messages (might take a while becuase ratelimiting)\n' +
@@ -15,7 +15,7 @@ export class CommandPurge implements Command {
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args } = cmdArgs;
 
-    const n = parseInt(args[0], 10);
+    const n = parseInt(args._[0], 10);
 
     if (!n || isNaN(n) || n < 2 || n > 1000)
       return msg.channel.send('number must be an integer from 2 to 1000 inclusive');

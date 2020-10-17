@@ -17,7 +17,7 @@ export class CommandApiMessage implements Command {
     const { msg, args } = cmdArgs;
 
     try {
-      await msg.channel.send(parseDiscohookJSON(args.join(' ')));
+      await msg.channel.send(parseDiscohookJSON(args._.join(' ')));
       msg.deletable && msg.delete();
     } catch (err) {
       msg.channel.send('error: \n```\n' + err + '\n```');

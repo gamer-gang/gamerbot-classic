@@ -1,42 +1,46 @@
 import { Message } from 'discord.js';
 import { LoremIpsum } from 'lorem-ipsum';
+import yargsParser from 'yargs-parser';
 
-import { Command } from '..';
-import { Config } from '../../entities/Config';
+import { Command, CommandDocs } from '..';
 import { CmdArgs } from '../../types';
-import { dbFindOneError } from '../../util';
 
 export class CommandLorem implements Command {
   cmd = 'lorem';
-  docs = {
-    usage: 'lorem [msgs=1]',
+  yargsSchema: yargsParser.Options = {
+    number: ['messages'],
+    alias: {
+      messages: 'm',
+    },
+    default: {
+      messages: 1,
+    },
+  };
+  docs: CommandDocs = {
+    usage: 'lorem [-m, --messages <int>]',
     description: 'ok',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, em } = cmdArgs;
+    const {
+      msg,
+      args,
+      em,
+      config: { allowSpam },
+    } = cmdArgs;
 
-    const config = await em.findOneOrFail(
-      Config,
-      { guildId: msg.guild?.id as string },
-      { failHandler: dbFindOneError(msg.channel) }
-    );
-
-    if (!config.allowSpam) {
+    if (!allowSpam) {
       return msg.channel.send('spam commands are off');
     }
-
-    const messages: string[] = [];
 
     const lorem = new LoremIpsum({
       seed: Date.now().toString(),
     });
 
-    let amount = 1;
-    if (args[0]) {
-      if (isNaN(parseInt(args[0]))) return msg.channel.send('invalid amount');
-      else if (amount > 10) return msg.channel.send('too many, max 10');
-      else amount = parseInt(args[0]);
-    }
+    const messages: string[] = [];
+    const amount = args.messages;
+
+    if (isNaN(amount)) return msg.channel.send('invalid amount');
+    else if (amount > 10) return msg.channel.send('too many, max 10');
 
     for (let i = 0; i < amount; i++) {
       let text = '';

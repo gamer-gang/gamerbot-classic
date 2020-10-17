@@ -4,7 +4,6 @@ import _ from 'lodash';
 import { Command } from '../..';
 import { Config } from '../../../entities/Config';
 import { CmdArgs } from '../../../types';
-import { dbFindOneError } from '../../../util';
 import { allowSpam } from './allowspam';
 import { egg } from './egg';
 import { prefix } from './prefix';
@@ -23,19 +22,13 @@ export class CommandConfig implements Command {
     description: 'get/set a config value',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, em, args } = cmdArgs;
+    const { msg, args, config } = cmdArgs;
 
-    const config = await em.findOneOrFail(
-      Config,
-      { guildId: msg.guild?.id as string },
-      { failHandler: dbFindOneError(msg.channel) }
-    );
-
-    if (!args[0] || !Object.keys(configHandlers).includes(args[0]))
+    if (!args._[0] || !Object.keys(configHandlers).includes(args._[0]))
       return msg.channel.send(
         'valid config options:` ' + Object.keys(configHandlers).join(', ') + '`'
       );
 
-    configHandlers[args[0]](config, cmdArgs, _.tail(args).join(' '));
+    configHandlers[args._[0]](config, cmdArgs, _.tail(args._).join(' '));
   }
 }

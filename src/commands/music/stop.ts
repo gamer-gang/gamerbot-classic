@@ -1,13 +1,13 @@
 import { Message } from 'discord.js';
 
-import { Command } from '..';
+import { Command, CommandDocs } from '..';
 import { CmdArgs } from '../../types';
 
 export class CommandStop implements Command {
   cmd = 'stop';
-  docs = {
+  docs: CommandDocs = {
     usage: 'stop',
-    description: 'stops playback'
+    description: 'stops playback',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, queueStore } = cmdArgs;

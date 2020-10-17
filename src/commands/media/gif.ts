@@ -2,16 +2,28 @@ import { Message, PartialMessage } from 'discord.js';
 import * as fse from 'fs-extra';
 import * as http from 'http';
 import * as https from 'https';
+import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
 import { CmdArgs } from '../../types';
-import { hasFlags, resolvePath, spliceFlag, urlRegExp } from '../../util';
+import { resolvePath, urlRegExp } from '../../util';
 
 const fileRegExp = /^[A-Za-z0-9\-_]+$/;
 const gifDir = 'data/gifs';
 
 export class CommandGif implements Command {
   cmd = 'gif';
+  yargsSchema: yargsParser.Options = {
+    boolean: ['list'],
+    string: ['remove'],
+    array: ['add', 'rename'],
+    alias: {
+      list: 'l',
+      add: 'a',
+      remove: ['r', 'rm'],
+      rename: ['n', 'mv'],
+    },
+  };
   docs = [
     {
       usage: 'gif <filename>',
@@ -26,14 +38,15 @@ export class CommandGif implements Command {
       description: 'add gif',
     },
     {
-      usage: 'gif -r, --remove <name>',
+      usage: 'gif -r, --rm, --remove <name>',
       description: 'remove gif',
     },
     {
-      usage: 'gif -n, --rename <name> <newName>',
+      usage: 'gif -n, --mv, --rename <name> <newName>',
       description: 'rename gif',
     },
   ];
+
   invalidChars = (msg: Message | PartialMessage): Promise<Message> =>
     msg.channel.send(
       `invalid chars in filename, allowed chars:\n\`\`\`\n${fileRegExp.toString()}\n\`\`\``
@@ -45,44 +58,23 @@ export class CommandGif implements Command {
   }
 
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, flags } = cmdArgs;
+    const { msg, args } = cmdArgs;
 
-    if (args.length == 0)
-      return msg.channel.send(`usage: \`${this.docs.map(d => d.usage).join('`, `')}\``);
-
-    const unrecognized = args.filter(
-      v => v[0] === '-' && !'l|-list|a|-add|r|-remove|n|-rename'.split('|').includes(v.substr(1))
-    );
-    if (unrecognized.length > 0)
-      return msg.channel.send(`unrecognized flags: \`${unrecognized.join('`, `')}\``);
-
-    if (hasFlags(flags, ['-l', '--list'])) {
+    if (args.list) {
       const files = await this.getGifs();
+      if (!files.length) return msg.channel.send('no gifs');
       return msg.channel.send(`files: \n\`\`\`\n${files.join(', ')}\n\`\`\``);
     }
 
-    if (hasFlags(flags, ['-a', '--add'])) {
-      spliceFlag(flags, args, '-a');
-      spliceFlag(flags, args, '--add');
-      return this.add(msg, args);
-    }
-
-    if (hasFlags(flags, ['-r', '--remove'])) {
-      spliceFlag(flags, args, '-r');
-      spliceFlag(flags, args, '--remove');
-      return this.remove(msg, args);
-    }
-
-    if (hasFlags(flags, ['-n', '--rename'])) {
-      spliceFlag(flags, args, '-n');
-      spliceFlag(flags, args, '--rename');
-      return this.remove(msg, args);
-    }
-
-    return this.show(msg, args);
+    if (args.add) return this.add(msg, args);
+    else if (args.remove) return this.remove(msg, args);
+    else if (args.rename) return this.rename(msg, args);
+    else if (args._.length === 1) return this.show(msg, args);
+    else return msg.channel.send(`usage: \`${this.docs.map(d => d.usage).join('`, `')}\``);
   }
-  async show(msg: Message | PartialMessage, args: string[]): Promise<Message> {
-    const name = args[0];
+  async show(msg: Message | PartialMessage, args: yargsParser.Arguments): Promise<Message> {
+    const name = args._[0];
+
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
     const gifPath = resolvePath(`${gifDir}/${name}.gif`);
 
@@ -90,9 +82,11 @@ export class CommandGif implements Command {
     return msg.channel.send({ files: [{ attachment: gifPath }] });
   }
 
-  async add(msg: Message | PartialMessage, args: string[]): Promise<Message> {
+  async add(msg: Message | PartialMessage, args: yargsParser.Arguments): Promise<Message> {
     const files = await this.getGifs();
-    const [name, url] = args;
+    const [name, url] = args.add as string[];
+
+    if (!name || !url) return msg.channel.send('expected 2 args for `--add`');
 
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
     if (files.includes(name)) return msg.channel.send('filename in use');
@@ -102,16 +96,20 @@ export class CommandGif implements Command {
     return msg.channel.send(await this.downloadGif(name, url));
   }
 
-  async remove(msg: Message | PartialMessage, args: string[]): Promise<Message> {
-    const name = args[0];
+  async remove(msg: Message | PartialMessage, args: yargsParser.Arguments): Promise<Message> {
+    const name = args._[0];
+    if (!name) return msg.channel.send('`--remove` needs an argument');
+
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
     if (!(await this.getGifs()).includes(name)) return msg.channel.send("file doesn't exist m8");
     await fse.remove(resolvePath(`${gifDir}/${name}.gif`));
     return msg.channel.send(`deleted gif ${name}`);
   }
 
-  async rename(msg: Message | PartialMessage, args: string[]): Promise<Message> {
-    const [name, newName] = args;
+  async rename(msg: Message | PartialMessage, args: yargsParser.Arguments): Promise<Message> {
+    const [name, newName] = args.rename as string[];
+    if (!name || !newName) return msg.channel.send('expected 2 args for `--rename`');
+
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
     if (!(await this.getGifs()).includes(name)) return msg.channel.send("file doesn't exist m8");
     await fse.rename(resolvePath(`${gifDir}/${name}.gif`), resolvePath(`${gifDir}/${newName}.gif`));

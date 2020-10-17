@@ -1,43 +1,42 @@
 import { Message } from 'discord.js';
 import randomWords from 'random-words';
+import yargsParser from 'yargs-parser';
 
-import { Command } from '..';
-import { Config } from '../../entities/Config';
+import { Command, CommandDocs } from '..';
 import { CmdArgs } from '../../types';
-import { dbFindOneError } from '../../util';
 
 export class CommandRandom implements Command {
   cmd = 'random';
-  docs = {
-    usage: 'random [msgs=1]',
+  yargsSchema: yargsParser.Options = {
+    number: ['messages'],
+    alias: {
+      messages: 'm',
+    },
+    default: {
+      messages: 1,
+    },
+  };
+  docs: CommandDocs = {
+    usage: 'random [-m, --messages <int>]',
     description: 'ok',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, em } = cmdArgs;
+    const {
+      msg,
+      args,
+      config: { allowSpam },
+    } = cmdArgs;
 
-    const config = await em.findOneOrFail(
-      Config,
-      { guildId: msg.guild?.id as string },
-      { failHandler: dbFindOneError(msg.channel) }
-    );
-
-    if (!config.allowSpam) {
-      return msg.channel.send('spam commands are off');
-    }
+    if (!allowSpam) return msg.channel.send('spam commands are off');
 
     const messages: string[] = [];
+    const amount = args.messages;
 
-    let amount = 1;
-    if (args[0]) {
-      if (isNaN(parseInt(args[0]))) return msg.channel.send('invalid amount');
-      else if (amount > 10) return msg.channel.send('too many, max 10');
-
-      amount = parseInt(args[0]);
-    }
+    if (isNaN(amount)) return msg.channel.send('invalid amount');
+    else if (amount > 10) return msg.channel.send('too many, max 10');
 
     for (let i = 0; i < amount; i++) {
       let text = '';
-      // eslint-disable-next-line no-constant-condition
       while (true) {
         const append = ' ' + randomWords(1);
         if (text.length + append.length > 2000) break;
