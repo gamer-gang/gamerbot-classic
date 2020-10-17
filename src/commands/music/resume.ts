@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 
 import { Command, CommandDocs } from '..';
 import { CmdArgs } from '../../types';
-import { updateVideoEmbed } from '../../util/music';
+import { updatePlayingEmbed } from '../../util/music';
 
 export class CommandResume implements Command {
   cmd = 'resume';
@@ -18,7 +18,7 @@ export class CommandResume implements Command {
 
     try {
       queue.voiceConnection?.dispatcher.resume();
-      updateVideoEmbed({ playing: true });
+      updatePlayingEmbed({ playing: true });
     } catch (err) {
       return msg.channel.send(`error:\n\`\`\`\n${err.stack}\n\`\`\``);
     }

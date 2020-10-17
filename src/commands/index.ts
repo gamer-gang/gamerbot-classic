@@ -18,6 +18,7 @@ import { CommandRole } from './moderation/role';
 import { CommandUnban } from './moderation/unban';
 import { CommandPause } from './music/pause';
 import { CommandPlay } from './music/play';
+import { CommandPlaying } from './music/playing';
 import { CommandQueue } from './music/queue';
 import { CommandResume } from './music/resume';
 import { CommandSkip } from './music/skip';
@@ -74,6 +75,7 @@ export const commands: Command[] = [
 
   // music
   new CommandPlay(),
+  new CommandPlaying(),
   new CommandPause(),
   new CommandQueue(),
   new CommandSkip(),

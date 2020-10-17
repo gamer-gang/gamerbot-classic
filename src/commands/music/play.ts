@@ -1,5 +1,4 @@
 import { Message, TextChannel, VoiceChannel, VoiceState } from 'discord.js';
-import fse from 'fs-extra';
 import he from 'he';
 import https from 'https';
 import _ from 'lodash';
@@ -7,11 +6,11 @@ import moment from 'moment';
 import * as mm from 'music-metadata';
 import { Duration } from 'simple-youtube-api';
 import temp from 'temp';
-import { inspect } from 'util';
 import ytdl from 'ytdl-core';
 
 import { Command, CommandDocs } from '..';
 import { client, youtube } from '../..';
+import { Embed } from '../../embed';
 import { CmdArgs, Track, TrackType } from '../../types';
 import {
   formatDuration,
@@ -20,11 +19,11 @@ import {
   youtubePlaylistRegExp,
   youtubeVideoRegExp,
 } from '../../util';
-import { updateVideoEmbed } from '../../util/music';
+import { updatePlayingEmbed } from '../../util/music';
 
 export class CommandPlay implements Command {
   cmd = ['play', 'p'];
-  docs : CommandDocs = [
+  docs: CommandDocs = [
     {
       usage: ['play <url>'],
       description: 'play youtube video from a video/playlist url; must not be private',
@@ -40,11 +39,9 @@ export class CommandPlay implements Command {
     if (!args._[0]) {
       // check for local files
       if (msg.attachments.size) {
-        console.log(inspect(msg.attachments.array(), false, 2, true));
         const attachment = msg.attachments.array()[0];
         https.get(attachment.url, async res => {
           const metadata = await mm.parseStream(res);
-          console.log(inspect(metadata, false, 2, true));
 
           const duration = moment.duration(metadata.format.duration, 'seconds');
           this.queueVideo(
@@ -95,10 +92,15 @@ export class CommandPlay implements Command {
       const videos = await playlist.getVideos();
       for (const video of Object.values(videos)) {
         const fullVideo = await youtube.getVideoByID(video.id);
+        if (!fullVideo) return;
         this.queueVideo(
           {
             type: TrackType.YOUTUBE,
-            data: fullVideo,
+            data: {
+              ...fullVideo,
+              livestream:
+                (fullVideo.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
+            },
             requesterId: msg.author?.id,
           } as Track,
           cmdArgs,
@@ -107,7 +109,7 @@ export class CommandPlay implements Command {
       }
       msg.channel.send(`added ${videos.length.toString()} videos to the queue`);
       const queue = queueStore.get(msg.guild?.id as string);
-      if (queue.current.embed) queue.current.embed.edit(updateVideoEmbed());
+      if (queue.current.embed) queue.current.embed.edit(updatePlayingEmbed());
     } catch (err) {
       console.error(err);
       if (err.toString() === 'Error: resource youtube#playlistListResponse not found')
@@ -127,7 +129,15 @@ export class CommandPlay implements Command {
       if (!video)
         return msg.channel.send("err: video not found (either it doesn't exist or it's private)");
       this.queueVideo(
-        { data: video, requesterId: msg.author?.id as string, type: TrackType.YOUTUBE } as Track,
+        {
+          data: {
+            ...video,
+            livestream:
+              (video.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
+          },
+          requesterId: msg.author?.id as string,
+          type: TrackType.YOUTUBE,
+        } as Track,
         cmdArgs
       );
     } catch (err) {
@@ -140,13 +150,17 @@ export class CommandPlay implements Command {
   }
 
   async searchVideo(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, config: { prefix } } = cmdArgs;
+    const {
+      msg,
+      args,
+      config: { prefix },
+    } = cmdArgs;
 
     try {
       const searchMessage = await msg.channel.send('loading...');
       const videos = (
         await Promise.all(
-          (await youtube.searchVideos(args.join(' '))).map(v => youtube.getVideoByID(v.id))
+          (await youtube.searchVideos(args._.join(' '))).map(v => youtube.getVideoByID(v.id))
         )
       )
         .flatMap(v => {
@@ -160,6 +174,8 @@ export class CommandPlay implements Command {
           data =>
             ({ type: TrackType.YOUTUBE, requesterId: msg.author?.id as string, data } as Track)
         );
+
+      if (!videos.length) return searchMessage.edit('no results');
 
       searchMessage.edit(
         'choose a video: \n' +
@@ -188,11 +204,9 @@ export class CommandPlay implements Command {
 
       let index: number;
       collector.on('collect', (message: Message) => {
-        if (message.content.startsWith(`${prefix}cancel`))
-          return collector.stop(StopReason.CANCEL);
+        if (message.content.startsWith(`${prefix}cancel`)) return collector.stop(StopReason.CANCEL);
 
-        if (message.content.startsWith(`${prefix}play`))
-          return collector.stop(StopReason.PLAYCMD);
+        if (message.content.startsWith(`${prefix}play`)) return collector.stop(StopReason.PLAYCMD);
 
         const i = parseInt(message.content);
         if (Number.isNaN(i) || i < 1 || i > 5)
@@ -235,7 +249,7 @@ export class CommandPlay implements Command {
           queue.tracks.length - 1
         } (approx. ${getQueueLength(queue, { first: true, last: false })} until playing)`
       );
-      updateVideoEmbed();
+      updatePlayingEmbed();
     }
   }
 
@@ -267,16 +281,16 @@ export class CommandPlay implements Command {
       queueStore.set(msg.guild?.id as string, queue);
     }
 
-    queue.current.embed ??= await msg.channel.send('loading...');
+    queue.current.embed ??= await msg.channel.send(new Embed({ title: 'loading...' }));
 
     const durationSeconds = toDurationSeconds(track.data.duration as Duration);
-    const sliderLength = Math.min(Math.ceil(durationSeconds / 5) + 1, 40);
+    const sliderLength = Math.min(Math.ceil(durationSeconds / 6) + 1, 40);
 
     let thumbPosition = 0;
 
-    updateVideoEmbed({
-      video: track,
-      thumbPosition: 0,
+    updatePlayingEmbed({
+      track: track,
+      thumbPosition,
       sliderLength,
       cmdArgs,
       playing: true,
@@ -285,13 +299,13 @@ export class CommandPlay implements Command {
     queue.current.embedInterval = setInterval(() => {
       thumbPosition++;
       if (thumbPosition > sliderLength - 1) {
-        updateVideoEmbed({ playing: false });
+        updatePlayingEmbed({ playing: false, thumbPosition: sliderLength });
         queue.current.embed = undefined;
 
-        queue.current.embedInterval ?? clearInterval(queue.current.embedInterval);
+        clearInterval(queue.current.embedInterval as NodeJS.Timeout);
         delete queue.current.embedInterval;
       }
-      updateVideoEmbed({ thumbPosition });
+      updatePlayingEmbed({ thumbPosition });
     }, (durationSeconds * 1000) / sliderLength);
 
     const callback = (info: unknown) => {
@@ -302,10 +316,10 @@ export class CommandPlay implements Command {
       const queue = queueStore.get(msg.guild?.id as string);
       queue.tracks.shift();
 
-      updateVideoEmbed({ playing: false });
+      updatePlayingEmbed({ playing: false });
       delete queue.current.embed;
 
-      queue.current.embedInterval && clearInterval(queue.current.embedInterval);
+      clearInterval(queue.current.embedInterval as NodeJS.Timeout);
       delete queue.current.embedInterval;
 
       queueStore.set(msg.guild?.id as string, queue);
@@ -316,17 +330,7 @@ export class CommandPlay implements Command {
     if (track.type === TrackType.YOUTUBE) {
       connection?.play(ytdl(track.data.id)).on('finish', callback);
     } else {
-      const stream = temp.openSync('gamerbot-localfile');
-      https.get(track.data.url, res => {
-        console.log(stream.path);
-        res.pipe(fse.createWriteStream(stream.path));
-        res.on('close', () =>
-          connection?.play(fse.createReadStream(stream.path)).on('finish', info => {
-            temp.cleanup();
-            callback(info);
-          })
-        );
-      });
+      connection?.play(track.data.url).on('finish', callback);
     }
   }
 }
