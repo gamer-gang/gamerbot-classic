@@ -83,3 +83,9 @@ export const commands: Command[] = [
   // games
   // new CommandLiarsDice(),
 ];
+
+commands.sort((a, b) => {
+  const cmdA = (Array.isArray(a.cmd) ? a.cmd[0] : a.cmd).toLowerCase();
+  const cmdB = (Array.isArray(b.cmd) ? b.cmd[0] : b.cmd).toLowerCase();
+  return cmdA < cmdB ? -1 : cmdA > cmdB ? 1 : 0;
+});
