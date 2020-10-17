@@ -18,6 +18,8 @@ export class CommandPlaying implements Command {
 
     const queue = queueStore.get(msg.guild?.id as string);
 
+    if (!queue.playing) return msg.channel.send('not playing');
+
     await updatePlayingEmbed({ playing: false });
 
     queue.current.embed = await msg.channel.send(new Embed({ title: 'loading...' }));

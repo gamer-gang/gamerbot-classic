@@ -15,6 +15,11 @@ export class CommandStop implements Command {
 
     if (!queue.playing) return msg.channel.send('not playing');
 
+    const voice = msg.member?.voice;
+    if (!voice?.channel) return msg.channel.send('you are not in voice channel');
+    if (voice.channel.id !== queue.voiceConnection?.channel.id)
+      return msg.channel.send('wrong voice channel');
+
     try {
       queue.tracks = [];
       queueStore.set(msg.guild?.id as string, queue);

@@ -35,8 +35,15 @@ export class CommandPlay implements Command {
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args } = cmdArgs;
 
+    const voice = msg.member?.voice;
+    if (!voice?.channel) return msg.channel.send('you are not in voice channel');
+
+    const permissions = voice.channel.permissionsFor(client.user?.id as string);
+    if (!permissions?.has('CONNECT')) return msg.channel.send("err: can't connect to channel");
+    if (!permissions?.has('SPEAK')) return msg.channel.send("err: can't speak in that channel");
+
     if (!args._[0]) {
-      // check for local files
+      // check for uploaded files
       if (msg.attachments.size) {
         const attachment = msg.attachments.array()[0];
         https.get(attachment.url, async res => {
@@ -66,13 +73,6 @@ export class CommandPlay implements Command {
 
       return msg.channel.send('err: expected at least one arg');
     }
-
-    const voice = msg.member?.voice;
-    if (!voice?.channel) return msg.channel.send('err: not in voice channel');
-
-    const permissions = voice.channel.permissionsFor(client.user?.id as string);
-    if (!permissions?.has('CONNECT')) return msg.channel.send("err: can't connect to channel");
-    if (!permissions?.has('SPEAK')) return msg.channel.send("err: can't speak in that channel");
 
     if (youtubePlaylistRegExp.test(args._[0])) return this.getPlaylist(cmdArgs);
     else if (youtubeVideoRegExp.test(args._[0])) return this.getVideo(cmdArgs);

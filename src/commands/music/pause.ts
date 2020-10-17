@@ -16,6 +16,11 @@ export class CommandPause implements Command {
 
     if (!queue.playing) return msg.channel.send('not playing');
 
+    const voice = msg.member?.voice;
+    if (!voice?.channel) return msg.channel.send('you are not in voice channel');
+    if (voice.channel.id !== queue.voiceConnection?.channel.id)
+      return msg.channel.send('wrong voice channel');
+
     try {
       queue.voiceConnection?.dispatcher?.pause(true);
       updatePlayingEmbed({ playing: false });
@@ -23,6 +28,6 @@ export class CommandPause implements Command {
       return msg.channel.send(`error:\n\`\`\`\n${err.stack}\n\`\`\``);
     }
 
-    return msg.channel.send('paused');
+    return msg.channel.send('paused\nNOTE: very broken rn');
   }
 }
