@@ -1,9 +1,8 @@
 import { Message } from 'discord.js';
 
 import { Command, CommandDocs } from '..';
-import { Embed } from '../../embed';
 import { CmdArgs } from '../../types';
-import { updatePlayingEmbed } from '../../util/music';
+import { Embed, updatePlayingEmbed } from '../../util';
 
 export class CommandPlaying implements Command {
   cmd = ['playing', 'np'];

@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 
 import { Command, CommandDocs } from '..';
 import { CmdArgs } from '../../types';
-import { updatePlayingEmbed } from '../../util/music';
+import { updatePlayingEmbed } from '../../util';
 
 export class CommandPause implements Command {
   cmd = 'pause';

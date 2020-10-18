@@ -1,0 +1,48 @@
+diff --git a/node_modules/ytsr/lib/main.js b/node_modules/ytsr/lib/main.js
+index e0785fa..7d3b1c7 100644
+--- a/node_modules/ytsr/lib/main.js
++++ b/node_modules/ytsr/lib/main.js
+@@ -1,11 +1,19 @@
+ const URL = require('url');
+ const UTIL = require('./util.js');
+ const PARSE_ITEM = require('./parseItem.js');
+-const MINIGET = require('miniget');
++const axios = require('axios');
+ 
+ // eslint-disable-next-line no-useless-escape, max-len
+ const nextpagRegex = /<div class="(([^"]*branded\-page\-box[^"]*search\-pager)|([^"]*search\-pager[^"]*branded\-page\-box))/;
+ 
++const axiosOptions = {
++  headers: {
++    'user-agent': 'insomnia/2020.4.1',
++    accept: '*/*',
++    cookie: 'VISITOR_INFO1_LIVE=3rr6iPXsamM',
++  },
++}
++
+ const main = module.exports = async(searchString, options) => {
+   const resp = {};
+ 
+@@ -14,8 +22,9 @@ const main = module.exports = async(searchString, options) => {
+   // Save provided nextpageRef and do the request
+   resp.currentRef = options.nextpageRef;
+   // Do request
+-  const body = await MINIGET(UTIL.buildRef(resp.currentRef, searchString, options), options).text();
+-  const parsed = JSON.parse(body);
++  const url = UTIL.buildRef(resp.currentRef, searchString, options);
++  const body = (await axios.get(url, { ...options, ...axiosOptions })).data;
++  const parsed = body;
+   const content = parsed[parsed.length - 1].body.content;
+ 
+   // Get the table of items and parse it (remove null items where the parsing failed)
+@@ -72,8 +81,8 @@ main.getFilters = async(searchString, options) => {
+   const urlOptions = prevQuery ? Object.assign({}, options, prevQuery) : options;
+ 
+   const ref = UTIL.buildRef(null, prevQuery.search_query || searchString, urlOptions);
+-  const body = await MINIGET(ref, options).text();
+-  const parsed = JSON.parse(body);
++  const body = (await axios.get(ref, { ...options, ...axiosOptions })).data;
++  const parsed = body;
+   const content = parsed[parsed.length - 1].body.content;
+   return UTIL.parseFilters(content);
+ };

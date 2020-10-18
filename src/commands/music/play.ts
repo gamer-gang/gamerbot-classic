@@ -1,24 +1,24 @@
 import { Message, TextChannel, VoiceChannel, VoiceState } from 'discord.js';
 import he from 'he';
-import https from 'https';
 import _ from 'lodash';
+import miniget from 'miniget';
 import moment from 'moment';
 import * as mm from 'music-metadata';
 import { Duration } from 'simple-youtube-api';
 import ytdl from 'ytdl-core';
+import ytsr from 'ytsr';
 
 import { Command, CommandDocs } from '..';
-import { client, youtube } from '../..';
-import { Embed } from '../../embed';
+import { client, getLogger, LoggerType, queueStore, spotify, youtube } from '../../providers';
 import { CmdArgs, Track, TrackType } from '../../types';
 import {
+  Embed,
   formatDuration,
   getQueueLength,
+  regExps,
   toDurationSeconds,
-  youtubePlaylistRegExp,
-  youtubeVideoRegExp,
+  updatePlayingEmbed,
 } from '../../util';
-import { updatePlayingEmbed } from '../../util/music';
 
 export class CommandPlay implements Command {
   cmd = ['play', 'p'];
@@ -33,10 +33,12 @@ export class CommandPlay implements Command {
     },
   ];
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+    const { msg, args, queueStore } = cmdArgs;
 
     const voice = msg.member?.voice;
     if (!voice?.channel) return msg.channel.send('you are not in voice channel');
+
+    const queue = queueStore.get(msg.guild?.id as string);
 
     const permissions = voice.channel.permissionsFor(client.user?.id as string);
     if (!permissions?.has('CONNECT')) return msg.channel.send("err: can't connect to channel");
@@ -46,41 +48,49 @@ export class CommandPlay implements Command {
       // check for uploaded files
       if (msg.attachments.size) {
         const attachment = msg.attachments.array()[0];
-        https.get(attachment.url, async res => {
-          const metadata = await mm.parseStream(res);
 
-          const duration = moment.duration(metadata.format.duration, 'seconds');
-          this.queueVideo(
-            {
-              requesterId: msg.author?.id as string,
-              type: TrackType.FILE,
-              data: {
-                title: attachment.name || _.last(attachment.url.split('/')),
-                url: attachment.url,
-                duration: {
-                  hours: duration.hours(),
-                  minutes: duration.minutes(),
-                  seconds: duration.seconds(),
-                },
+        const metadata = await mm.parseStream(miniget(attachment.url));
+
+        const duration = moment.duration(metadata.format.duration, 'seconds');
+        this.queueTrack(
+          {
+            requesterId: msg.author?.id as string,
+            type: TrackType.FILE,
+            data: {
+              title: attachment.name || _.last(attachment.url.split('/')),
+              url: attachment.url,
+              duration: {
+                hours: duration.hours(),
+                minutes: duration.minutes(),
+                seconds: duration.seconds(),
               },
-            } as Track,
-            cmdArgs
-          );
-        });
+            },
+          } as Track,
+          cmdArgs
+        );
 
         return;
+      }
+
+      if (queue?.voiceConnection?.dispatcher.paused) {
+        queue.voiceConnection?.dispatcher.resume();
+        updatePlayingEmbed({ playing: true });
+        return msg.channel.send('resumed');
       }
 
       return msg.channel.send('err: expected at least one arg');
     }
 
-    if (youtubePlaylistRegExp.test(args._[0])) return this.getPlaylist(cmdArgs);
-    else if (youtubeVideoRegExp.test(args._[0])) return this.getVideo(cmdArgs);
-    else return this.searchVideo(cmdArgs);
+    if (regExps.youtube.playlist.test(args._[0])) return this.getYoutubePlaylist(cmdArgs);
+    else if (regExps.youtube.video.test(args._[0])) return this.getYoutubeVideo(cmdArgs);
+    else if (regExps.spotify.playlist.test(args._[0])) return this.getSpotifyPlaylist(cmdArgs);
+    else if (regExps.spotify.album.test(args._[0])) return this.getSpotifyAlbum(cmdArgs);
+    else if (regExps.spotify.track.test(args._[0])) return this.getSpotifyTrack(cmdArgs);
+    else return this.searchYoutube(cmdArgs);
   }
 
-  async getPlaylist(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, queueStore } = cmdArgs;
+  async getYoutubePlaylist(cmdArgs: CmdArgs): Promise<void | Message> {
+    const { msg, args } = cmdArgs;
     try {
       const playlist = await youtube.getPlaylist(args._[0]);
       if (!playlist)
@@ -89,28 +99,32 @@ export class CommandPlay implements Command {
         );
 
       const videos = await playlist.getVideos();
-      for (const video of Object.values(videos)) {
-        const fullVideo = await youtube.getVideoByID(video.id);
-        if (!fullVideo) return;
-        this.queueVideo(
-          {
-            type: TrackType.YOUTUBE,
-            data: {
-              ...fullVideo,
-              livestream:
-                (fullVideo.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
-            },
-            requesterId: msg.author?.id,
-          } as Track,
-          cmdArgs,
-          { silent: true }
-        );
-      }
+      (await Promise.all(videos.map(v => youtube.getVideoByID(v.id)))).map(
+        v =>
+          v &&
+          this.queueTrack(
+            {
+              type: TrackType.YOUTUBE,
+              data: {
+                ...v,
+                livestream:
+                  (v.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
+              },
+              requesterId: msg.author?.id,
+            } as Track,
+            cmdArgs,
+            { silent: true, beginPlaying: false }
+          )
+      );
+
       msg.channel.send(`added ${videos.length.toString()} videos to the queue`);
+
       const queue = queueStore.get(msg.guild?.id as string);
-      if (queue.current.embed) queue.current.embed.edit(updatePlayingEmbed());
+      if (queue?.current.embed) queue.current.embed.edit(updatePlayingEmbed());
+
+      this.playNext(cmdArgs);
     } catch (err) {
-      console.error(err);
+      getLogger(LoggerType.MESSAGE, msg.id).error(err);
       if (err.toString() === 'Error: resource youtube#playlistListResponse not found')
         return msg.channel.send(
           "err: playlist not found (either it doesn't exist or it's private)"
@@ -120,14 +134,14 @@ export class CommandPlay implements Command {
     }
   }
 
-  async getVideo(cmdArgs: CmdArgs): Promise<void | Message> {
+  async getYoutubeVideo(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args } = cmdArgs;
 
     try {
       const video = await youtube.getVideo(args._[0]);
       if (!video)
         return msg.channel.send("err: video not found (either it doesn't exist or it's private)");
-      this.queueVideo(
+      this.queueTrack(
         {
           data: {
             ...video,
@@ -140,7 +154,7 @@ export class CommandPlay implements Command {
         cmdArgs
       );
     } catch (err) {
-      console.error(err);
+      getLogger(LoggerType.MESSAGE, msg.id).error(err);
       if (err.toString() === 'Error: resource youtube#videoListResponse not found')
         return msg.channel.send("err: video not found (either it doesn't exist or it's private)");
 
@@ -148,7 +162,146 @@ export class CommandPlay implements Command {
     }
   }
 
-  async searchVideo(cmdArgs: CmdArgs): Promise<void | Message> {
+  async getSpotifyAlbum(cmdArgs: CmdArgs): Promise<void | Message> {
+    const { msg, args } = cmdArgs;
+    const albumId = regExps.spotify.album.exec(args._[0]);
+    if (!albumId) return msg.channel.send('invalid album');
+
+    const album = await spotify.getAlbum(albumId[1]);
+    if (!album) return msg.channel.send('invalid album');
+    msg.channel.send('searching for videos...');
+
+    const tracks = await this.searchAllAndQueue(
+      album.body.tracks.items.map(t => `${t.name} ${t.artists.map(a => a.name).join(' ')} topic`),
+      cmdArgs
+    );
+
+    const errors = album.body.tracks.items.length - tracks;
+
+    msg.channel.send(
+      `queued ${tracks} tracks from "${album.body.name}"${
+        errors ? ` (${errors} track${errors === 1 ? '' : 's'} could not be resolved)` : ''
+      }`
+    );
+
+    const queue = queueStore.get(msg.guild?.id as string);
+    if (queue?.current.embed) queue.current.embed.edit(updatePlayingEmbed());
+
+    this.playNext(cmdArgs);
+  }
+
+  async getSpotifyPlaylist(cmdArgs: CmdArgs): Promise<void | Message> {
+    const { msg, args } = cmdArgs;
+    const playlistId = regExps.spotify.playlist.exec(args._[0]);
+    if (!playlistId) return msg.channel.send('invalid playlist');
+
+    const playlist = await spotify.getPlaylist(playlistId[1]);
+    if (!playlist) return msg.channel.send('invalid playlist');
+    msg.channel.send('searching for videos...');
+
+    const tracks = await this.searchAllAndQueue(
+      playlist.body.tracks.items.map(
+        t => `${t.track.name} ${t.track.artists.map(a => a.name).join(' ')} topic`
+      ),
+      cmdArgs
+    );
+
+    const errors = playlist.body.tracks.items.length - tracks;
+
+    msg.channel.send(
+      `queued ${tracks} tracks from "${playlist.body.name}"${
+        errors ? ` (${errors} track${errors === 1 ? '' : 's'} could not be resolved)` : ''
+      }`
+    );
+
+    const queue = queueStore.get(msg.guild?.id as string);
+    if (queue.current.embed) queue.current.embed.edit(updatePlayingEmbed());
+
+    this.playNext(cmdArgs);
+  }
+
+  private async searchAllAndQueue(searchQueries: string[], cmdArgs: CmdArgs) {
+    const { msg } = cmdArgs;
+
+    let tracks = 0;
+    // it's very ugly but it works
+    // basically: search for 1 video for each track (awaited in parallel) and then fetch the video
+    // from the data api
+    (
+      await Promise.all(
+        (
+          await Promise.all(
+            (await Promise.all(searchQueries.map(s => ytsr.getFilters(s))))
+              .map(f => f.get('Type')?.find(o => o.name === 'Video'))
+              .map(filter => ytsr(null, { limit: 1, nextpageRef: filter?.ref as string }))
+          )
+        )
+          .map(s => s.items[0])
+          .map(search => youtube.getVideo(search.type === 'video' ? search.link : ''))
+      )
+    ).map(v => {
+      tracks++;
+      return (
+        v &&
+        this.queueTrack(
+          {
+            type: TrackType.YOUTUBE,
+            data: {
+              ...v,
+              livestream: (v.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
+            },
+            requesterId: msg.author?.id as string,
+          },
+          cmdArgs,
+          { silent: true, beginPlaying: false }
+        )
+      );
+    });
+
+    return tracks;
+  }
+
+  async getSpotifyTrack(cmdArgs: CmdArgs): Promise<void | Message> {
+    const { msg, args } = cmdArgs;
+    const trackId = regExps.spotify.track.exec(args._[0]);
+    if (!trackId) return msg.channel.send('invalid track');
+
+    const track = await spotify.getTrack(trackId[1]);
+    if (!track) return msg.channel.send('invalid track');
+
+    const filter = (
+      await ytsr.getFilters(
+        `${track.body.name} ${track.body.artists.map(a => a.name).join(' ')} topic`
+      )
+    )
+      .get('Type')
+      ?.find(o => o.name === 'Video');
+    if (!filter) return;
+
+    const search = (await ytsr(null, { limit: 1, nextpageRef: filter?.ref as string })).items[0];
+
+    const url = search.type === 'video' && search.link;
+    if (!url) return;
+
+    const video = await youtube.getVideo(url);
+    if (!video) return;
+
+    msg.channel.send(`resolved \`spotify:track:${trackId[1]} => https://youtu.be/${video.id}\``);
+
+    this.queueTrack(
+      {
+        type: TrackType.YOUTUBE,
+        data: {
+          ...video,
+          livestream: (video.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
+        },
+        requesterId: msg.author?.id as string,
+      },
+      cmdArgs
+    );
+  }
+
+  async searchYoutube(cmdArgs: CmdArgs): Promise<void | Message> {
     const {
       msg,
       args,
@@ -157,9 +310,22 @@ export class CommandPlay implements Command {
 
     try {
       const searchMessage = await msg.channel.send('loading...');
+
+      const filter = (await ytsr.getFilters(args._.join(' ')))
+        .get('Type')
+        ?.find(o => o.name === 'Video');
+
+      if (!filter) return;
+
+      const search = (await ytsr(null, { limit: 5, nextpageRef: filter?.ref as string })).items;
+
       const videos = (
         await Promise.all(
-          (await youtube.searchVideos(args._.join(' '))).map(v => youtube.getVideoByID(v.id))
+          search.flatMap(v => {
+            const url = v.type === 'video' && v.link;
+            if (!url) return [];
+            return youtube.getVideo(url);
+          })
         )
       )
         .flatMap(v => {
@@ -225,26 +391,33 @@ export class CommandPlay implements Command {
         if (!video)
           throw new Error('invalid state: video is null after selecting valid returned search');
 
-        this.queueVideo(video, cmdArgs);
+        this.queueTrack(video, cmdArgs);
       });
     } catch (err) {
-      console.error(err);
+      getLogger(LoggerType.MESSAGE, msg.id).error(err);
       return msg.channel.send(`error:\n\`\`\`\n${err}\n\`\`\``);
     }
   }
 
-  queueVideo(video: Track, cmdArgs: CmdArgs, options?: { silent?: boolean }): void {
+  async queueTrack(
+    track: Track,
+    cmdArgs: CmdArgs,
+    options?: { silent?: boolean; beginPlaying?: boolean }
+  ): Promise<void> {
     const { msg, queueStore } = cmdArgs;
 
     const queue = queueStore.get(msg.guild?.id as string);
-    queue.tracks.push(video);
+    queue.tracks.push(track);
     queue.textChannel = msg.channel as TextChannel;
-    queueStore.set(msg.guild?.id as string, queue);
 
-    if (!queue.playing) this.playVideo(cmdArgs);
+    options ??= {};
+    options.silent ??= false;
+    options.beginPlaying ??= true;
+
+    if (!queue.playing && options?.beginPlaying) this.playNext(cmdArgs);
     else if (!options?.silent) {
       msg.channel.send(
-        `added "${video.data.title}" to queue position ${
+        `added "${track.data.title}" to queue position ${
           queue.tracks.length - 1
         } (approx. ${getQueueLength(queue, { first: true, last: false })} until playing)`
       );
@@ -252,7 +425,7 @@ export class CommandPlay implements Command {
     }
   }
 
-  async playVideo(cmdArgs: CmdArgs): Promise<void> {
+  async playNext(cmdArgs: CmdArgs): Promise<void> {
     const { msg, queueStore } = cmdArgs;
 
     const queue = queueStore.get(msg.guild?.id as string);
@@ -310,7 +483,9 @@ export class CommandPlay implements Command {
       }, (durationSeconds * 1000) / sliderLength));
 
     const callback = (info: unknown) => {
-      console.info(`video "${track.data.title}" ended with info ${info}`);
+      getLogger(LoggerType.MESSAGE, msg.id).debug(
+        `video "${track.data.title}" ended with info ${info}`
+      );
 
       const queue = queueStore.get(msg.guild?.id as string);
       queue.tracks.shift();
@@ -323,7 +498,7 @@ export class CommandPlay implements Command {
 
       queueStore.set(msg.guild?.id as string, queue);
 
-      this.playVideo(cmdArgs);
+      this.playNext(cmdArgs);
     };
 
     if (track.type === TrackType.YOUTUBE) {
