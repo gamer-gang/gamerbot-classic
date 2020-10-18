@@ -12,6 +12,8 @@ RUN apt update && apt -y install yarn ffmpeg \
 WORKDIR /app
 
 COPY package.json yarn.lock ./
+COPY ./patches ./patches
+
 RUN yarn
 
 COPY . .
