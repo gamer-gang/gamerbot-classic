@@ -6,7 +6,7 @@ import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
 import { CmdArgs } from '../../types';
-import { resolvePath, urlRegExp } from '../../util';
+import { regExps, resolvePath } from '../../util';
 
 const fileRegExp = /^[A-Za-z0-9\-_]+$/;
 const gifDir = 'data/gifs';
@@ -90,7 +90,7 @@ export class CommandGif implements Command {
 
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
     if (files.includes(name)) return msg.channel.send('filename in use');
-    if (!urlRegExp.test(url)) return msg.channel.send('invalid url');
+    if (!regExps.url.test(url)) return msg.channel.send('invalid url');
 
     msg.channel.send('downloading...');
     return msg.channel.send(await this.downloadGif(name, url));

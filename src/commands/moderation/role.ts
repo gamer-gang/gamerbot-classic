@@ -3,10 +3,9 @@ import emojiRegex from 'emoji-regex';
 import yargsParser from 'yargs-parser';
 
 import { Command, CommandDocs } from '..';
-import { client } from '../..';
-import { Embed } from '../../embed';
 import { ReactionRole, RoleEmoji } from '../../entities/ReactionRole';
 import { CmdArgs } from '../../types';
+import { Embed } from '../../util';
 
 export class CommandRole implements Command {
   cmd = 'role';
@@ -37,7 +36,7 @@ export class CommandRole implements Command {
     if (!msg.guild?.members.resolve(msg.author as User)?.hasPermission('MANAGE_ROLES'))
       return msg.channel.send('you are missing `MANAGE_ROLES` permission');
 
-    if (!msg.guild?.members.resolve(client.user?.id as string)?.hasPermission('MANAGE_ROLES'))
+    if (!msg.guild?.members.resolve(msg.client.user?.id as string)?.hasPermission('MANAGE_ROLES'))
       return msg.channel.send('bot is missing `MANAGE_ROLES` permission');
 
     if (args.list) {

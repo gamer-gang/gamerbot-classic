@@ -13,7 +13,7 @@ export class CommandEz implements Command {
   cmd = 'ez';
   docs = {
     usage: 'ez',
-    description: 'ez'
+    description: 'ez',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg } = cmdArgs;

@@ -1,8 +1,8 @@
 import { Message } from 'discord.js';
 
-import { formatDuration, getQueueLength, toDurationSeconds } from '.';
-import { Embed } from '../embed';
 import { CmdArgs, Track, TrackType } from '../types';
+import { formatDuration, getQueueLength, toDurationSeconds } from '../util';
+import { Embed } from './embed';
 
 let embedCache: EmbedArgs;
 interface EmbedArgs {
@@ -43,14 +43,14 @@ export const updatePlayingEmbed = async (opts?: Partial<EmbedArgs>): Promise<voi
       track.type === TrackType.YOUTUBE && track.data.livestream
         ? 'livestream'
         : '–'.repeat(before) +
-          (playing ? '\\⚪' : '⬜') +
+          (playing ? '\\⚪' : '◻️') +
           '–'.repeat(after) +
-          ` (${formatDuration(
+          ` (~${formatDuration(
             toDurationSeconds(track.data.duration) - queue.current.secondsRemaining
           )}/${duration})`,
   })
     .setAuthor(
-      'gamerbot80: ' + (playing ? 'now playing' : 'no longer playing'),
+      'gamerbot80: ' + (playing ? 'now playing' : 'not playing'),
       'attachment://hexagon.png'
     )
     .addField('requester', `<@!${track.requesterId}>`, true)

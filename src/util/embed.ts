@@ -1,6 +1,6 @@
 import { MessageEmbed, MessageEmbedOptions } from 'discord.js';
 
-import { resolvePath } from './util';
+import { resolvePath } from '../util';
 
 export class Embed extends MessageEmbed {
   constructor(data?: MessageEmbed | MessageEmbedOptions) {

@@ -1,13 +1,11 @@
 import { Canvas } from 'canvas';
 
-import { BedwarsStats } from '../../hypixelapi';
-
 export const makeBedwarsStats = ({
   data,
   playername,
   clientTag,
 }: {
-  data: BedwarsStats;
+  data: HypixelAPI.BedwarsStats;
   playername: string;
   clientTag: string;
 }): Buffer => {

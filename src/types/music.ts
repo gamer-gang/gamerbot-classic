@@ -6,7 +6,7 @@ export enum TrackType {
   FILE,
 }
 
-export interface Video extends YTVideo {
+export interface Video extends Omit<YTVideo, 'fetch'> {
   livestream: boolean;
 }
 

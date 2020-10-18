@@ -1,9 +1,9 @@
 import { Message, MessageReaction, PartialMessage, PartialUser, User } from 'discord.js';
 
-import { client } from '..';
-import { Embed } from '../embed';
 import { ReactionRole, RoleEmoji } from '../entities/ReactionRole';
+import { client, getLogger, LoggerType } from '../providers';
 import { CmdArgs } from '../types';
+import { Embed } from '../util';
 
 type Reaction = MessageReaction;
 type MessagePart = Message | PartialMessage;
@@ -17,7 +17,7 @@ const verifyReaction = async (reaction: Reaction, user: UserPart): Promise<boole
     await reaction.fetch();
     return true;
   } catch (err) {
-    console.error('fetch error message: ', err);
+    getLogger(LoggerType.REACTION, reaction.message.id).error('fetch error message: ', err);
 
     const dm = await user.createDM();
     dm.send(

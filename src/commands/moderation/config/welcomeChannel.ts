@@ -18,8 +18,6 @@ export const welcomeChannel = async (
     return msg.channel.send('no welcome channel set');
   }
 
-  console.log(value);
-
   if (value === 'unset') {
     delete config.welcomeChannelId;
     return msg.channel.send(

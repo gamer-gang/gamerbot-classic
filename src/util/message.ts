@@ -1,6 +1,6 @@
 import { MessageOptions } from 'discord.js';
 
-import { Embed } from '../embed';
+import { Embed } from './embed';
 
 export const hasMentions = (content: string, includeSingleUser = true): boolean =>
   content.includes('@everyone') ||

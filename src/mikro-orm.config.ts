@@ -1,8 +1,10 @@
 import { MigrationObject, MikroORM } from '@mikro-orm/core';
+import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path, { basename } from 'path';
 
+import { dbLogger } from './providers';
 import { resolvePath } from './util';
 
 dotenv.config({ path: resolvePath('.env') });
@@ -50,6 +52,8 @@ export default {
   user: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   debug: process.env.NODE_ENV === 'development',
+  logger: msg => dbLogger.debug(msg),
+  highlighter: new SqlHighlighter(),
   baseDir: resolvePath('.'),
   discovery: { disableDynamicFileAccess: true },
   migrations: { migrationsList: getMigrations(), path: resolvePath('src/migrations') },

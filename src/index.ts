@@ -1,10 +1,9 @@
 import { MikroORM } from '@mikro-orm/core/MikroORM';
 import { registerFont } from 'canvas';
-import { Client, Message } from 'discord.js';
+import { Message } from 'discord.js';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import _ from 'lodash/fp';
-import YouTube from 'simple-youtube-api';
 import yargsParser from 'yargs-parser';
 
 import { commands } from './commands';
@@ -14,9 +13,8 @@ import * as reactions from './listeners/reactions';
 import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
 import mikroOrmConfig from './mikro-orm.config';
-import { GuildGames, GuildQueue } from './types';
+import { client, logger, queueStore, spotify } from './providers';
 import { dbFindOneError, resolvePath } from './util';
-import { Store } from './util/store';
 
 dotenv.config({ path: resolvePath('.env') });
 
@@ -34,26 +32,6 @@ export const setPresence = (): void => {
   });
 };
 
-export const client = new Client({
-  partials: ['MESSAGE', 'REACTION'],
-  // disableMentions: 'everyone',
-});
-export const youtube = new YouTube(process.env.YT_API_KEY as string);
-
-export const queueStore = new Store<GuildQueue>({
-  path: 'data/queue.yaml',
-  writeOnSet: false,
-  readImmediately: false,
-  dataLanguage: 'yaml',
-});
-
-export const gameStore = new Store<GuildGames>({
-  path: 'data/games.yaml',
-  writeOnSet: true,
-  readImmediately: true,
-  dataLanguage: 'yaml',
-});
-
 // register fonts for canvas
 const fonts: Record<string, { family: string; weight?: string; style?: string }> = {
   'FiraSans-Regular.ttf': { family: 'Fira Sans' },
@@ -70,6 +48,16 @@ Object.keys(fonts).forEach(filename =>
   // init db
   const orm = await MikroORM.init(mikroOrmConfig);
   await orm.getMigrator().up();
+
+  // init spotify
+  const getSpotifyAccessToken = async () => {
+    const grant = await spotify.clientCredentialsGrant();
+    logger.info(`new spotify access token granted, expires in ${grant.body.expires_in}`);
+    spotify.setAccessToken(grant.body.access_token);
+    setTimeout(getSpotifyAccessToken, grant.body.expires_in * 1000);
+  };
+
+  setTimeout(getSpotifyAccessToken, 0);
 
   client.on('message', async (msg: Message) => {
     if (msg.author.bot) return;
@@ -125,22 +113,21 @@ Object.keys(fonts).forEach(filename =>
       em: orm.em,
       config,
       queueStore,
-      gameStore,
     });
 
     orm.em.flush();
   });
 
   client.on('ready', () => {
-    console.log(`${client.user?.tag} ready`);
+    logger.info(`${client.user?.tag} ready`);
     setPresence();
     setInterval(setPresence, 1000 * 60 * 10);
   });
 
   client
-    .on('warn', console.warn)
-    .on('error', console.error)
-    .on('disconnect', () => console.log('client disconnected'))
+    .on('warn', logger.warn)
+    .on('error', logger.error)
+    .on('disconnect', () => logger.warn('client disconnected!'))
     .on('guildCreate', async guild => {
       const fresh = orm.em.create(Config, { guildId: guild.id });
       await orm.em.persistAndFlush(fresh);
@@ -156,4 +143,4 @@ Object.keys(fonts).forEach(filename =>
     .on('messageReactionAdd', reactions.onMessageReactionAdd(orm.em))
     .on('messageReactionRemove', reactions.onMessageReactionRemove(orm.em))
     .login(process.env.DISCORD_TOKEN);
-})().catch(console.error);
+})().catch(logger.error);

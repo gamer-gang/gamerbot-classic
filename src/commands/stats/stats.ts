@@ -5,9 +5,9 @@ import _ from 'lodash';
 import yargsParser from 'yargs-parser';
 
 import { Command, CommandDocs } from '..';
-import { client } from '../..';
-import { Embed } from '../../embed';
+import { client } from '../../providers';
 import { CmdArgs } from '../../types';
+import { Embed } from '../../util';
 import { makeBedwarsStats } from './bedwars';
 
 const uuidRegex = /^\b[0-9a-f]{8}\b-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?\b[0-9a-f]{12}\b$/i;

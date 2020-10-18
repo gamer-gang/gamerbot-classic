@@ -1,9 +1,8 @@
 import { Message, MessageReaction, User } from 'discord.js';
 
-import { Embed } from '../../../embed';
 import { Config } from '../../../entities/Config';
 import { CmdArgs } from '../../../types';
-import { parseDiscohookJSON } from '../../../util';
+import { Embed, parseDiscohookJSON } from '../../../util';
 
 export const welcomeMessage = async (
   config: Config,

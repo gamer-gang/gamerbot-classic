@@ -3,8 +3,7 @@ import Discord from 'discord.js';
 import yargsParser from 'yargs-parser';
 
 import { Config } from '../entities/Config';
-import { Store } from '../util/store';
-import { GuildGames } from './games';
+import { Store } from '../util';
 import { GuildQueue } from './music';
 
 export * from './economy';
@@ -17,6 +16,5 @@ export interface CmdArgs {
   cmd: string;
   config: Config;
   queueStore: Store<GuildQueue>;
-  gameStore: Store<GuildGames>;
   em: EntityManager<IDatabaseDriver<Connection>>;
 }

@@ -1,7 +1,6 @@
 import { Message } from 'discord.js';
 
 import { Command, CommandDocs } from '..';
-import { client } from '../..';
 import { CmdArgs } from '../../types';
 
 export class CommandBan implements Command {
@@ -17,7 +16,7 @@ export class CommandBan implements Command {
 
     if (args.length === 0) return msg.channel.send('expected at least 1 arg');
 
-    if (!msg.guild?.members.resolve(client.user?.id as string)?.hasPermission('BAN_MEMBERS'))
+    if (!msg.guild?.me?.hasPermission('BAN_MEMBERS'))
       return msg.channel.send('bot is missing `BAN_MEMBERS` permission');
 
     try {
