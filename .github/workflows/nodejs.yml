@@ -1,14 +1,11 @@
 name: webpack
 
-on:
-  push:
-    branches: [master]
-  pull_request:
-    branches: [master]
+on: [push]
 
 jobs:
   build:
     name: Build
+    if: "!contains(github.event.commits[0].message, '[ci skip]')"
     runs-on: ubuntu-latest
 
     strategy:
