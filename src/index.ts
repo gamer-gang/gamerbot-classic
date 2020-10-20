@@ -87,6 +87,10 @@ Object.keys(fonts).forEach(filename =>
 
     eggs.onMessage(msg, config)();
 
+	  if(msg.content.toLowerCase().includes(":dusted:")){
+		  msg.react('💯');
+  	}
+
     if (!msg.content.startsWith(config.prefix)) return;
 
     const [cmd, ...argv] = msg.content.slice(config.prefix.length).replace(/ +/g, ' ').split(' ');
