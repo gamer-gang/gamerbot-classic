@@ -14,8 +14,8 @@ export const regExps = {
   },
   spotify: {
     // https://open.spotify.com/<track|playlist|album>/<id>
-    playlist: /^(?:https?:\/\/open.spotify.com\/playlist\/|spotify:playlist:)([a-zA-Z0-9]+).*$/,
-    album: /^(?:https?:\/\/open.spotify.com\/album\/|spotify:album:)([a-zA-Z0-9]+).*$/,
-    track: /^(?:https?:\/\/open.spotify.com\/track\/|spotify:track:)([a-zA-Z0-9]+).*$/,
+    playlist: /^(?:https?:\/\/open\.spotify\.com\/playlist\/|spotify:playlist:)([a-zA-Z0-9]+).*$/,
+    album: /^(?:https?:\/\/open\.spotify\.com\/album\/|spotify:album:)([a-zA-Z0-9]+).*$/,
+    track: /^(?:https?:\/\/open\.spotify\.com\/track\/|spotify:track:)([a-zA-Z0-9]+).*$/,
   },
 };
