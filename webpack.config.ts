@@ -29,7 +29,7 @@ export default <webpack.Configuration>{
     symlinks: false,
   },
   plugins: [
-    ...(process.env.DOCKER ? [] : [new ProgressPlugin({})]),
+    ...(process.env.DOCKER || process.env.CI ? [] : [new ProgressPlugin({})]),
     ...(process.env.NODEMON ? [new NodemonPlugin()] : []),
     new EnvironmentPlugin({ WEBPACK: true }),
     new ForkTsCheckerPlugin({
