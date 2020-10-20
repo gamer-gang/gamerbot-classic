@@ -5,7 +5,7 @@ on: [push]
 jobs:
   build:
     name: Build
-    if: "!contains(github.event.commits[0].message, '[ci skip]')"
+    if: github.event_name == 'push' && contains(toJson(github.event.commits), '***NO_CI***') == false && contains(toJson(github.event.commits), '[ci skip]') == false && contains(toJson(github.event.commits), '[skip ci]') == false
     runs-on: ubuntu-latest
 
     strategy:
