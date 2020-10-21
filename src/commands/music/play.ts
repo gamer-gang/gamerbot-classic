@@ -5,8 +5,8 @@ import miniget from 'miniget';
 import moment from 'moment';
 import * as mm from 'music-metadata';
 import { Duration } from 'simple-youtube-api';
+import yts from 'yt-search';
 import ytdl from 'ytdl-core';
-import ytsr from 'ytsr';
 
 import { Command, CommandDocs } from '..';
 import { client, getLogger, LoggerType, queueStore, spotify, youtube } from '../../providers';
@@ -171,10 +171,12 @@ export class CommandPlay implements Command {
     if (!album) return msg.channel.send('invalid album');
     msg.channel.send('searching for videos...');
 
-    const tracks = await this.searchAllAndQueue(
-      album.body.tracks.items.map(t => `${t.name} ${t.artists.map(a => a.name).join(' ')} topic`),
-      cmdArgs
-    );
+    const tracks = (
+      await this.searchAllAndQueue(
+        album.body.tracks.items.map(t => `${t.name} ${t.artists.map(a => a.name).join(' ')} topic`),
+        cmdArgs
+      )
+    ).length;
 
     const errors = album.body.tracks.items.length - tracks;
 
@@ -199,12 +201,14 @@ export class CommandPlay implements Command {
     if (!playlist) return msg.channel.send('invalid playlist');
     msg.channel.send('searching for videos...');
 
-    const tracks = await this.searchAllAndQueue(
-      playlist.body.tracks.items.map(
-        t => `${t.track.name} ${t.track.artists.map(a => a.name).join(' ')} topic`
-      ),
-      cmdArgs
-    );
+    const tracks = (
+      await this.searchAllAndQueue(
+        playlist.body.tracks.items.map(
+          t => `${t.track.name} ${t.track.artists.map(a => a.name).join(' ')} topic`
+        ),
+        cmdArgs
+      )
+    ).length;
 
     const errors = playlist.body.tracks.items.length - tracks;
 
@@ -223,39 +227,36 @@ export class CommandPlay implements Command {
   private async searchAllAndQueue(searchQueries: string[], cmdArgs: CmdArgs) {
     const { msg } = cmdArgs;
 
-    let tracks = 0;
-    // it's very ugly but it works
+    const tracks: Track[] = [];
+
     // basically: search for 1 video for each track (awaited in parallel) and then fetch the video
     // from the data api
     (
       await Promise.all(
-        (
-          await Promise.all(
-            (await Promise.all(searchQueries.map(s => ytsr.getFilters(s))))
-              .map(f => f.get('Type')?.find(o => o.name === 'Video'))
-              .map(filter => ytsr(null, { limit: 1, nextpageRef: filter?.ref as string }))
-          )
-        )
-          .map(s => s.items[0])
-          .map(search => youtube.getVideo(search.type === 'video' ? search.link : ''))
+        (await Promise.all(searchQueries.map(s => yts(s))))
+          .flatMap(s => {
+            if (!s.videos.length) {
+              msg.channel.send(`could'nt find any youtube results for "${s}"`);
+              return [];
+            }
+            return s.videos[0];
+          })
+          .map(video => youtube.getVideo(video.url))
       )
     ).map(v => {
-      tracks++;
-      return (
-        v &&
-        this.queueTrack(
-          {
-            type: TrackType.YOUTUBE,
-            data: {
-              ...v,
-              livestream: (v.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
-            },
-            requesterId: msg.author?.id as string,
-          },
-          cmdArgs,
-          { silent: true, beginPlaying: false }
-        )
-      );
+      if (!v) return;
+      tracks.push({
+        type: TrackType.YOUTUBE,
+        data: {
+          ...v,
+          livestream: (v.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
+        },
+        requesterId: msg.author?.id as string,
+      });
+      return this.queueTrack(tracks[tracks.length - 1], cmdArgs, {
+        silent: true,
+        beginPlaying: false,
+      });
     });
 
     return tracks;
@@ -269,36 +270,17 @@ export class CommandPlay implements Command {
     const track = await spotify.getTrack(trackId[1]);
     if (!track) return msg.channel.send('invalid track');
 
-    const filter = (
-      await ytsr.getFilters(
-        `${track.body.name} ${track.body.artists.map(a => a.name).join(' ')} topic`
-      )
-    )
-      .get('Type')
-      ?.find(o => o.name === 'Video');
-    if (!filter) return;
+    const searchString = `${track.body.name} ${track.body.artists
+      .map(a => a.name)
+      .join(' ')} topic`;
+    const search = await yts(searchString);
 
-    const search = (await ytsr(null, { limit: 1, nextpageRef: filter?.ref as string })).items[0];
+    if (!search.videos)
+      return msg.channel.send(`couldnt find any youtube results for "${searchString}"`);
 
-    const url = search.type === 'video' && search.link;
-    if (!url) return;
+    const video = await youtube.getVideo(search.videos[0].url);
 
-    const video = await youtube.getVideo(url);
-    if (!video) return;
-
-    msg.channel.send(`resolved \`spotify:track:${trackId[1]} => https://youtu.be/${video.id}\``);
-
-    this.queueTrack(
-      {
-        type: TrackType.YOUTUBE,
-        data: {
-          ...video,
-          livestream: (video.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
-        },
-        requesterId: msg.author?.id as string,
-      },
-      cmdArgs
-    );
+    msg.channel.send(`resolved \`spotify:track:${trackId[1]} => https://youtu.be/${video?.id}\``);
   }
 
   async searchYoutube(cmdArgs: CmdArgs): Promise<void | Message> {
@@ -311,22 +293,10 @@ export class CommandPlay implements Command {
     try {
       const searchMessage = await msg.channel.send('loading...');
 
-      const filter = (await ytsr.getFilters(args._.join(' ')))
-        .get('Type')
-        ?.find(o => o.name === 'Video');
-
-      if (!filter) return;
-
-      const search = (await ytsr(null, { limit: 5, nextpageRef: filter?.ref as string })).items;
+      const search = await yts(args._.join(' '));
 
       const videos = (
-        await Promise.all(
-          search.flatMap(v => {
-            const url = v.type === 'video' && v.link;
-            if (!url) return [];
-            return youtube.getVideo(url);
-          })
-        )
+        await Promise.all(search.videos.slice(0, 5).map(v => youtube.getVideo(v.url)))
       )
         .flatMap(v => {
           if (!v) return [];

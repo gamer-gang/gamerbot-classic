@@ -11,8 +11,7 @@
     "watch": "cross-env NODE_ENV=development webpack --watch",
     "build:dev": "cross-env NODE_ENV=development webpack",
     "build:prod": "cross-env NODE_ENV=production webpack",
-    "start:prod": "cross-env NODE_ENV=production node ./dist/main.js",
-    "postinstall": "patch-package"
+    "start:prod": "cross-env NODE_ENV=production node ./dist/main.js"
   },
   "mikro-orm": {
     "useTsNode": true,
@@ -57,8 +56,9 @@
     "utf-8-validate": "^5.0.2",
     "uuid": "^8.3.1",
     "yargs-parser": "^20.2.3",
+    "yt-search": "^2.3.3",
     "ytdl-core": "^3.4.1",
-    "ytsr": "^1.0.4",
+    "ytsr": "github:TimeForANinja/node-ytsr#wip-api-adjustments",
     "zlib-sync": "^0.1.7"
   },
   "devDependencies": {
@@ -78,6 +78,7 @@
     "@types/webpack-env": "^1.15.3",
     "@types/webpack-node-externals": "^2.5.0",
     "@types/yargs-parser": "^15.0.0",
+    "@types/yt-search": "^2.3.0",
     "@typescript-eslint/eslint-plugin": "4.4.2-alpha.1",
     "@typescript-eslint/parser": "4.4.2-alpha.1",
     "concurrently": "^5.3.0",

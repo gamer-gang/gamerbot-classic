@@ -24,10 +24,9 @@ export class CommandStop implements Command {
       queue.tracks = [];
       queueStore.set(msg.guild?.id as string, queue);
       queue.voiceConnection?.dispatcher?.end('stop command');
+      return msg.channel.send('stopped');
     } catch (err) {
       return msg.channel.send(`error: \n\`\`\`\n${err.stack}\n\`\`\``);
     }
-
-    return msg.channel.send('stopped');
   }
 }
