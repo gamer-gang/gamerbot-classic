@@ -14,7 +14,7 @@ export class CommandBan implements Command {
     if (!msg.guild?.members.resolve(msg.author?.id as string)?.hasPermission('BAN_MEMBERS'))
       return msg.channel.send('you are missing `BAN_MEMBERS` permission');
 
-    if (args.length === 0) return msg.channel.send('expected at least 1 arg');
+    if (args._.length === 0) return msg.channel.send('expected at least 1 arg');
 
     if (!msg.guild?.me?.hasPermission('BAN_MEMBERS'))
       return msg.channel.send('bot is missing `BAN_MEMBERS` permission');

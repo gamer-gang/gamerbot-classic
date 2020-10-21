@@ -60,7 +60,7 @@ export class CommandRole implements Command {
       return;
     }
 
-    if (args.length < 1)
+    if (args._.length < 1)
       return msg.channel.send(`expected at least 1 arg \nusage: \`${this.docs[0].usage}\``);
 
     const embed = new Embed().setTitle('roles');

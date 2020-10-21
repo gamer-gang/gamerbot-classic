@@ -24,7 +24,7 @@ export class CommandStats implements Command {
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args } = cmdArgs;
-    if (args.length !== 1 && args.length !== 2) return msg.channel.send('expected 1 or 2 args');
+    if (args._.length !== 1 && args._.length !== 2) return msg.channel.send('expected 1 or 2 args');
 
     const isUuid = uuidRegex.test(args._[0]);
     let uuid = isUuid ? args._[0].replace('-', '') : uuidCache[args._[0]];
@@ -63,7 +63,7 @@ export class CommandStats implements Command {
     return this.sendData({
       channel: msg.channel as TextChannel,
       playerData: _.cloneDeep(statsCache[uuid]),
-      type: args[1],
+      type: args._[1],
       cmdArgs,
     });
   }
