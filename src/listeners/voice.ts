@@ -17,7 +17,7 @@ export const onVoiceStateUpdate = () => (oldState: VoiceState, newState: VoiceSt
         delete queue.voiceConnection;
         delete queue.textChannel;
         delete queue.current.embed;
-        delete queue.current.embedInterval;
+        // delete queue.current.embedInterval;
         queue.tracks = [];
         queue.playing = false;
       });

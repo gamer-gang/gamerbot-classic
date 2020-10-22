@@ -4,21 +4,13 @@ import _ from 'lodash';
 import miniget from 'miniget';
 import moment from 'moment';
 import * as mm from 'music-metadata';
-import { Duration } from 'simple-youtube-api';
 import yts from 'yt-search';
 import ytdl from 'ytdl-core';
 
 import { Command, CommandDocs } from '..';
 import { client, getLogger, LoggerType, queueStore, spotify, youtube } from '../../providers';
 import { CmdArgs, Track, TrackType } from '../../types';
-import {
-  Embed,
-  formatDuration,
-  getQueueLength,
-  regExps,
-  toDurationSeconds,
-  updatePlayingEmbed,
-} from '../../util';
+import { Embed, formatDuration, getQueueLength, regExps, updatePlayingEmbed } from '../../util';
 
 export class CommandPlay implements Command {
   cmd = ['play', 'p'];
@@ -66,7 +58,7 @@ export class CommandPlay implements Command {
               },
             },
           } as Track,
-          cmdArgs
+          { cmdArgs }
         );
 
         return;
@@ -112,8 +104,7 @@ export class CommandPlay implements Command {
               },
               requesterId: msg.author?.id,
             } as Track,
-            cmdArgs,
-            { silent: true, beginPlaying: false }
+            { cmdArgs, silent: true, beginPlaying: false }
           )
       );
 
@@ -151,7 +142,7 @@ export class CommandPlay implements Command {
           requesterId: msg.author?.id as string,
           type: TrackType.YOUTUBE,
         } as Track,
-        cmdArgs
+        { cmdArgs }
       );
     } catch (err) {
       getLogger(LoggerType.MESSAGE, msg.id).error(err);
@@ -171,20 +162,27 @@ export class CommandPlay implements Command {
     if (!album) return msg.channel.send('invalid album');
     msg.channel.send('searching for videos...');
 
-    const tracks = (
-      await this.searchAllAndQueue(
-        album.body.tracks.items.map(t => `${t.name} ${t.artists.map(a => a.name).join(' ')} topic`),
-        cmdArgs
-      )
-    ).length;
-
-    const errors = album.body.tracks.items.length - tracks;
-
-    msg.channel.send(
-      `queued ${tracks} tracks from "${album.body.name}"${
-        errors ? ` (${errors} track${errors === 1 ? '' : 's'} could not be resolved)` : ''
-      }`
-    );
+    for (const { name, artists, duration_ms, id } of album.body.tracks.items) {
+      const duration = moment.duration(duration_ms, 'ms');
+      this.queueTrack(
+        {
+          type: TrackType.SPOTIFY,
+          data: {
+            title: name,
+            cover: album.body.images[0],
+            artists,
+            duration: {
+              hours: duration.hours(),
+              minutes: duration.minutes(),
+              seconds: duration.seconds(),
+            },
+            id,
+          },
+          requesterId: msg.author?.id as string,
+        },
+        { cmdArgs, silent: true, beginPlaying: false }
+      );
+    }
 
     const queue = queueStore.get(msg.guild?.id as string);
     if (queue?.current.embed) queue.current.embed.edit(updatePlayingEmbed());
@@ -201,65 +199,42 @@ export class CommandPlay implements Command {
     if (!playlist) return msg.channel.send('invalid playlist');
     msg.channel.send('searching for videos...');
 
-    const tracks = (
-      await this.searchAllAndQueue(
-        playlist.body.tracks.items.map(
-          t => `${t.track.name} ${t.track.artists.map(a => a.name).join(' ')} topic`
-        ),
-        cmdArgs
-      )
-    ).length;
-
-    const errors = playlist.body.tracks.items.length - tracks;
+    for (const {
+      track: { name, artists, duration_ms, id, album },
+    } of playlist.body.tracks.items) {
+      const duration = moment.duration(duration_ms, 'ms');
+      this.queueTrack(
+        {
+          type: TrackType.SPOTIFY,
+          data: {
+            title: name,
+            cover: album.images[0],
+            artists,
+            duration: {
+              hours: duration.hours(),
+              minutes: duration.minutes(),
+              seconds: duration.seconds(),
+            },
+            id,
+          },
+          requesterId: msg.author?.id as string,
+        },
+        {
+          cmdArgs,
+          silent: true,
+          beginPlaying: false,
+        }
+      );
+    }
 
     msg.channel.send(
-      `queued ${tracks} tracks from "${playlist.body.name}"${
-        errors ? ` (${errors} track${errors === 1 ? '' : 's'} could not be resolved)` : ''
-      }`
+      `queued ${playlist.body.tracks.items.length} tracks from "${playlist.body.name}"`
     );
 
     const queue = queueStore.get(msg.guild?.id as string);
-    if (queue.current.embed) queue.current.embed.edit(updatePlayingEmbed());
+    queue.current.embed && queue.current.embed.edit(updatePlayingEmbed());
 
-    this.playNext(cmdArgs);
-  }
-
-  private async searchAllAndQueue(searchQueries: string[], cmdArgs: CmdArgs) {
-    const { msg } = cmdArgs;
-
-    const tracks: Track[] = [];
-
-    // basically: search for 1 video for each track (awaited in parallel) and then fetch the video
-    // from the data api
-    (
-      await Promise.all(
-        (await Promise.all(searchQueries.map(s => yts(s))))
-          .flatMap(s => {
-            if (!s.videos.length) {
-              msg.channel.send(`could'nt find any youtube results for "${s}"`);
-              return [];
-            }
-            return s.videos[0];
-          })
-          .map(video => youtube.getVideo(video.url))
-      )
-    ).map(v => {
-      if (!v) return;
-      tracks.push({
-        type: TrackType.YOUTUBE,
-        data: {
-          ...v,
-          livestream: (v.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
-        },
-        requesterId: msg.author?.id as string,
-      });
-      return this.queueTrack(tracks[tracks.length - 1], cmdArgs, {
-        silent: true,
-        beginPlaying: false,
-      });
-    });
-
-    return tracks;
+    !queue.playing && this.playNext(cmdArgs);
   }
 
   async getSpotifyTrack(cmdArgs: CmdArgs): Promise<void | Message> {
@@ -270,17 +245,39 @@ export class CommandPlay implements Command {
     const track = await spotify.getTrack(trackId[1]);
     if (!track) return msg.channel.send('invalid track');
 
-    const searchString = `${track.body.name} ${track.body.artists
-      .map(a => a.name)
-      .join(' ')} topic`;
-    const search = await yts(searchString);
+    // const searchString = `${track.body.name} ${track.body.artists
+    //   .map(a => a.name)
+    //   .join(' ')} topic`;
+    // const search = await yts(searchString);
 
-    if (!search.videos)
-      return msg.channel.send(`couldnt find any youtube results for "${searchString}"`);
+    // if (!search.videos)
+    //   return msg.channel.send(`couldnt find any youtube results for "${searchString}"`);
 
-    const video = await youtube.getVideo(search.videos[0].url);
+    // const video = await youtube.getVideo(search.videos[0].url);
+    // if (!video) return msg.channel.send(`couldnt find any youtube results for "${searchString}"`);
 
-    msg.channel.send(`resolved \`spotify:track:${trackId[1]} => https://youtu.be/${video?.id}\``);
+    // msg.channel.send(`resolved \`spotify:track:${trackId[1]} => https://youtu.be/${video?.id}\``);
+
+    const duration = moment.duration(track.body.duration_ms, 'ms');
+
+    this.queueTrack(
+      {
+        type: TrackType.SPOTIFY,
+        data: {
+          title: track.body.name,
+          cover: track.body.album.images[0],
+          artists: track.body.artists,
+          id: track.body.id,
+          duration: {
+            hours: duration.hours(),
+            minutes: duration.minutes(),
+            seconds: duration.seconds(),
+          },
+        },
+        requesterId: msg.author?.id as string,
+      },
+      { cmdArgs }
+    );
   }
 
   async searchYoutube(cmdArgs: CmdArgs): Promise<void | Message> {
@@ -361,7 +358,7 @@ export class CommandPlay implements Command {
         if (!video)
           throw new Error('invalid state: video is null after selecting valid returned search');
 
-        this.queueTrack(video, cmdArgs);
+        this.queueTrack(video, { cmdArgs });
       });
     } catch (err) {
       getLogger(LoggerType.MESSAGE, msg.id).error(err);
@@ -371,42 +368,43 @@ export class CommandPlay implements Command {
 
   async queueTrack(
     track: Track,
-    cmdArgs: CmdArgs,
-    options?: { silent?: boolean; beginPlaying?: boolean }
+    options: { cmdArgs: CmdArgs; silent?: boolean; beginPlaying?: boolean }
   ): Promise<void> {
-    const { msg, queueStore } = cmdArgs;
+    const { msg, queueStore } = options.cmdArgs;
 
     const queue = queueStore.get(msg.guild?.id as string);
     queue.tracks.push(track);
     queue.textChannel = msg.channel as TextChannel;
 
-    options ??= {};
-    options.silent ??= false;
-    options.beginPlaying ??= true;
-
-    if (!queue.playing && options?.beginPlaying) this.playNext(cmdArgs);
-    else if (!options?.silent) {
+    if (!queue.playing && (options?.beginPlaying ?? true)) this.playNext(options.cmdArgs);
+    else if (!(options?.silent ?? false)) {
       msg.channel.send(
-        `added "${track.data.title}" to queue position ${
-          queue.tracks.length - 1
-        } (approx. ${getQueueLength(queue, { first: true, last: false })} until playing)`
+        new Embed({
+          noAuthor: true,
+          description: `[${track.data.title}](${
+            track.type === TrackType.SPOTIFY
+              ? 'https://open.spotify.com/track/' + track.data.id
+              : track.data.url
+          }) queued (#${queue.tracks.length - 1} in queue, approx. ${getQueueLength(queue, {
+            first: true,
+            last: false,
+          })} until playing)`,
+        })
       );
       updatePlayingEmbed();
     }
   }
 
-  async playNext(cmdArgs: CmdArgs): Promise<void> {
+  async playNext(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, queueStore } = cmdArgs;
 
     const queue = queueStore.get(msg.guild?.id as string);
-
-    let connection = queue.voiceConnection;
 
     const track = queue.tracks[0];
 
     if (!track) {
       // no more in queue
-      connection?.disconnect();
+      queue.voiceConnection?.disconnect();
       queue.playing = false;
       queueStore.set(msg.guild?.id as string, queue);
       return;
@@ -414,47 +412,23 @@ export class CommandPlay implements Command {
 
     if (!queue.playing) {
       const voice = msg.member?.voice as VoiceState;
-      await voice.setSelfDeaf(true);
 
       queue.voiceChannel = voice.channel as VoiceChannel;
-      connection = await queue.voiceChannel.join();
-      queue.voiceConnection = connection;
+      queue.voiceConnection = await queue.voiceChannel.join();
+      await queue.voiceConnection?.voice.setSelfDeaf(true);
       queue.playing = true;
       queueStore.set(msg.guild?.id as string, queue);
     }
 
-    queue.current.embed ??= await msg.channel.send(new Embed({ title: 'loading...' }));
+    queue.current.embed ??= await msg.channel.send(
+      new Embed({ noAuthor: true, description: 'loading...' })
+    );
 
-    const durationSeconds = toDurationSeconds(track.data.duration as Duration);
-    const sliderLength = Math.min(Math.ceil(durationSeconds / 6) + 1, 40);
-
-    let thumbPosition = 0;
-
-    updatePlayingEmbed({
-      track: track,
-      thumbPosition,
-      sliderLength,
-      cmdArgs,
-      playing: true,
-    });
-
-    ((track.type === TrackType.YOUTUBE && !track.data.livestream) ||
-      track.type === TrackType.FILE) &&
-      (queue.current.embedInterval = setInterval(() => {
-        thumbPosition++;
-        if (thumbPosition > sliderLength - 1) {
-          updatePlayingEmbed({ playing: false, thumbPosition: sliderLength });
-          queue.current.embed = undefined;
-
-          clearInterval(queue.current.embedInterval as NodeJS.Timeout);
-          delete queue.current.embedInterval;
-        }
-        updatePlayingEmbed({ thumbPosition });
-      }, (durationSeconds * 1000) / sliderLength));
+    updatePlayingEmbed({ track, cmdArgs, playing: true });
 
     const callback = (info: unknown) => {
       getLogger(LoggerType.MESSAGE, msg.id).debug(
-        `video "${track.data.title}" ended with info ${info}`
+        `video "${track.data.title}" ended with info "${info}"`
       );
 
       const queue = queueStore.get(msg.guild?.id as string);
@@ -463,18 +437,37 @@ export class CommandPlay implements Command {
       updatePlayingEmbed({ playing: false });
       delete queue.current.embed;
 
-      clearInterval(queue.current.embedInterval as NodeJS.Timeout);
-      delete queue.current.embedInterval;
-
-      queueStore.set(msg.guild?.id as string, queue);
-
       this.playNext(cmdArgs);
     };
 
-    if (track.type === TrackType.YOUTUBE) {
-      connection?.play(ytdl(track.data.id)).on('finish', callback);
-    } else {
-      connection?.play(track.data.url).on('finish', callback);
+    switch (track.type) {
+      case TrackType.YOUTUBE:
+        queue.voiceConnection?.play(ytdl(track.data.id)).on('finish', callback);
+        break;
+      case TrackType.FILE:
+        queue.voiceConnection?.play(track.data.url).on('finish', callback);
+        break;
+      case TrackType.SPOTIFY: {
+        const error = () => {
+          queue.current.embed?.edit(
+            new Embed({
+              noAuthor: true,
+              title: `could not play [${track.data.title}](${track.data.id})`,
+              description: '',
+            })
+          );
+          return callback('no track found for ' + track.data.id);
+        };
+
+        const search = await yts(
+          `${track.data.title} ${track.data.artists.map(a => a.name).join(' ')} topic`
+        );
+        if (!search.videos.length) return error();
+        const video = await youtube.getVideo(search.videos[0].url);
+        if (!video) return error();
+
+        queue.voiceConnection?.play(ytdl(video.id)).on('finish', callback);
+      }
     }
   }
 }

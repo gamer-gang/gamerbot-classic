@@ -67,9 +67,7 @@ Object.keys(fonts).forEach(filename =>
     queueStore.setIfUnset(msg.guild?.id as string, {
       tracks: [],
       playing: false,
-      current: {
-        secondsRemaining: 0,
-      },
+      current: {},
     });
 
     const config = await (async () => {

@@ -1,34 +1,50 @@
 import { Message, TextChannel, VoiceChannel, VoiceConnection } from 'discord.js';
-import { Duration, Video as YTVideo } from 'simple-youtube-api';
+import { Duration, Video } from 'simple-youtube-api';
 
 export enum TrackType {
   YOUTUBE,
   FILE,
+  SPOTIFY,
 }
 
-export interface Video extends Omit<YTVideo, 'fetch'> {
+export type BaseTrack = {
+  requesterId: string;
+};
+
+export interface YoutubeTrack extends BaseTrack {
+  type: TrackType.YOUTUBE;
+  data: YoutubeTrackData;
+}
+
+export interface YoutubeTrackData extends Omit<Video, 'fetch'> {
   livestream: boolean;
 }
 
-export interface URLAudio {
+export interface FileTrack extends BaseTrack {
+  type: TrackType.FILE;
+  data: FileTrackData;
+}
+
+export interface FileTrackData {
   url: string;
   title: string;
   duration: Duration;
 }
 
-export type VideoTrack = {
-  type: TrackType.YOUTUBE;
-  data: Video;
-};
+export interface SpotifyTrack extends BaseTrack {
+  type: TrackType.SPOTIFY;
+  data: SpotifyTrackData;
+}
 
-export type URLTrack = {
-  type: TrackType.FILE;
-  data: URLAudio;
-};
+export interface SpotifyTrackData {
+  title: string;
+  artists: (SpotifyApi.ArtistObjectSimplified | SpotifyApi.ArtistObjectFull)[];
+  id: string;
+  cover: SpotifyApi.ImageObject;
+  duration: Duration;
+}
 
-export type Track = (VideoTrack | URLTrack) & {
-  requesterId: string;
-};
+export type Track = YoutubeTrack | FileTrack | SpotifyTrack;
 
 export interface GuildQueue {
   tracks: Track[];
@@ -37,7 +53,7 @@ export interface GuildQueue {
   voiceConnection?: VoiceConnection;
   playing: boolean;
   current: {
-    secondsRemaining: number;
+    // secondsRemaining: number;
     startTime?: Date;
     pauseTime?: Date;
     embed?: Message;

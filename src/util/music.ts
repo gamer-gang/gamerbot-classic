@@ -8,8 +8,6 @@ let embedCache: EmbedArgs;
 interface EmbedArgs {
   playing: boolean;
   track: Track;
-  thumbPosition: number;
-  sliderLength: number;
   cmdArgs: CmdArgs;
 }
 
@@ -18,12 +16,10 @@ export const updatePlayingEmbed = async (opts?: Partial<EmbedArgs>): Promise<voi
   embedCache = {
     playing: opts?.playing ?? embedCache?.playing,
     cmdArgs: opts?.cmdArgs ?? embedCache?.cmdArgs,
-    sliderLength: opts?.sliderLength ?? embedCache?.sliderLength,
-    thumbPosition: opts?.thumbPosition ?? embedCache?.thumbPosition,
     track: opts?.track ?? embedCache?.track,
   };
 
-  const { track, thumbPosition, sliderLength, cmdArgs, playing } = embedCache;
+  const { track, cmdArgs, playing } = embedCache;
 
   const { queueStore, msg } = cmdArgs;
 
@@ -32,25 +28,21 @@ export const updatePlayingEmbed = async (opts?: Partial<EmbedArgs>): Promise<voi
   const seconds = toDurationSeconds(track.data.duration);
   const duration = formatDuration(seconds);
 
-  queue.current.secondsRemaining = seconds - (thumbPosition / sliderLength) * seconds;
-
-  const before = Math.max(thumbPosition, 0);
-  const after = Math.max(sliderLength - (thumbPosition + 1), 0);
+  // queue.current.secondsRemaining = seconds - (thumbPosition / sliderLength) * seconds;
 
   const embed = new Embed({
     title: track.data.title,
     description:
-      track.type === TrackType.YOUTUBE && track.data.livestream
-        ? 'livestream'
-        : '–'.repeat(before) +
-          (playing ? '\\⚪' : '◻️') +
-          '–'.repeat(after) +
-          ` (~${formatDuration(
-            toDurationSeconds(track.data.duration) - queue.current.secondsRemaining
-          )}/${duration})`,
+      track.type === TrackType.SPOTIFY
+        ? 'spotify'
+        : track.type === TrackType.YOUTUBE
+        ? track.data.livestream
+          ? 'youtube livestream'
+          : 'youtube'
+        : 'file',
   })
     .setAuthor(
-      'gamerbot80: ' + (playing ? 'now playing' : 'not playing'),
+      playing ? 'now playing' : 'not playing',
       'attachment://hexagon.png'
     )
     .addField('requester', `<@!${track.requesterId}>`, true)
@@ -61,6 +53,12 @@ export const updatePlayingEmbed = async (opts?: Partial<EmbedArgs>): Promise<voi
       .setThumbnail(track.data.thumbnails.maxres.url)
       .setURL(`https://youtu.be/${track.data.id}`)
       .addField('channel', track.data.channel.title, true);
+
+  track.type === TrackType.SPOTIFY &&
+    embed
+      .setThumbnail(track.data.cover.url)
+      .setURL(`https://open.spotify.com/track/${track.data.id}`)
+      .addField('artist', track.data.artists.map(a => a.name).join(', '), true);
 
   if (queue.current.embed) return queue.current.embed?.edit(embed);
   else return;

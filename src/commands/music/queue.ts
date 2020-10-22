@@ -4,7 +4,7 @@ import yargsParser from 'yargs-parser';
 
 import { Command, CommandDocs } from '..';
 import { CmdArgs, Track, TrackType } from '../../types';
-import { formatDuration, getQueueLength } from '../../util';
+import { formatDuration, getCurrentSecondsRemaining, getQueueLength } from '../../util';
 
 export class CommandQueue implements Command {
   cmd = ['queue', 'q'];
@@ -77,8 +77,8 @@ export class CommandQueue implements Command {
         `now playing: ${_.unescape(nowPlaying?.data.title)} (${
           nowPlaying?.type === TrackType.YOUTUBE && nowPlaying?.data.livestream
             ? 'livestream'
-            : formatDuration(queue.current.secondsRemaining) + ' remaining'
-        })${queue.voiceConnection?.dispatcher.paused ? ' (paused)' : ''}\n` +
+            : formatDuration(getCurrentSecondsRemaining(queue)) + ' remaining'
+        }${queue.voiceConnection?.dispatcher.paused ? ', paused' : ''})\n` +
         queueString
     );
   }

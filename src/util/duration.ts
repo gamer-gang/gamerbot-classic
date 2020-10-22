@@ -40,6 +40,17 @@ export const toDurationSeconds = (duration: Duration): number => {
   return (hours ?? 0) * 60 * 60 + (minutes ?? 0) * 60 + (seconds ?? 0);
 };
 
+export const getCurrentSecondsRemaining = (queue: GuildQueue): number => {
+  if (!queue.playing || !queue.voiceConnection?.dispatcher) return 0;
+  return (
+    toDurationSeconds(queue.tracks[0].data.duration) -
+    Math.floor(
+      queue.voiceConnection.dispatcher.totalStreamTime - queue.voiceConnection.dispatcher.pausedTime
+    ) /
+      1000
+  );
+};
+
 export const getQueueLength = (
   queue: GuildQueue,
   include?: { first?: boolean; last?: boolean }
@@ -52,9 +63,7 @@ export const getQueueLength = (
     _.drop(tracks, 1)
       .map(t => toDurationSeconds(t.data.duration as Duration))
       .reduce((a, b) => a + Math.round(b), 0) +
-    (include?.first ?? false ? queue.current.secondsRemaining : 0);
+    (include?.first ?? false ? getCurrentSecondsRemaining(queue) : 0);
 
-  const totalDuration = formatDuration(totalDurationSeconds);
-
-  return totalDuration;
+  return formatDuration(isNaN(totalDurationSeconds) ? 0 : totalDurationSeconds);
 };
