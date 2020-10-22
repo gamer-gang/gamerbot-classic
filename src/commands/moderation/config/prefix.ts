@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 
 import { Config } from '../../../entities/Config';
 import { CmdArgs } from '../../../types';
-import { regExps } from '../../../util';
+import { Embed, regExps } from '../../../util';
 
 export const prefix = async (
   config: Config,
@@ -11,13 +11,20 @@ export const prefix = async (
 ): Promise<void | Message> => {
   const { msg } = cmdArgs;
 
-  if (!value) return msg.channel.send(`prefix is \`${config.prefix}\``);
+  if (!value) return msg.channel.send(new Embed({ title: `prefix is \`${config.prefix}\`` }));
 
-  if (value?.includes(' ')) return msg.channel.send('no spaces');
-  if (!regExps.ascii.test(value)) return msg.channel.send('only ascii characters allowed');
-  if (value.length > 16) return msg.channel.send('too long');
+  if (value?.includes(' '))
+    return msg.channel.send(new Embed({ intent: 'error', title: 'no spaces allowed in prefix' }));
+  if (!regExps.ascii.test(value))
+    return msg.channel.send(
+      new Embed({ intent: 'error', title: 'only ascii characters allowed in prefix' })
+    );
+  if (value.length > 16)
+    return msg.channel.send(new Embed({ intent: 'error', title: 'max 16 characters' }));
 
   config.prefix = value;
 
-  return msg.channel.send(`prefix is now ${config.prefix}`);
+  return msg.channel.send(
+    new Embed({ intent: 'success', title: `prefix is now ${config.prefix}` })
+  );
 };

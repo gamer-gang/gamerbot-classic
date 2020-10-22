@@ -6,6 +6,7 @@ import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
 import { CmdArgs } from '../../types';
+import { Embed } from '../../util';
 
 export class CommandJoke implements Command {
   cmd = 'joke';
@@ -13,23 +14,24 @@ export class CommandJoke implements Command {
     boolean: ['codepen', 'programming'],
     alias: {
       codepen: 'c',
-      programming: 'p'
-    }
-  }
+      programming: 'p',
+    },
+  };
   docs = [
     {
       usage: 'joke',
-      description: 'get a joke from https://github.com/15Dkatz/official_joke_api',
+      description: 'get a joke (https://sv443.net/jokeapi/v2/)',
     },
     {
       usage: 'joke -p',
-      description: 'get a programming joke from https://github.com/15Dkatz/official_joke_api',
+      description: 'get a programming joke (https://sv443.net/jokeapi/v2/)',
     },
     {
       usage: 'joke -c',
       description: 'get a joke from codepen (may take a while)',
     },
   ];
+
   async getCodepenJoke(): Promise<string> {
     const response = await axios.get('https://codepen.io/pen/');
     if (response.status !== 200) throw new Error('response code ' + response.status);
@@ -39,16 +41,20 @@ export class CommandJoke implements Command {
 
     return he.decode(text.replace('\n', '').replace(/<\/?code>/g, '`'));
   }
+
+  private makeUrl = (type: string) =>
+    `https://jokeapi.dev/joke/${type}?format=txt&blacklistFlags=religious,political`;
+
   async getGenericJoke(): Promise<string> {
-    const response = await axios.get('https://official-joke-api.appspot.com/jokes/random');
-    return `${response.data.setup}\n${response.data.punchline}`;
+    const response = await axios.get(this.makeUrl('Miscellaneous,Dark,Pun'));
+    return response.data;
   }
+
   async getProgrammingJoke(): Promise<string> {
-    const response = await axios.get(
-      'https://official-joke-api.appspot.com/jokes/programming/random'
-    );
-    return `${response.data[0].setup}\n${response.data[0].punchline}`;
+    const response = await axios.get(this.makeUrl('Programming'));
+    return response.data;
   }
+
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args } = cmdArgs;
     try {
@@ -60,7 +66,13 @@ export class CommandJoke implements Command {
 
       return msg.channel.send(joke);
     } catch (err) {
-      return msg.channel.send(`Error getting joke, error message: \n\`\`\`\n${err}\n\`\`\``);
+      return msg.channel.send(
+        new Embed({
+          intent: 'error',
+          title: 'error getting joke',
+          description: `\`\`\`\n${err}\n\`\`\``,
+        })
+      );
     }
   }
 }

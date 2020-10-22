@@ -14,7 +14,7 @@ import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
 import mikroOrmConfig from './mikro-orm.config';
 import { client, logger, queueStore, spotify } from './providers';
-import { dbFindOneError, resolvePath } from './util';
+import { dbFindOneError, Embed, resolvePath } from './util';
 
 dotenv.config({ path: resolvePath('.env') });
 
@@ -106,7 +106,13 @@ Object.keys(fonts).forEach(filename =>
       } as yargsParser.Options)
     );
 
-    if (args.error) msg.channel.send('warning: \n```\n' + args.error + '\n```');
+    if (args.error)
+      msg.channel.send(
+        new Embed({
+          intent: 'warning',
+          description: 'warning: \n```\n' + args.error + '\n```',
+        })
+      );
 
     await commandClass.executor({
       msg,

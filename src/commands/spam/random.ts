@@ -4,6 +4,7 @@ import yargsParser from 'yargs-parser';
 
 import { Command, CommandDocs } from '..';
 import { CmdArgs } from '../../types';
+import { Embed } from '../../util';
 
 export class CommandRandom implements Command {
   cmd = 'random';
@@ -27,13 +28,16 @@ export class CommandRandom implements Command {
       config: { allowSpam },
     } = cmdArgs;
 
-    if (!allowSpam) return msg.channel.send('spam commands are off');
+    if (!allowSpam)
+      return msg.channel.send(new Embed({ intent: 'error', title: 'spam commands are off' }));
 
     const messages: string[] = [];
     const amount = args.messages;
 
-    if (isNaN(amount)) return msg.channel.send('invalid amount');
-    else if (amount > 10) return msg.channel.send('too many, max 10');
+    if (isNaN(amount))
+      return msg.channel.send(new Embed({ intent: 'error', title: 'invalid message amount' }));
+    else if (amount > 10)
+      return msg.channel.send(new Embed({ intent: 'error', title: 'too many messages, max 10' }));
 
     for (let i = 0; i < amount; i++) {
       let text = '';

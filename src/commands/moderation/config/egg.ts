@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 
 import { Config } from '../../../entities/Config';
 import { CmdArgs } from '../../../types';
+import { Embed } from '../../../util';
 
 export const egg = async (
   config: Config,
@@ -10,10 +11,13 @@ export const egg = async (
 ): Promise<void | Message> => {
   const { msg } = cmdArgs;
 
-  if (!value) return msg.channel.send(`egg is ${config.egg ? 'on' : 'off'}`);
+  if (!value)
+    return msg.channel.send(new Embed({ title: `egg is ${config.allowSpam ? 'on' : 'off'}` }));
 
   if (!msg.guild?.member(msg.author?.id as string)?.hasPermission('ADMINISTRATOR'))
-    return msg.channel.send('missing `ADMINISTRATOR` permission');
+    return msg.channel.send(
+      new Embed({ intent: 'error', title: 'missing `ADMINISTRATOR` permission' })
+    );
 
   switch (value) {
     case 'yes':
@@ -29,8 +33,12 @@ export const egg = async (
       config.egg = false;
       break;
     default:
-      return msg.channel.send('value must be one of `yes|y|true|on|no|n|false|off`');
+      return msg.channel.send(
+        new Embed({ intent: 'error', title: 'value must be one of `yes|y|true|on|no|n|false|off`' })
+      );
   }
 
-  await msg.channel.send(`egg ${config.egg ? 'activated' : 'off (but why???)'}`);
+  await msg.channel.send(
+    new Embed({ intent: 'success', title: `egg ${config.egg ? 'activated' : 'off (but why???)'}` })
+  );
 };

@@ -11,10 +11,11 @@ export class CommandAbout implements Command {
     description: 'Show about message.',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const embed = new Embed().setTitle('about!!!!!!1');
+    const embed = new Embed({ title: 'about' }).setDefaultAuthor();
     embed
       .addField('wheere is source code', 'https://github.com/gamer-gang/gamerbot')
-      .addField('nice pfp', 'make by @qqq#0447')
+      .addField('found bug??', "report it in the repo's issues page")
+      .addField('nice pfp', 'pfp made by @qqq#0447')
       .addField('a', 'b');
     return cmdArgs.msg.channel.send(embed);
   }

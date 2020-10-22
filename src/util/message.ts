@@ -1,6 +1,6 @@
 import { MessageOptions } from 'discord.js';
 
-import { Embed } from './embed';
+import { Embed, EmbedOptions } from './embed';
 
 export const hasMentions = (content: string, includeSingleUser = true): boolean =>
   content.includes('@everyone') ||
@@ -15,21 +15,9 @@ export const parseDiscohookJSON = (json: string): MessageOptions => {
   if (data.embeds) {
     if (data.embeds.length > 1) throw 'max 1 embed';
 
-    const {
-      author,
-      color,
-      description,
-      fields,
-      footer,
-      image,
-      thumbnail,
-      title,
-      url,
-    } = data.embeds[0];
+    const embedData = data.embeds[0] as Discohook.Embed & EmbedOptions;
 
-    embed = new Embed({ description, fields, footer, image, thumbnail, url, title });
-    if (author) embed.author = author;
-    if (color) embed.color = color;
+    embed = new Embed(embedData);
   }
 
   return {

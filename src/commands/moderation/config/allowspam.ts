@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 
 import { Config } from '../../../entities/Config';
 import { CmdArgs } from '../../../types';
+import { Embed } from '../../../util';
 
 export const allowSpam = async (
   config: Config,
@@ -10,10 +11,13 @@ export const allowSpam = async (
 ): Promise<void | Message> => {
   const { msg } = cmdArgs;
 
-  if (!value) return msg.channel.send(`spam is ${config.allowSpam ? 'on' : 'off'}`);
+  if (!value)
+    return msg.channel.send(new Embed({ title: `spam is ${config.allowSpam ? 'on' : 'off'}` }));
 
   if (!msg.guild?.member(msg.author?.id as string)?.hasPermission('ADMINISTRATOR'))
-    return msg.channel.send('missing `ADMINISTRATOR` permission');
+    return msg.channel.send(
+      new Embed({ intent: 'error', title: 'missing `ADMINISTRATOR` permission' })
+    );
 
   switch (value) {
     case 'yes':
@@ -29,8 +33,15 @@ export const allowSpam = async (
       config.allowSpam = false;
       break;
     default:
-      return msg.channel.send('value must be one of `yes|y|true|on|no|n|false|off`');
+      return msg.channel.send(
+        new Embed({ intent: 'error', title: 'value must be one of `yes|y|true|on|no|n|false|off`' })
+      );
   }
 
-  await msg.channel.send(`spam commands are now ${config.allowSpam ? 'on' : 'off'}`);
+  await msg.channel.send(
+    new Embed({
+      intent: 'success',
+      title: `spam commands are now ${config.allowSpam ? 'on' : 'off'}`,
+    })
+  );
 };

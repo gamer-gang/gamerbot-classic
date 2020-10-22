@@ -4,6 +4,7 @@ import _ from 'lodash';
 import { Command } from '../..';
 import { Config } from '../../../entities/Config';
 import { CmdArgs } from '../../../types';
+import { Embed } from '../../../util';
 import { allowSpam } from './allowspam';
 import { egg } from './egg';
 import { prefix } from './prefix';
@@ -26,7 +27,10 @@ export class CommandConfig implements Command {
 
     if (!args._[0] || !Object.keys(configHandlers).includes(args._[0]))
       return msg.channel.send(
-        'valid config options:` ' + Object.keys(configHandlers).join(', ') + '`'
+        new Embed({
+          title: 'valid config options',
+          description: '```\n' + Object.keys(configHandlers).join('\n') + '\n```',
+        })
       );
 
     configHandlers[args._[0]](config, cmdArgs, _.tail(args._).join(' '));

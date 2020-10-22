@@ -3,7 +3,7 @@ import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
 import { CmdArgs } from '../../types';
-import { hasMentions } from '../../util';
+import { Embed, hasMentions } from '../../util';
 
 export class CommandSpam implements Command {
   cmd = 'spam';
@@ -34,7 +34,8 @@ export class CommandSpam implements Command {
       config: { allowSpam },
     } = cmdArgs;
 
-    if (!allowSpam) return msg.channel.send('spam commands are off');
+    if (!allowSpam)
+      return msg.channel.send(new Embed({ intent: 'error', title: 'spam commands are off' }));
     if (hasMentions(args._.join(' ') as string)) return msg.channel.send('no');
 
     const { tts, repetitions, messages } = args;
@@ -45,7 +46,10 @@ export class CommandSpam implements Command {
     if (isNaN(messages) || !messages) errors.push('invalid message count');
     if (!args._[0]) errors.push(`no text to send`);
 
-    if (errors.length) return msg.channel.send(errors.join('\n'));
+    if (errors.length)
+      return msg.channel.send(
+        new Embed({ intent: 'error', title: 'errors', description: errors.join('\n') })
+      );
 
     const spamText = args._.join(' ').trim();
     let output = '';

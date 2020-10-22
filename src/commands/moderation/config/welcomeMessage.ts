@@ -18,10 +18,13 @@ export const welcomeMessage = async (
       .replace('%GUILD%', `${msg.guild?.name}`);
 
   if (!msg.guild?.member(msg.author?.id as string)?.hasPermission('ADMINISTRATOR'))
-    return msg.channel.send('you are missing `ADMINISTRATOR` permission');
+    return msg.channel.send(
+      new Embed({ intent: 'error', title: 'you are missing `ADMINISTRATOR` permission' })
+    );
 
   if (!value) {
-    if (!config.welcomeJson) return msg.channel.send('no welcome message set');
+    if (!config.welcomeJson)
+      return msg.channel.send(new Embed({ intent: 'warning', title: 'no welcome message set' }));
     await msg.channel.send(
       new Embed({
         title: `${msg.guild.name}: current welcome message (\`$config welcomeMessage unset\` to remove)`,
@@ -34,7 +37,7 @@ export const welcomeMessage = async (
 
   if (value === 'unset') {
     delete config.welcomeJson;
-    return msg.channel.send('unset welcome message');
+    return msg.channel.send(new Embed({ intent: 'warning', title: 'unset welcome message' }));
   }
 
   try {
@@ -42,7 +45,7 @@ export const welcomeMessage = async (
       await msg.channel.send('existing welcome message: ');
       await msg.channel.send(parseDiscohookJSON(replace(config.welcomeJson)));
 
-      const confirmation = await msg.channel.send('a welcome message is already set, replace it?');
+      const confirmation = await msg.channel.send('replace this welcome message with a new one?');
 
       const collector = confirmation.createReactionCollector(
         (reaction: MessageReaction, user: User) =>
@@ -92,9 +95,13 @@ const confirmMessage = async (json: string, config: Config, cmdArgs: CmdArgs) =>
 
     if (!config.welcomeChannelId)
       msg.channel.send(
-        'success\nwarning: no welcome channel set, will default to system message channel'
+        new Embed({
+          intent: 'warning',
+          title:
+            'message set successfully\nwarning: no welcome channel set, will default to system message channel',
+        })
       );
-    else msg.channel.send('success');
+    else msg.channel.send(new Embed({ intent: 'success', title: 'new welcome message set' }));
   });
 
   await confirmation.react('✅');

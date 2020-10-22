@@ -21,7 +21,9 @@ export class CommandPlaying implements Command {
 
     await updatePlayingEmbed({ playing: false });
 
-    queue.current.embed = await msg.channel.send(new Embed({ title: 'loading...' }));
+    queue.current.embed = await msg.channel.send(
+      new Embed({ noAuthor: true, title: 'loading...' })
+    );
 
     updatePlayingEmbed({ playing: true });
   }

@@ -6,7 +6,7 @@ import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
 import { CmdArgs } from '../../types';
-import { regExps, resolvePath } from '../../util';
+import { Embed, regExps, resolvePath } from '../../util';
 
 const fileRegExp = /^[A-Za-z0-9\-_]+$/;
 const gifDir = 'data/gifs';
@@ -49,7 +49,10 @@ export class CommandGif implements Command {
 
   invalidChars = (msg: Message | PartialMessage): Promise<Message> =>
     msg.channel.send(
-      `invalid chars in filename, allowed chars:\n\`\`\`\n${fileRegExp.toString()}\n\`\`\``
+      new Embed({
+        intent: 'error',
+        title: `invalid chars in filename, allowed chars:\n\`\`\`\n${fileRegExp.toString()}\n\`\`\``,
+      })
     );
 
   async getGifs(ext = false): Promise<string[]> {
@@ -62,15 +65,24 @@ export class CommandGif implements Command {
 
     if (args.list) {
       const files = await this.getGifs();
-      if (!files.length) return msg.channel.send('no gifs');
-      return msg.channel.send(`files: \n\`\`\`\n${files.join(', ')}\n\`\`\``);
+      if (!files.length)
+        return msg.channel.send(new Embed({ intent: 'warning', title: 'no gifs' }));
+      return msg.channel.send(
+        new Embed({ title: `files`, description: `\`\`\`\n${files.join(', ')}\n\`\`\`` })
+      );
     }
 
     if (args.add) return this.add(msg, args);
     else if (args.remove) return this.remove(msg, args);
     else if (args.rename) return this.rename(msg, args);
     else if (args._.length === 1) return this.show(msg, args);
-    else return msg.channel.send(`usage: \`${this.docs.map(d => d.usage).join('`, `')}\``);
+    else
+      return msg.channel.send(
+        new Embed({
+          intent: 'warning',
+          title: `usage: \n\`\`\`${this.docs.map(d => d.usage).join('\n')}\n\`\`\``,
+        })
+      );
   }
   async show(msg: Message | PartialMessage, args: yargsParser.Arguments): Promise<Message> {
     const name = args._[0];
@@ -78,7 +90,8 @@ export class CommandGif implements Command {
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
     const gifPath = resolvePath(`${gifDir}/${name}.gif`);
 
-    if (!(await this.getGifs()).includes(name)) return msg.channel.send("file doest't exist m8");
+    if (!(await this.getGifs()).includes(name))
+      return msg.channel.send(new Embed({ intent: 'error', title: "file doest't exist m8" }));
     return msg.channel.send({ files: [{ attachment: gifPath }] });
   }
 
@@ -86,7 +99,8 @@ export class CommandGif implements Command {
     const files = await this.getGifs();
     const [name, url] = args.add as string[];
 
-    if (!name || !url) return msg.channel.send('expected 2 args for `--add`');
+    if (!name || !url)
+      return msg.channel.send(new Embed({ intent: 'error', title: 'expected 2 args for `--add`' }));
 
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
     if (files.includes(name)) return msg.channel.send('filename in use');
@@ -98,25 +112,33 @@ export class CommandGif implements Command {
 
   async remove(msg: Message | PartialMessage, args: yargsParser.Arguments): Promise<Message> {
     const name = args._[0];
-    if (!name) return msg.channel.send('`--remove` needs an argument');
+    if (!name)
+      return msg.channel.send(
+        new Embed({ intent: 'error', title: '`--remove` needs an argument' })
+      );
 
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
-    if (!(await this.getGifs()).includes(name)) return msg.channel.send("file doesn't exist m8");
+    if (!(await this.getGifs()).includes(name))
+      return msg.channel.send(new Embed({ intent: 'error', title: "file doesn't exist m8" }));
     await fse.remove(resolvePath(`${gifDir}/${name}.gif`));
     return msg.channel.send(`deleted gif ${name}`);
   }
 
   async rename(msg: Message | PartialMessage, args: yargsParser.Arguments): Promise<Message> {
     const [name, newName] = args.rename as string[];
-    if (!name || !newName) return msg.channel.send('expected 2 args for `--rename`');
+    if (!name || !newName)
+      return msg.channel.send(
+        new Embed({ intent: 'error', title: 'expected 2 args for `--rename`' })
+      );
 
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
-    if (!(await this.getGifs()).includes(name)) return msg.channel.send("file doesn't exist m8");
+    if (!(await this.getGifs()).includes(name))
+      return msg.channel.send(new Embed({ intent: 'error', title: "file doesn't exist m8" }));
     await fse.rename(resolvePath(`${gifDir}/${name}.gif`), resolvePath(`${gifDir}/${newName}.gif`));
     return msg.channel.send(`renamed gif ${name} to ${newName}`);
   }
 
-  downloadGif(name: string, url: string): Promise<string> {
+  downloadGif(name: string, url: string): Promise<Embed> {
     return new Promise(resolve => {
       const requestModule = url.includes('https://') ? https : http;
       requestModule.get(url, response => {
@@ -124,14 +146,21 @@ export class CommandGif implements Command {
 
         // 4xx/5xx error
         if (response.statusCode >= 400 && response.statusCode <= 599)
-          return resolve(`received status code ${response.statusCode.toString()}`);
+          return resolve(
+            new Embed({
+              intent: 'error',
+              title: `received status code ${response.statusCode.toString()}`,
+            })
+          );
 
         if (response.headers['content-type'] !== 'image/gif')
-          return resolve('incorrect mime type, must be `image/gif`');
+          return resolve(
+            new Embed({ intent: 'error', title: 'incorrect mime type, must be `image/gif`' })
+          );
 
         response.pipe(fse.createWriteStream(resolvePath(`${gifDir}/${name}.gif`)));
 
-        resolve('done, saved file ' + name);
+        resolve(new Embed({ intent: 'success', title: 'done, saved file ' + name }));
       });
     });
   }

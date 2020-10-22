@@ -22,6 +22,7 @@ const verifyReaction = async (reaction: Reaction, user: UserPart): Promise<boole
     const dm = await user.createDM();
     dm.send(
       new Embed({
+        intent: 'error',
         title: 'error modifying roles in ' + reaction.message.guild?.name,
         description:
           `\`\`\`\n${err}\n\`\`\`\n` +
@@ -45,6 +46,7 @@ const roleError = async ({
   const dm = await user.createDM();
   dm.send(
     new Embed({
+      intent: 'error',
       title: 'error modifying roles in ' + reaction.message.guild?.name,
       description:
         `\`\`\`\nrole id of ${collector.roleId} could not be resolved\n\`\`\`\n` +
@@ -73,9 +75,13 @@ const missingPermissions = ({ msg, user }: { msg: MessagePart; user: UserPart })
   if (msg.guild?.me?.hasPermission('MANAGE_ROLES')) return true;
 
   msg.channel.send(
-    user +
-      ": can't modify your roles because the bot is missing the `MANAGE_ROLES` " +
-      'permission. please contact a server admin for help.'
+    new Embed({
+      intent: 'error',
+      description:
+        user +
+        ": i can't modify your roles because the bot is missing the `MANAGE_ROLES` " +
+        'permission. please contact a server admin for help.',
+    })
   );
   return false;
 };
@@ -101,6 +107,7 @@ export const onMessageReactionAdd = (em: EM) => async (
   const dm = await user.createDM();
   dm.send(
     new Embed({
+      intent: 'success',
       title: `received role \`${role.name}\` in ${msg.guild?.name}!`,
       description: 'remove the reaction from the message to remove this role.',
     })
@@ -128,6 +135,7 @@ export const onMessageReactionRemove = (em: EM) => async (
   const dm = await user.createDM();
   dm.send(
     new Embed({
+      intent: 'success',
       title: `removed role \`${role.name}\` in ${msg.guild?.name}!`,
       description: 'react to the message again to get the role back.',
     })

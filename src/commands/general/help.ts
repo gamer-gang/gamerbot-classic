@@ -30,7 +30,10 @@ export class CommandHelp implements Command {
         const embed = new Embed().setTitle('help: ' + name).setDescription(desc);
 
         return msg.channel.send(embed);
-      } else return msg.channel.send('no help found for ' + search);
+      } else
+        return msg.channel.send(
+          new Embed({ intent: 'error', title: 'no help found for ' + search })
+        );
     } else {
       const embed = new Embed().setTitle('help!!!!!!1');
       for (const command of commands) embed.addField(...this.makeField(prefix, command));
@@ -38,9 +41,15 @@ export class CommandHelp implements Command {
       try {
         const dm = await msg.author?.createDM();
         dm?.send(embed);
-        msg.channel.send('help message sent in DMs');
+        msg.channel.send(new Embed({ intent: 'success', title: 'help message sent in DMs' }));
       } catch (err) {
-        msg.channel.send('error sending DM, err message:\n```\n' + err + '\n```');
+        msg.channel.send(
+          new Embed({
+            intent: 'error',
+            title: 'error sending DM',
+            description: '```\n' + err + '\n```',
+          })
+        );
       }
     }
   }

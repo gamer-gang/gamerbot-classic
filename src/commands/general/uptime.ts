@@ -3,6 +3,7 @@ import moment from 'moment';
 
 import { Command } from '..';
 import { CmdArgs } from '../../types';
+import { Embed } from '../../util';
 
 export class CommandUptime implements Command {
   cmd = 'uptime';
@@ -18,7 +19,9 @@ export class CommandUptime implements Command {
 
     const uptime = moment.duration(Math.round(process.uptime()), 'seconds');
 
-    return msg.channel.send(`uptime: ${this.makeDurationString(uptime)}`);
+    return msg.channel.send(
+      new Embed({ title: 'uptime:', description: this.makeDurationString(uptime) })
+    );
   }
 
   makeDurationString(duration: moment.Duration): string {

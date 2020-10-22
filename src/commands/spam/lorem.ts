@@ -4,6 +4,7 @@ import yargsParser from 'yargs-parser';
 
 import { Command, CommandDocs } from '..';
 import { CmdArgs } from '../../types';
+import { Embed } from '../../util';
 
 export class CommandLorem implements Command {
   cmd = 'lorem';
@@ -29,7 +30,7 @@ export class CommandLorem implements Command {
     } = cmdArgs;
 
     if (!allowSpam) {
-      return msg.channel.send('spam commands are off');
+      return msg.channel.send(new Embed({ intent: 'error', title: 'spam commands are off' }));
     }
 
     const lorem = new LoremIpsum({
@@ -39,8 +40,10 @@ export class CommandLorem implements Command {
     const messages: string[] = [];
     const amount = args.messages;
 
-    if (isNaN(amount)) return msg.channel.send('invalid amount');
-    else if (amount > 10) return msg.channel.send('too many, max 10');
+    if (isNaN(amount))
+      return msg.channel.send(new Embed({ intent: 'error', title: 'invalid message amount' }));
+    else if (amount > 10)
+      return msg.channel.send(new Embed({ intent: 'error', title: 'too many messages, max 10' }));
 
     for (let i = 0; i < amount; i++) {
       let text = '';
