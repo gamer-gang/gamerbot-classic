@@ -1,14 +1,15 @@
 import { Message } from 'discord.js';
 
-import { CmdArgs, Track, TrackType } from '../types';
-import { formatDuration, getQueueLength, toDurationSeconds } from '../util';
+import { queueStore } from '../providers';
+import { Track, TrackType } from '../types';
+import { formatDuration, getQueueLength } from './duration';
 import { Embed } from './embed';
+import { Store } from './store';
 
-let embedCache: EmbedArgs;
+const embedCache = new Store<EmbedArgs>({ readImmediately: false, writeOnSet: false });
 interface EmbedArgs {
   playing: boolean;
-  track: Track;
-  cmdArgs: CmdArgs;
+  track?: Track;
 }
 
 export const getTrackLength = (track: Track): string =>
@@ -20,30 +21,38 @@ export const getTrackUrl = (track: Track): string =>
   track.type === TrackType.SPOTIFY
     ? 'https://open.spotify.com/track/' + track.data.id
     : track.type === TrackType.YOUTUBE
-    ? 'https://youtu.be/' + track.data.id
+    ? 'https://youtube.com/watch?v=' + track.data.id
     : track.data.url;
 
-export const updatePlayingEmbed = async (opts?: Partial<EmbedArgs>): Promise<void | Message> => {
-  embedCache ??= opts as EmbedArgs;
-  embedCache = {
-    playing: opts?.playing ?? embedCache?.playing,
-    cmdArgs: opts?.cmdArgs ?? embedCache?.cmdArgs,
-    track: opts?.track ?? embedCache?.track,
-  };
+export const updatePlayingEmbed = async (
+  opts: Partial<EmbedArgs> & { guildId: string }
+): Promise<void | Message> => {
+  const guildId = opts?.guildId;
 
-  const { track, cmdArgs, playing } = embedCache;
+  embedCache.setIfUnset(guildId, opts as EmbedArgs);
 
-  const { queueStore, msg } = cmdArgs;
+  const cache = embedCache.get(guildId);
 
-  const queue = queueStore.get(msg.guild?.id as string);
+  cache.playing = opts.playing ?? cache.playing ?? true;
+  cache.track = opts.track ?? cache.track;
 
-  const seconds = toDurationSeconds(track.data.duration);
+  const { track, playing } = cache;
+
+  const queue = queueStore.get(guildId);
+
+  if (!track) {
+    throw new Error('track is null nerd');
+  }
+
+  // if (!track && !playing) {
+  //   throw new Error('not enough data provided to music embed');
+  // }
 
   // queue.current.secondsRemaining = seconds - (thumbPosition / sliderLength) * seconds;
 
   const embed = new Embed({
     title: playing ? 'now playing' : 'not playing',
-    description: `[**${track.data.title}**](${getTrackUrl(track)}) (${
+    description: `**[${track.data.title}](${getTrackUrl(track)})** (${
       track.type === TrackType.SPOTIFY
         ? 'spotify'
         : track.type === TrackType.YOUTUBE

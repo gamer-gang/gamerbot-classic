@@ -1,6 +1,6 @@
 import { MessageEmbed, MessageEmbedOptions } from 'discord.js';
 
-import { resolvePath } from '../util';
+import { resolvePath } from './path';
 
 type EmbedIntent = 'info' | 'success' | 'warning' | 'error';
 
