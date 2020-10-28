@@ -13,7 +13,8 @@ import { welcomeMessage } from './welcomeMessage';
 
 const configHandlers: Record<
   string,
-  (config: Config, cmdArgs: CmdArgs, value?: string) => Promise<void | Message>
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (config: Config, cmdArgs: CmdArgs, value?: string) => Promise<any>
 > = { welcomeChannel, welcomeMessage, prefix, egg, allowSpam };
 
 export class CommandConfig implements Command {

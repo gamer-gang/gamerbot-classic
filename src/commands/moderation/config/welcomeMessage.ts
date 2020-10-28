@@ -8,7 +8,7 @@ export const welcomeMessage = async (
   config: Config,
   cmdArgs: CmdArgs,
   value?: string
-): Promise<void | Message> => {
+): Promise<void | Message | Message[]> => {
   const { msg } = cmdArgs;
 
   const replace = (json: string) =>
