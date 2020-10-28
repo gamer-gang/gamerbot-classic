@@ -11,16 +11,11 @@ export const onVoiceStateUpdate = () => (oldState: VoiceState, newState: VoiceSt
       getLogger(LoggerType.VOICE, newState.id).info('bot was disconnected in ' + newState.guild.id);
       const queue = queueStore.get(newState.guild.id);
       if (!queue) return;
-      updatePlayingEmbed({ playing: false });
-      queue.voiceConnection?.dispatcher?.end('disconnected', () => {
-        delete queue.voiceChannel;
-        delete queue.voiceConnection;
-        delete queue.textChannel;
-        delete queue.current.embed;
-        // delete queue.current.embedInterval;
-        queue.tracks = [];
-        queue.playing = false;
-      });
+      updatePlayingEmbed({ guildId: newState.guild.id, playing: false });
+      queue.tracks = [];
+      queue.playing = false;
+      queueStore.set(newState.guild.id, { tracks: [], playing: false, current: {} });
+      queue.voiceConnection?.dispatcher?.end('disconnected');
     } else if (oldState.channelID == null && newState.channelID != null) {
       // joined
       // do nothing

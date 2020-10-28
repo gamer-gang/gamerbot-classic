@@ -25,7 +25,7 @@ export class CommandResume implements Command {
 
     try {
       queue.voiceConnection?.dispatcher.resume();
-      updatePlayingEmbed({ playing: true });
+      updatePlayingEmbed({ guildId: msg.guild?.id as string, playing: true });
       return msg.channel.send(new Embed({ intent: 'success', title: 'resumed' }));
     } catch (err) {
       return msg.channel.send(

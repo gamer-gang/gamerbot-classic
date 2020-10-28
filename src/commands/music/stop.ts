@@ -1,7 +1,8 @@
 import { Message } from 'discord.js';
+import _ from 'lodash';
 
 import { Command, CommandDocs } from '..';
-import { CmdArgs } from '../../types';
+import { CmdArgs, Track } from '../../types';
 import { Embed } from '../../util';
 
 export class CommandStop implements Command {
@@ -24,8 +25,7 @@ export class CommandStop implements Command {
       );
 
     try {
-      queue.tracks = [];
-      queueStore.set(msg.guild?.id as string, queue);
+      queue.tracks = [_.head(queue.tracks) as Track];
       queue.voiceConnection?.dispatcher?.end('stop command');
       return msg.channel.send(new Embed({ intent: 'success', title: 'stopped' }));
     } catch (err) {

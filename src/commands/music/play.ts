@@ -78,7 +78,7 @@ export class CommandPlay implements Command {
 
       if (queue?.voiceConnection?.dispatcher.paused) {
         queue.voiceConnection?.dispatcher.resume();
-        updatePlayingEmbed({ playing: true });
+        updatePlayingEmbed({ guildId: msg.guild?.id as string, playing: true });
         return msg.channel.send(new Embed({ intent: 'success', title: 'resumed' }));
       }
 
@@ -101,7 +101,7 @@ export class CommandPlay implements Command {
         return msg.channel.send(
           new Embed({
             intent: 'error',
-            title: "err: playlist not found (either it doesn't exist or it's private)",
+            title: "playlist not found (either it doesn't exist or it's private)",
           })
         );
 
@@ -126,12 +126,14 @@ export class CommandPlay implements Command {
       msg.channel.send(
         new Embed({
           intent: 'success',
-          title: `queued ${videos.length.toString()} videos from ${playlist.title}`,
+          description:
+            `queued ${videos.length.toString()} videos from ` +
+            `**[${playlist.title}](https://youtube.com/playlist?list=${playlist.id})**`,
         })
       );
 
       const queue = queueStore.get(msg.guild?.id as string);
-      if (queue?.current.embed) queue.current.embed.edit(updatePlayingEmbed());
+      if (queue?.current.embed) updatePlayingEmbed({ guildId: msg.guild?.id as string });
 
       this.playNext(cmdArgs);
     } catch (err) {
@@ -140,7 +142,7 @@ export class CommandPlay implements Command {
         return msg.channel.send(
           new Embed({
             intent: 'error',
-            title: "err: playlist not found (either it doesn't exist or it's private)",
+            title: "playlist not found (either it doesn't exist or it's private)",
           })
         );
 
@@ -159,7 +161,7 @@ export class CommandPlay implements Command {
         return msg.channel.send(
           new Embed({
             intent: 'error',
-            title: "err: video not found (either it doesn't exist or it's private)",
+            title: "video not found (either it doesn't exist or it's private)",
           })
         );
       this.queueTrack(
@@ -220,8 +222,17 @@ export class CommandPlay implements Command {
       );
     }
 
+    msg.channel.send(
+      new Embed({
+        intent: 'success',
+        description:
+          `queued ${album.body.tracks.items.length} tracks from ` +
+          `**[${album.body.name}](https://open.spotify.com/album/${album.body.id})**`,
+      })
+    );
+
     const queue = queueStore.get(msg.guild?.id as string);
-    if (queue?.current.embed) queue.current.embed.edit(updatePlayingEmbed());
+    if (queue?.current.embed) updatePlayingEmbed({ guildId: msg.guild?.id as string });
 
     this.playNext(cmdArgs);
   }
@@ -264,12 +275,14 @@ export class CommandPlay implements Command {
     msg.channel.send(
       new Embed({
         intent: 'success',
-        description: `queued ${playlist.body.tracks.items.length} tracks from "${playlist.body.name}"`,
+        description:
+          `queued ${playlist.body.tracks.items.length} tracks from ` +
+          `**[${playlist.body.name}](https://open.spotify.com/playlist/${playlist.body.id})**`,
       })
     );
 
     const queue = queueStore.get(msg.guild?.id as string);
-    queue.current.embed && queue.current.embed.edit(updatePlayingEmbed());
+    queue.current.embed && updatePlayingEmbed({ guildId: msg.guild?.id as string });
 
     !queue.playing && this.playNext(cmdArgs);
   }
@@ -337,12 +350,12 @@ export class CommandPlay implements Command {
         new Embed({
           title: 'choose a video',
           description: videos
-            .map((t, i) =>
-              t
-                ? `${i + 1}. [**${he.decode(t.data.title)}**](${getTrackUrl(t)}) (${getTrackLength(
-                    t
-                  )})`
-                : ''
+            .filter(t => !!t)
+            .map(
+              (track, index) =>
+                `${index + 1}. ` +
+                `**[${he.decode(track.data.title)}](${getTrackUrl(track)})**` +
+                ` (${getTrackLength(track)})`
             )
             .join('\n'),
         })
@@ -412,7 +425,7 @@ export class CommandPlay implements Command {
       msg.channel.send(
         new Embed({
           intent: 'success',
-          description: `[${track.data.title}](${getTrackUrl(track)}) queued (#${
+          description: `**[${track.data.title}](${getTrackUrl(track)})** queued (#${
             queue.tracks.length - 1
           } in queue, approx. ${getQueueLength(queue, {
             first: true,
@@ -420,21 +433,21 @@ export class CommandPlay implements Command {
           })} until playing)`,
         })
       );
-      updatePlayingEmbed();
+      updatePlayingEmbed({ guildId: msg.guild?.id as string });
     }
   }
 
   async playNext(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, queueStore } = cmdArgs;
 
-    const queue = queueStore.get(msg.guild?.id as string);
+    let queue = queueStore.get(msg.guild?.id as string);
 
     const track = queue.tracks[0];
 
     if (!track) {
       // no more in queue
       queue.voiceConnection?.disconnect();
-      queue.playing = false;
+      queue = { tracks: [], current: {}, playing: false };
       queueStore.set(msg.guild?.id as string, queue);
       return;
     }
@@ -444,24 +457,24 @@ export class CommandPlay implements Command {
 
       queue.voiceChannel = voice.channel as VoiceChannel;
       queue.voiceConnection = await queue.voiceChannel.join();
-      await queue.voiceConnection?.voice.setSelfDeaf(true);
+      await queue.voiceConnection?.voice?.setSelfDeaf(true);
       queue.playing = true;
-      queueStore.set(msg.guild?.id as string, queue);
     }
 
-    queue.current.embed ??= await msg.channel.send(new Embed({ title: 'loading...' }));
+    queue.current.embed = await msg.channel.send(new Embed({ title: 'loading...' }));
 
-    updatePlayingEmbed({ track, cmdArgs, playing: true });
+    updatePlayingEmbed({ track, guildId: msg.guild?.id as string, playing: true });
 
     const callback = (info: unknown) => {
+      const queue = queueStore.get(msg.guild?.id as string);
+
       getLogger(LoggerType.MESSAGE, msg.id).debug(
-        `video "${track.data.title}" ended with info "${info}"`
+        `track "${track.data.title}" ended with info "${info}"`
       );
 
-      const queue = queueStore.get(msg.guild?.id as string);
       queue.tracks.shift();
 
-      updatePlayingEmbed({ playing: false });
+      updatePlayingEmbed({ guildId: msg.guild?.id as string, playing: false });
       delete queue.current.embed;
 
       this.playNext(cmdArgs);
@@ -479,8 +492,9 @@ export class CommandPlay implements Command {
           queue.current.embed?.edit(
             new Embed({
               intent: 'error',
-              title: `could not play [${track.data.title}](${track.data.id})`,
-              description: '',
+              description:
+                `could not play **[${track.data.title}](${getTrackUrl(track)})**\n` +
+                `couldn't find an equivalent video on youtube`,
             })
           );
           return callback('no track found for ' + track.data.id);

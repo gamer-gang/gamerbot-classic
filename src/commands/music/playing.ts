@@ -19,12 +19,12 @@ export class CommandPlaying implements Command {
 
     if (!queue.playing) return msg.channel.send('not playing');
 
-    await updatePlayingEmbed({ playing: false });
+    await updatePlayingEmbed({ guildId: msg.guild?.id as string, playing: false });
 
     queue.current.embed = await msg.channel.send(
       new Embed({ noAuthor: true, title: 'loading...' })
     );
 
-    updatePlayingEmbed({ playing: true });
+    updatePlayingEmbed({ guildId: msg.guild?.id as string, playing: true });
   }
 }

@@ -25,7 +25,7 @@ export class CommandPause implements Command {
 
     try {
       queue.voiceConnection?.dispatcher?.pause(true);
-      updatePlayingEmbed({ playing: false });
+      updatePlayingEmbed({ guildId: msg.guild?.id as string, playing: false });
     } catch (err) {
       return msg.channel.send(
         new Embed({
