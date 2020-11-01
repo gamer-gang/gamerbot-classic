@@ -11,13 +11,7 @@ export const allowSpam = async (
 ): Promise<void | Message> => {
   const { msg } = cmdArgs;
 
-  if (!value)
-    return msg.channel.send(new Embed({ title: `spam is ${config.allowSpam ? 'on' : 'off'}` }));
-
-  if (!msg.guild?.member(msg.author?.id as string)?.hasPermission('ADMINISTRATOR'))
-    return msg.channel.send(
-      new Embed({ intent: 'error', title: 'missing `ADMINISTRATOR` permission' })
-    );
+  if (!value) return msg.channel.send(Embed.info(`spam is ${config.allowSpam ? 'on' : 'off'}`));
 
   switch (value) {
     case 'yes':
@@ -34,14 +28,9 @@ export const allowSpam = async (
       break;
     default:
       return msg.channel.send(
-        new Embed({ intent: 'error', title: 'value must be one of `yes|y|true|on|no|n|false|off`' })
+        Embed.error('bad value', 'value must be one of `yes|y|true|on|no|n|false|off`')
       );
   }
 
-  await msg.channel.send(
-    new Embed({
-      intent: 'success',
-      title: `spam commands are now ${config.allowSpam ? 'on' : 'off'}`,
-    })
-  );
+  await msg.channel.send(Embed.success(`spam commands are now ${config.allowSpam ? 'on' : 'off'}`));
 };

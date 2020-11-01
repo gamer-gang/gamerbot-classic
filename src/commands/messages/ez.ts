@@ -4,7 +4,7 @@ import yaml from 'js-yaml';
 
 import { Command } from '..';
 import { CmdArgs } from '../../types';
-import { resolvePath } from '../../util';
+import { resolvePath, sanitize } from '../../util';
 
 const replacements = yaml.load(fse.readFileSync(resolvePath('assets/ez.yaml')).toString())
   .replacements as string[];
@@ -23,11 +23,7 @@ export class CommandEz implements Command {
 
     msg.delete();
     return msg.channel.send(
-      `*${(guildMember?.nickname ?? guildMember?.user.username)
-        ?.replace(/\\/g, '\\\\')
-        .replace(/\*/g, '\\*')
-        .replace(/_/g, '\\_')
-        .replace(/`/g, '\\`')} says:* ${replacement}`
+      `*${sanitize(guildMember?.nickname ?? guildMember?.user.username)} says:* ${replacement}`
     );
   }
 }

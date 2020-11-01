@@ -7,6 +7,18 @@ export const hasMentions = (content: string, includeSingleUser = true): boolean 
   content.includes('@here') ||
   (includeSingleUser ? /<@!\d{18}>/g.test(content) : false);
 
+export const sanitize = (content?: string): string =>
+  content // comment so that replaces are wrapped
+    ?.replace(/\\/g, '\\\\')
+    .replace(/\*/g, '\\*')
+    .replace(/_/g, '\\_')
+    .replace(/`/g, '\\`') ?? '';
+
+// eslint-disable-next-line
+export const codeBlock = (content?: any, language?: string): string => `\`\`\`${language}
+${content}
+\`\`\``;
+
 export const parseDiscohookJSON = (json: string): MessageOptions => {
   const data = JSON.parse(json) as Discohook.Message;
 

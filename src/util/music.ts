@@ -1,4 +1,5 @@
 import { Message } from 'discord.js';
+import { Video } from 'simple-youtube-api';
 
 import { queueStore } from '../providers';
 import { Track, TrackType } from '../types';
@@ -11,6 +12,9 @@ interface EmbedArgs {
   playing: boolean;
   track?: Track;
 }
+
+export const isLivestream = (video: Video): boolean =>
+  (video.raw.snippet as Record<string, string>).liveBroadcastContent === 'live';
 
 export const getTrackLength = (track: Track): string =>
   track.type === TrackType.YOUTUBE && track.data.livestream
@@ -61,9 +65,7 @@ export const updatePlayingEmbed = async (
           : 'youtube'
         : 'file'
     })`,
-  })
-    .addField('requested by', `<@!${track.requesterId}>`, true)
-    .addField('queue length after', getQueueLength(queue, { first: false }), true);
+  });
 
   if (track.type === TrackType.YOUTUBE)
     embed
@@ -73,6 +75,10 @@ export const updatePlayingEmbed = async (
     embed
       .setThumbnail(track.data.cover.url)
       .addField('artist', track.data.artists.map(a => a.name).join(', '), true);
+
+  embed
+    .addField('requested by', `<@!${track.requesterId}>`, true)
+    .addField('queue length after', getQueueLength(queue, { first: false }), true);
 
   if (queue.current.embed) return queue.current.embed?.edit(embed);
   else return;

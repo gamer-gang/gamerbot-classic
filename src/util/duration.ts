@@ -21,11 +21,7 @@ export function formatDuration(length: Duration | number): string {
     duration = length;
   } else {
     const len = moment.duration(length, 'seconds');
-    duration = {
-      hours: len.hours(),
-      minutes: len.minutes(),
-      seconds: len.seconds(),
-    };
+    duration = fromMoment(len);
   }
 
   return [
@@ -34,6 +30,21 @@ export function formatDuration(length: Duration | number): string {
     (duration.seconds ?? 0).toString().padStart(2, '0'),
   ].join(':');
 }
+
+const fromMoment = (duration?: moment.Duration): Duration =>
+  duration
+    ? {
+        hours: duration.hours(),
+        minutes: duration.minutes(),
+        seconds: duration.seconds(),
+      }
+    : { hours: 0, minutes: 0, seconds: 0 };
+
+export const toDuration = (
+  amount?: number | moment.Duration,
+  type?: moment.unitOfTime.DurationConstructor
+): Duration =>
+  fromMoment(typeof amount === 'number' ? moment.duration(amount, type ?? 'seconds') : amount);
 
 export const toDurationSeconds = (duration: Duration): number => {
   const { hours, minutes, seconds } = duration;

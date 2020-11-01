@@ -14,34 +14,29 @@ export const welcomeChannel = async (
   if (!value) {
     if (config.welcomeChannelId)
       return msg.channel.send(
-        new Embed({
-          title: `welcome channel is set to <#${config.welcomeChannelId}> (\`$config welcomeChannel unset\` to remove)`,
-        })
+        Embed.info(
+          `welcome channel is set to <#${config.welcomeChannelId}>`,
+          'use `$config welcomeChannel unset` to remove'
+        )
       );
-    return msg.channel.send(new Embed({ intent: 'warning', title: 'no welcome channel set' }));
+    return msg.channel.send(Embed.warning('no welcome channel set'));
   }
 
   if (value === 'unset') {
     delete config.welcomeChannelId;
     return msg.channel.send(
-      new Embed({
-        intent: 'warning',
-        title: 'unset welcome channel; welcome messages will go to the system message channel',
-      })
+      Embed.warning(
+        'unset welcome channel',
+        'welcome messages will go to the system message channel'
+      )
     );
   }
 
-  const channelId = value.replace(/(<#|>)/g, '');
+  const channelId = value.replace(/[<#>]/g, '');
   const channel = msg.guild?.channels.cache.get(channelId);
-  if (!channel)
-    return msg.channel.send(
-      new Embed({ intent: 'error', title: 'invalid channel `' + value + '`' })
-    );
-  if (channel.type !== 'text')
-    return msg.channel.send(new Embed({ intent: 'error', title: 'only text channels allowed' }));
+  if (!channel) return msg.channel.send(Embed.error('invalid channel `' + value + '`'));
+  if (channel.type !== 'text') return msg.channel.send(Embed.error('only text channels allowed'));
 
   config.welcomeChannelId = channel.id;
-  return msg.channel.send(
-    new Embed({ intent: 'success', title: `welcome channel set to ${channel}` })
-  );
+  return msg.channel.send(Embed.success(`welcome channel set to ${channel}`));
 };

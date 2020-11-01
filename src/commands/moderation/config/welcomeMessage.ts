@@ -2,7 +2,13 @@ import { Message, MessageReaction, User } from 'discord.js';
 
 import { Config } from '../../../entities/Config';
 import { CmdArgs } from '../../../types';
-import { Embed, parseDiscohookJSON } from '../../../util';
+import { codeBlock, Embed, parseDiscohookJSON } from '../../../util';
+
+const replacer = (msg: CmdArgs['msg']) => (json: string) =>
+  json
+    .replace('%USER%', `<@!${msg.author.id}>`)
+    .replace('%USERTAG%', `${msg.author.tag}`)
+    .replace('%GUILD%', `${msg.guild.name}`);
 
 export const welcomeMessage = async (
   config: Config,
@@ -11,25 +17,15 @@ export const welcomeMessage = async (
 ): Promise<void | Message | Message[]> => {
   const { msg } = cmdArgs;
 
-  const replace = (json: string) =>
-    json
-      .replace('%USER%', `<@!${msg.author?.id}>`)
-      .replace('%USERTAG%', `${msg.author?.tag}`)
-      .replace('%GUILD%', `${msg.guild?.name}`);
-
-  if (!msg.guild?.member(msg.author?.id as string)?.hasPermission('ADMINISTRATOR'))
-    return msg.channel.send(
-      new Embed({ intent: 'error', title: 'you are missing `ADMINISTRATOR` permission' })
-    );
+  const replace = replacer(msg);
 
   if (!value) {
-    if (!config.welcomeJson)
-      return msg.channel.send(new Embed({ intent: 'warning', title: 'no welcome message set' }));
+    if (!config.welcomeJson) return msg.channel.send(Embed.warning('no welcome message set'));
     await msg.channel.send(
-      new Embed({
-        title: `${msg.guild.name}: current welcome message (\`$config welcomeMessage unset\` to remove)`,
-        description: '```json\n' + config.welcomeJson + '\n```',
-      })
+      Embed.info(
+        msg.guild.name + ': current welcome message (`$config welcomeMessage unset to remove)',
+        codeBlock(JSON.stringify(JSON.parse(config.welcomeJson), null, 2), 'json')
+      )
     );
 
     return msg.channel.send(parseDiscohookJSON(replace(config.welcomeJson)));
@@ -37,7 +33,7 @@ export const welcomeMessage = async (
 
   if (value === 'unset') {
     delete config.welcomeJson;
-    return msg.channel.send(new Embed({ intent: 'warning', title: 'unset welcome message' }));
+    return msg.channel.send(Embed.warning('unset welcome message'));
   }
 
   try {
@@ -66,21 +62,18 @@ export const welcomeMessage = async (
 
     confirmMessage(value, config, cmdArgs);
   } catch (err) {
-    msg.channel.send('error: \n```\n' + err + '\n```');
+    msg.channel.send(Embed.error(codeBlock(err)));
   }
 };
 
 const confirmMessage = async (json: string, config: Config, cmdArgs: CmdArgs) => {
   const { msg } = cmdArgs;
 
-  const replace = (json: string) =>
-    json
-      .replace('%USER%', `<@!${msg.author?.id}>`)
-      .replace('%USERTAG%', `${msg.author?.tag}`)
-      .replace('%GUILD%', `${msg.guild?.name}`);
-
-  await msg.channel.send(parseDiscohookJSON(replace(json)));
+  await msg.channel.send(parseDiscohookJSON(replacer(msg)(json)));
   const confirmation = await msg.channel.send('set this as the welcome message?');
+
+  await confirmation.react('✅');
+  confirmation.react('❌');
 
   const collector = confirmation.createReactionCollector(
     (reaction: MessageReaction, user: User) =>
@@ -95,15 +88,11 @@ const confirmMessage = async (json: string, config: Config, cmdArgs: CmdArgs) =>
 
     if (!config.welcomeChannelId)
       msg.channel.send(
-        new Embed({
-          intent: 'warning',
-          title:
-            'message set successfully\nwarning: no welcome channel set, will default to system message channel',
-        })
+        Embed.warning(
+          'message set successfully',
+          'warning: no welcome channel set, messages will default to system message channel'
+        )
       );
-    else msg.channel.send(new Embed({ intent: 'success', title: 'new welcome message set' }));
+    else msg.channel.send(Embed.success('new welcome message set'));
   });
-
-  await confirmation.react('✅');
-  confirmation.react('❌');
 };

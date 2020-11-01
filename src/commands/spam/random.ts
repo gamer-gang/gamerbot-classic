@@ -28,16 +28,15 @@ export class CommandRandom implements Command {
       config: { allowSpam },
     } = cmdArgs;
 
-    if (!allowSpam)
-      return msg.channel.send(new Embed({ intent: 'error', title: 'spam commands are off' }));
+    if (!allowSpam) return msg.channel.send(Embed.error('spam commands are off'));
 
     const messages: string[] = [];
     const amount = args.messages;
 
-    if (isNaN(amount))
-      return msg.channel.send(new Embed({ intent: 'error', title: 'invalid message amount' }));
-    else if (amount > 10)
-      return msg.channel.send(new Embed({ intent: 'error', title: 'too many messages, max 10' }));
+    const errors: string[] = [];
+    if (isNaN(amount)) errors.push('invalid message amount');
+    if (amount > 10) errors.push('too many messages, max 10');
+    if (errors.length) return msg.channel.send(Embed.error('errors', errors.join('\n')));
 
     for (let i = 0; i < amount; i++) {
       let text = '';
@@ -49,8 +48,6 @@ export class CommandRandom implements Command {
       messages.push(text);
     }
 
-    for (const message of messages) {
-      msg.channel.send(message);
-    }
+    for (const message of messages) msg.channel.send(message);
   }
 }

@@ -13,12 +13,6 @@ export const egg = async (
 
   if (!value)
     return msg.channel.send(new Embed({ title: `egg is ${config.allowSpam ? 'on' : 'off'}` }));
-
-  if (!msg.guild?.member(msg.author?.id as string)?.hasPermission('ADMINISTRATOR'))
-    return msg.channel.send(
-      new Embed({ intent: 'error', title: 'missing `ADMINISTRATOR` permission' })
-    );
-
   switch (value) {
     case 'yes':
     case 'y':
@@ -33,9 +27,7 @@ export const egg = async (
       config.egg = false;
       break;
     default:
-      return msg.channel.send(
-        new Embed({ intent: 'error', title: 'value must be one of `yes|y|true|on|no|n|false|off`' })
-      );
+      return msg.channel.send(Embed.error('value must be one of `yes|y|true|on|no|n|false|off`'));
   }
 
   await msg.channel.send(

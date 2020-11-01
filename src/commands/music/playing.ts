@@ -15,16 +15,14 @@ export class CommandPlaying implements Command {
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, queueStore } = cmdArgs;
 
-    const queue = queueStore.get(msg.guild?.id as string);
+    const queue = queueStore.get(msg.guild.id);
 
-    if (!queue.playing) return msg.channel.send('not playing');
+    if (!queue.playing) return msg.channel.send(Embed.error('not playing'));
 
-    await updatePlayingEmbed({ guildId: msg.guild?.id as string, playing: false });
+    await updatePlayingEmbed({ guildId: msg.guild.id, playing: false });
 
-    queue.current.embed = await msg.channel.send(
-      new Embed({ noAuthor: true, title: 'loading...' })
-    );
+    queue.current.embed = await msg.channel.send(Embed.info('loading...'));
 
-    updatePlayingEmbed({ guildId: msg.guild?.id as string, playing: true });
+    updatePlayingEmbed({ guildId: msg.guild.id, playing: true });
   }
 }

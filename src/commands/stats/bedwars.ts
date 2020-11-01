@@ -93,10 +93,7 @@ export const makeBedwarsStats = ({
 
   c.textAlign = 'right';
   c.fillText(
-    data.coins.toLocaleString() +
-      ' coins   ' +
-      BedwarsExp.getLevelForExp(data.Experience).toFixed(2) +
-      '★',
+    data.coins.toLocaleString() + ' coins   ' + getLevelForExp(data.Experience).toFixed(2) + '★',
     canvas.width - padding,
     padding + 48
   );
@@ -158,66 +155,62 @@ const EASY_LEVELS_XP = 7000;
 const XP_PER_PRESTIGE = 96 * 5000 + EASY_LEVELS_XP;
 const LEVELS_PER_PRESTIGE = 100;
 
-class BedwarsExp {
-  static getLevelForExp(exp: number) {
-    const prestiges = Math.floor(exp / XP_PER_PRESTIGE);
+const getLevelForExp = (exp: number) => {
+  const prestiges = Math.floor(exp / XP_PER_PRESTIGE);
 
-    let level = prestiges * LEVELS_PER_PRESTIGE;
+  let level = prestiges * LEVELS_PER_PRESTIGE;
 
-    let expWithoutPrestiges = exp - prestiges * XP_PER_PRESTIGE;
+  let expWithoutPrestiges = exp - prestiges * XP_PER_PRESTIGE;
 
-    for (let i = 1; i <= EASY_LEVELS; ++i) {
-      const expForEasyLevel = BedwarsExp.getExpForLevel(i);
-      if (expWithoutPrestiges < expForEasyLevel) break;
-      level++;
-      expWithoutPrestiges -= expForEasyLevel;
-    }
-
-    level += expWithoutPrestiges / 5000;
-
-    return level;
+  for (let i = 1; i <= EASY_LEVELS; ++i) {
+    const expForEasyLevel = getExpForLevel(i);
+    if (expWithoutPrestiges < expForEasyLevel) break;
+    level++;
+    expWithoutPrestiges -= expForEasyLevel;
   }
 
-  static getExpForLevel(level: number) {
-    if (level == 0) return 0;
+  level += expWithoutPrestiges / 5000;
 
-    const respectedLevel = BedwarsExp.getLevelRespectingPrestige(level);
-    if (respectedLevel > EASY_LEVELS) {
-      return 5000;
-    }
+  return level;
+};
 
-    switch (respectedLevel) {
-      case 1:
-        return 500;
-      case 2:
-        return 1000;
-      case 3:
-        return 2000;
-      case 4:
-        return 3500;
-    }
+const getExpForLevel = (level: number) => {
+  if (level == 0) return 0;
+
+  const respectedLevel = getLevelRespectingPrestige(level);
+  if (respectedLevel > EASY_LEVELS) {
     return 5000;
   }
 
-  static getLevelRespectingPrestige(level: number) {
-    if (level > prestige.RAINBOW * LEVELS_PER_PRESTIGE) {
-      return level - prestige.RAINBOW * LEVELS_PER_PRESTIGE;
-    } else {
-      return level % LEVELS_PER_PRESTIGE;
-    }
+  switch (respectedLevel) {
+    case 1:
+      return 500;
+    case 2:
+      return 1000;
+    case 3:
+      return 2000;
+    case 4:
+      return 3500;
   }
-}
-
-const prestige = {
-  NONE: 0,
-  IRON: 1,
-  GOLD: 2,
-  DIAMOND: 3,
-  EMERALD: 4,
-  SAPPHIRE: 5,
-  RUBY: 6,
-  CRYSTAL: 7,
-  OPAL: 8,
-  AMETHYST: 9,
-  RAINBOW: 10,
+  return 5000;
 };
+
+const getLevelRespectingPrestige = (level: number) => {
+  return level > Prestige.RAINBOW * LEVELS_PER_PRESTIGE
+    ? level - Prestige.RAINBOW * LEVELS_PER_PRESTIGE
+    : level % LEVELS_PER_PRESTIGE;
+};
+
+enum Prestige {
+  NONE = 0,
+  IRON = 1,
+  GOLD = 2,
+  DIAMOND = 3,
+  EMERALD = 4,
+  SAPPHIRE = 5,
+  RUBY = 6,
+  CRYSTAL = 7,
+  OPAL = 8,
+  AMETHYST = 9,
+  RAINBOW = 10,
+}

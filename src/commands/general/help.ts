@@ -1,8 +1,9 @@
 import { Message } from 'discord.js';
+import _ from 'lodash';
 
 import { Command, CommandDocs, commands } from '..';
 import { CmdArgs } from '../../types';
-import { Embed } from '../../util';
+import { codeBlock, Embed } from '../../util';
 
 export class CommandHelp implements Command {
   cmd = ['help', 'h'];
@@ -11,59 +12,53 @@ export class CommandHelp implements Command {
     description: 'Show this message.',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const {
-      msg,
-      args,
-      em,
-      config: { prefix },
-    } = cmdArgs;
+    const { msg, args, config } = cmdArgs;
 
-    const search = args._[0];
-    if (search) {
-      const find = commands.find(({ cmd }) =>
+    if (args._[0]) {
+      const command = commands.find(({ cmd }) =>
         Array.isArray(cmd)
-          ? cmd.find(v => v.toLowerCase() == search.toLowerCase())
-          : cmd.toLowerCase() === search.toLowerCase()
+          ? cmd.find(v => v.toLowerCase() == args._[0].toLowerCase())
+          : cmd.toLowerCase() === args._[0].toLowerCase()
       );
-      if (find) {
-        const [name, desc] = this.makeField(prefix, find);
-        const embed = new Embed().setTitle('help: ' + name).setDescription(desc);
+      if (command) {
+        const [name, desc] = this.makeField(config.prefix, command);
+        const embed = new Embed({ title: 'help: ' + name, description: desc });
 
         return msg.channel.send(embed);
-      } else
-        return msg.channel.send(
-          new Embed({ intent: 'error', title: 'no help found for ' + search })
-        );
+      } else return msg.channel.send(Embed.error('no help found for ' + args._[0]));
     } else {
-      const embed = new Embed().setTitle('help!!!!!!1');
-      for (const command of commands) embed.addField(...this.makeField(prefix, command));
+      const embed = new Embed({
+        title: 'help',
+        description: "`$cmd --help`, `$cmd -h`, or `$help <cmd>` will show `cmd`'s help text",
+      });
+      for (const command of _.dropRight(commands))
+        embed.addField(...this.makeField(config.prefix, command, true));
+      embed.addField(...this.makeField(config.prefix, _.last(commands) as Command));
 
       try {
         const dm = await msg.author?.createDM();
         dm?.send(embed);
-        msg.channel.send(new Embed({ intent: 'success', title: 'help message sent in DMs' }));
+        msg.channel.send(Embed.success('help message sent in DMs'));
       } catch (err) {
-        msg.channel.send(
-          new Embed({
-            intent: 'error',
-            title: 'error sending DM',
-            description: '```\n' + err + '\n```',
-          })
-        );
+        msg.channel.send(Embed.error('error sending DM', codeBlock(err)));
       }
     }
   }
 
-  makeField(prefix: string, command: Command): [name: string, value: string, inline: boolean] {
+  makeField(
+    prefix: string,
+    command: Command,
+    trailingNewline = false
+  ): [name: string, value: string, inline: boolean] {
     const fieldName = Array.isArray(command.cmd)
       ? command.cmd.map(cmd => `\`${prefix}${cmd}\``).join(', ')
       : `\`${prefix}${command.cmd}\``;
 
     const fieldValue = Array.isArray(command.docs)
-      ? command.docs.map(this.formatFieldValue).join('\n\n')
+      ? command.docs.map(this.formatFieldValue).join('\n')
       : this.formatFieldValue(command.docs);
 
-    return [fieldName, fieldValue + '\n', false];
+    return [fieldName, fieldValue + (trailingNewline ? '\n\u200b' : ''), false];
   }
 
   formatFieldValue(docs: Exclude<CommandDocs, unknown[]>): string {

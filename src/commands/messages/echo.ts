@@ -27,7 +27,7 @@ export class CommandEcho implements Command {
     const { msg, args } = cmdArgs;
 
     if (args._.length == 0 || /^\s+$/.test(args._.join(' ')))
-      return msg.channel.send(new Embed({ intent: 'error', title: 'nothing to say' }));
+      return msg.channel.send(Embed.error('**nothing to say**'));
 
     args.delete && msg.deletable && msg.delete();
 

@@ -5,7 +5,7 @@ import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { ReactionRole, RoleEmoji } from '../../entities/ReactionRole';
 import { CmdArgs } from '../../types';
-import { Embed } from '../../util';
+import { codeBlock, Embed } from '../../util';
 
 export class CommandRole implements Command {
   cmd = 'role';
@@ -34,14 +34,10 @@ export class CommandRole implements Command {
     const { msg, args, em } = cmdArgs;
 
     if (!msg.guild?.members.resolve(msg.author as User)?.hasPermission('MANAGE_ROLES'))
-      return msg.channel.send(
-        new Embed({ intent: 'error', title: 'you are missing `MANAGE_ROLES` permission' })
-      );
+      return msg.channel.send(Embed.error('you are missing the `MANAGE_ROLES` permission'));
 
     if (!msg.guild?.members.resolve(msg.client.user?.id as string)?.hasPermission('MANAGE_ROLES'))
-      return msg.channel.send(
-        new Embed({ intent: 'error', title: 'bot is missing `MANAGE_ROLES` permission' })
-      );
+      return msg.channel.send(Embed.error('bot is missing `MANAGE_ROLES` permission'));
 
     if (args.list) {
       const manager = await msg.guild.roles.fetch();
@@ -58,20 +54,16 @@ export class CommandRole implements Command {
       const messages = rows
         .join('\n')
         .match(/(.|\n){1,1900}\n/g)
-        ?.map(message => '```\n' + message + '\n```') as string[];
+        ?.map(message => codeBlock(message)) as string[];
 
       for (const message of messages) await msg.channel.send(message);
       return;
     }
 
-    if (args._.length < 1)
-      return msg.channel.send(
-        new Embed({
-          intent: 'error',
-          title: 'expected at least 1 arg',
-          description: `usage: \`${this.docs[0].usage}\``,
-        })
-      );
+    // if (args._.length < 1)
+    //   return msg.channel.send(
+    //     Embed.error('expected at least 1 arg', `usage: \`${this.docs[0].usage}\``)
+    //   );
 
     const embed = new Embed({ title: 'roles' }).setDefaultAuthor();
     let description = 'react with the emoji for a role:\n';
@@ -81,33 +73,23 @@ export class CommandRole implements Command {
       const parts = arg.split(',');
       if (parts.length !== 2)
         return msg.channel.send(
-          new Embed({
-            intent: 'error',
-            title: `syntax error in argument #${i}`,
-            description: 'format should be `roleId,:emoji:` (no spaces before/after comma)',
-          })
+          Embed.error(
+            `syntax error in argument #${i}`,
+            'format should be `roleId,:emoji:` (no spaces before/after comma)'
+          )
         );
       const roleId = parts[0].trim();
       let emoji: string | GuildEmoji = parts[1].trim();
 
       const role = msg.guild?.roles.resolve(roleId);
-      if (!role)
-        return msg.channel.send(
-          new Embed({ intent: 'error', title: 'could not resolve role ' + roleId })
-        );
+      if (!role) return msg.channel.send(Embed.error('could not resolve role ' + roleId));
 
       const authorHighestRole = msg.guild?.members.resolve(msg.author?.id as string)?.roles.highest;
       if (!authorHighestRole)
-        return msg.channel.send(
-          new Embed({ intent: 'error', title: 'you need a role to use this command' })
-        );
+        return msg.channel.send(Embed.error('you need a role to use this command'));
+
       if (role.comparePositionTo(authorHighestRole) >= 0)
-        return msg.channel.send(
-          new Embed({
-            intent: 'error',
-            title: `role \`${role.name}\` is higher than your highest role`,
-          })
-        );
+        return msg.channel.send(Embed.error(`role ${role} is higher than your highest role`));
 
       if (/^<:.+:\d{18}>$/.test(emoji.toString())) {
         // custom emoji
@@ -117,7 +99,7 @@ export class CommandRole implements Command {
         const exec = emojiRegex().exec(emoji.toString());
         // invalid emoji
         if (!exec || exec[0] !== emoji)
-          return msg.channel.send(new Embed({ intent: 'error', title: 'invalid emoji: ' + emoji }));
+          return msg.channel.send(Embed.error('invalid emoji: ' + emoji));
         // valid emoji, nothing to do
       }
 
@@ -130,8 +112,7 @@ export class CommandRole implements Command {
       );
     });
 
-    if (roles.length === 0)
-      return msg.channel.send(new Embed({ intent: 'warning', title: 'nothing to do' }));
+    if (roles.length === 0) return msg.channel.send(Embed.warning('nothing to do'));
 
     embed.setDescription(description);
 

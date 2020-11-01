@@ -6,7 +6,7 @@ import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
 import { CmdArgs } from '../../types';
-import { Embed, regExps, resolvePath } from '../../util';
+import { codeBlock, Embed, regExps, resolvePath } from '../../util';
 
 const fileRegExp = /^[A-Za-z0-9\-_]+$/;
 const gifDir = 'data/gifs';
@@ -49,10 +49,9 @@ export class CommandGif implements Command {
 
   invalidChars = (msg: Message | PartialMessage): Promise<Message> =>
     msg.channel.send(
-      new Embed({
-        intent: 'error',
-        title: `invalid chars in filename, allowed chars:\n\`\`\`\n${fileRegExp.toString()}\n\`\`\``,
-      })
+      Embed.error(
+        `**invalid characters in filename**\nonly letters, numbers, dashes, and underscores allowed`
+      )
     );
 
   async getGifs(ext = false): Promise<string[]> {
@@ -65,11 +64,8 @@ export class CommandGif implements Command {
 
     if (args.list) {
       const files = await this.getGifs();
-      if (!files.length)
-        return msg.channel.send(new Embed({ intent: 'warning', title: 'no gifs' }));
-      return msg.channel.send(
-        new Embed({ title: `files`, description: `\`\`\`\n${files.join(', ')}\n\`\`\`` })
-      );
+      if (!files.length) return msg.channel.send(Embed.warning('no gifs stored'));
+      return msg.channel.send(Embed.info('files', codeBlock(files.join(', '))));
     }
 
     if (args.add) return this.add(msg, args);
@@ -78,10 +74,10 @@ export class CommandGif implements Command {
     else if (args._.length === 1) return this.show(msg, args);
     else
       return msg.channel.send(
-        new Embed({
-          intent: 'warning',
-          title: `usage: \n\`\`\`${this.docs.map(d => d.usage).join('\n')}\n\`\`\``,
-        })
+        Embed.warning(
+          'incorrect usage',
+          'usage: \n' + codeBlock(this.docs.map(d => d.usage).join('\n'))
+        )
       );
   }
   async show(msg: Message | PartialMessage, args: yargsParser.Arguments): Promise<Message> {
@@ -91,7 +87,7 @@ export class CommandGif implements Command {
     const gifPath = resolvePath(`${gifDir}/${name}.gif`);
 
     if (!(await this.getGifs()).includes(name))
-      return msg.channel.send(new Embed({ intent: 'error', title: "file doest't exist m8" }));
+      return msg.channel.send(Embed.error('file does not exist'));
     return msg.channel.send({ files: [{ attachment: gifPath }] });
   }
 
@@ -99,43 +95,40 @@ export class CommandGif implements Command {
     const files = await this.getGifs();
     const [name, url] = args.add as string[];
 
-    if (!name || !url)
-      return msg.channel.send(new Embed({ intent: 'error', title: 'expected 2 args for `--add`' }));
+    if (!name || !url) return msg.channel.send(Embed.error('expected 2 args for `--add`'));
 
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
-    if (files.includes(name)) return msg.channel.send('filename in use');
-    if (!regExps.url.test(url)) return msg.channel.send('invalid url');
+    if (files.includes(name)) return msg.channel.send(Embed.error('filename in use'));
+    if (!regExps.url.test(url)) return msg.channel.send(Embed.error('invalid URL'));
 
-    msg.channel.send('downloading...');
+    msg.channel.send(Embed.info('downloading...'));
     return msg.channel.send(await this.downloadGif(name, url));
   }
 
   async remove(msg: Message | PartialMessage, args: yargsParser.Arguments): Promise<Message> {
     const name = args._[0];
-    if (!name)
-      return msg.channel.send(
-        new Embed({ intent: 'error', title: '`--remove` needs an argument' })
-      );
+    if (!name) return msg.channel.send(Embed.error('`--remove` requires a value'));
 
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
     if (!(await this.getGifs()).includes(name))
-      return msg.channel.send(new Embed({ intent: 'error', title: "file doesn't exist m8" }));
+      return msg.channel.send(Embed.error('file does not exist'));
+
     await fse.remove(resolvePath(`${gifDir}/${name}.gif`));
-    return msg.channel.send(`deleted gif ${name}`);
+
+    return msg.channel.send(Embed.success(`deleted gif ${name}`));
   }
 
   async rename(msg: Message | PartialMessage, args: yargsParser.Arguments): Promise<Message> {
     const [name, newName] = args.rename as string[];
-    if (!name || !newName)
-      return msg.channel.send(
-        new Embed({ intent: 'error', title: 'expected 2 args for `--rename`' })
-      );
+    if (!name || !newName) return msg.channel.send(Embed.error('expected 2 values for `--rename`'));
 
     if (!fileRegExp.test(name)) return this.invalidChars(msg);
     if (!(await this.getGifs()).includes(name))
-      return msg.channel.send(new Embed({ intent: 'error', title: "file doesn't exist m8" }));
+      return msg.channel.send(Embed.error('file does not exist'));
+
     await fse.rename(resolvePath(`${gifDir}/${name}.gif`), resolvePath(`${gifDir}/${newName}.gif`));
-    return msg.channel.send(`renamed gif ${name} to ${newName}`);
+
+    return msg.channel.send(Embed.success(`renamed gif ${name} to ${newName}`));
   }
 
   downloadGif(name: string, url: string): Promise<Embed> {
@@ -146,21 +139,14 @@ export class CommandGif implements Command {
 
         // 4xx/5xx error
         if (response.statusCode >= 400 && response.statusCode <= 599)
-          return resolve(
-            new Embed({
-              intent: 'error',
-              title: `received status code ${response.statusCode.toString()}`,
-            })
-          );
+          return resolve(Embed.error(`received status code ${response.statusCode.toString()}`));
 
         if (response.headers['content-type'] !== 'image/gif')
-          return resolve(
-            new Embed({ intent: 'error', title: 'incorrect mime type, must be `image/gif`' })
-          );
+          return resolve(Embed.error('incorrect MIME type', 'mime type must be `image/gif`'));
 
         response.pipe(fse.createWriteStream(resolvePath(`${gifDir}/${name}.gif`)));
 
-        resolve(new Embed({ intent: 'success', title: 'done, saved file ' + name }));
+        resolve(Embed.error(`done, saved file \`${name}\``));
       });
     });
   }

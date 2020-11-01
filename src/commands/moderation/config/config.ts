@@ -4,7 +4,7 @@ import _ from 'lodash';
 import { Command } from '../..';
 import { Config } from '../../../entities/Config';
 import { CmdArgs } from '../../../types';
-import { Embed } from '../../../util';
+import { codeBlock, Embed } from '../../../util';
 import { allowSpam } from './allowspam';
 import { egg } from './egg';
 import { prefix } from './prefix';
@@ -26,12 +26,15 @@ export class CommandConfig implements Command {
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args, config } = cmdArgs;
 
+    if (!msg.guild?.member(msg.author?.id as string)?.hasPermission('ADMINISTRATOR'))
+      return msg.channel.send(Embed.error('you must be an administrator to use this command'));
+
     if (!args._[0] || !Object.keys(configHandlers).includes(args._[0]))
       return msg.channel.send(
-        new Embed({
-          title: 'valid config options',
-          description: '```\n' + Object.keys(configHandlers).join('\n') + '\n```',
-        })
+        Embed.error(
+          'invalid config option',
+          'valid options:\n' + codeBlock(Object.keys(configHandlers).join('\n'))
+        )
       );
 
     configHandlers[args._[0]](config, cmdArgs, _.tail(args._).join(' '));

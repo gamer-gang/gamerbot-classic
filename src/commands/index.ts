@@ -13,6 +13,7 @@ import { CommandEz } from './messages/ez';
 import { CommandJoke } from './messages/joke';
 import { CommandBan } from './moderation/ban';
 import { CommandConfig } from './moderation/config/config';
+import { CommandKick } from './moderation/kick';
 import { CommandPurge } from './moderation/purge';
 import { CommandRole } from './moderation/role';
 import { CommandUnban } from './moderation/unban';
@@ -21,6 +22,7 @@ import { CommandPlay } from './music/play';
 import { CommandPlaying } from './music/playing';
 import { CommandQueue } from './music/queue';
 import { CommandResume } from './music/resume';
+import { CommandShuffle } from './music/shuffle';
 import { CommandSkip } from './music/skip';
 import { CommandStop } from './music/stop';
 import { CommandLorem } from './spam/lorem';
@@ -51,6 +53,7 @@ export const commands: Command[] = [
   // moderation
   new CommandBan(),
   new CommandConfig(),
+  new CommandKick(),
   new CommandPurge(),
   new CommandRole(),
   new CommandUnban(),
@@ -78,6 +81,7 @@ export const commands: Command[] = [
   new CommandPlaying(),
   new CommandPause(),
   new CommandQueue(),
+  new CommandShuffle(),
   new CommandSkip(),
   new CommandStop(),
   new CommandResume(),

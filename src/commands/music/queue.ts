@@ -40,38 +40,34 @@ export class CommandQueue implements Command {
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args, queueStore } = cmdArgs;
 
-    const queue = queueStore.get(msg.guild?.id as string);
+    const queue = queueStore.get(msg.guild.id);
 
     if (args.clear) {
-      if (!queue.tracks.length)
-        return msg.channel.send(new Embed({ intent: 'error', title: 'nothing playing' }));
+      if (!queue.tracks.length) return msg.channel.send(Embed.error('nothing playing'));
 
       queue.tracks = [_.head(queue.tracks) as Track];
 
-      return msg.channel.send(new Embed({ intent: 'success', title: 'cleared queue' }));
+      return msg.channel.send(Embed.success('cleared queue'));
     }
 
     if (args.remove != null) {
       const index = args.remove;
 
       if (isNaN(index) || !index || index <= 0 || index > queue.tracks.length - 1)
-        return msg.channel.send(new Embed({ intent: 'error', title: 'invalid removal index' }));
+        return msg.channel.send(Embed.error('invalid removal index'));
 
       const removed = queue.tracks.splice(index, 1)[0];
 
       return msg.channel.send(
-        new Embed({
-          intent: 'success',
-          description: `removed **[${he.decode(removed.data.title)}](${getTrackUrl(
-            removed
-          )})** from the queue`,
-        })
+        Embed.success(
+          '',
+          `removed **[${he.decode(removed.data.title)}](${getTrackUrl(removed)})** from the queue`
+        )
       );
     }
 
     const tracks = _.cloneDeep(queue.tracks);
-    if (!tracks.length)
-      return msg.channel.send(new Embed({ intent: 'warning', title: 'nothing playing' }));
+    if (!tracks.length) return msg.channel.send(Embed.warning('nothing playing'));
 
     const nowPlaying = tracks.shift();
     // shouldn't happen, we checked if the track list is empty
@@ -130,7 +126,6 @@ export class CommandQueue implements Command {
     queue: GuildQueue;
   }): Embed {
     const embed = new Embed({
-      noAuthor: true,
       title: 'queue',
       description:
         `**now playing: [${he.decode(nowPlaying.data.title)}](${getTrackUrl(nowPlaying)})** (${

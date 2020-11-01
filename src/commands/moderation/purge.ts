@@ -19,28 +19,23 @@ export class CommandPurge implements Command {
     const n = parseInt(args._[0], 10);
 
     if (!n || isNaN(n) || n < 2 || n > 1000)
-      return msg.channel.send(
-        new Embed({ intent: 'error', title: 'number must be an integer from 2 to 1000 inclusive' })
-      );
+      return msg.channel.send(Embed.error('number must be an integer from 2 to 1000 inclusive'));
 
     if (!msg.guild?.members.resolve(msg.author?.id as string)?.hasPermission('MANAGE_MESSAGES'))
-      return msg.channel.send(
-        new Embed({ intent: 'error', title: 'you are missing `MANAGE_MESSAGES` permission' })
-      );
+      return msg.channel.send(Embed.error('you are missing the `MANAGE_MESSAGES` permission'));
 
-    if (!msg.guild?.me?.hasPermission('MANAGE_MESSAGES'))
-      return msg.channel.send(
-        new Embed({ intent: 'error', title: 'bot is missing `MANAGE_MESSAGES` permission' })
-      );
+    if (
+      !msg.guild?.me?.hasPermission('MANAGE_MESSAGES') ||
+      !(msg.channel as TextChannel).permissionsFor(msg.guild?.me)
+    )
+      return msg.channel.send(Embed.error('I am missing the `MANAGE_MESSAGES` permission'));
 
     for (let i = 0; i < Math.ceil(n / 100); i++) {
       const deletable = i === Math.floor(n / 100) ? n % 100 : 100;
       const deleted = await (msg.channel as TextChannel).bulkDelete(deletable, true);
       if (deleted.array().length < deletable) {
         msg.channel
-          .send(
-            new Embed({ intent: 'warning', title: 'stopped deleting because messages are too old' })
-          )
+          .send(Embed.warning('stopped deleting because messages are older than 14 days'))
           .then(m => setTimeout(() => m.delete(), 5000));
         return;
       }

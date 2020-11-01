@@ -66,13 +66,7 @@ export class CommandJoke implements Command {
 
       return msg.channel.send(joke);
     } catch (err) {
-      return msg.channel.send(
-        new Embed({
-          intent: 'error',
-          title: 'error getting joke',
-          description: `\`\`\`\n${err}\n\`\`\``,
-        })
-      );
+      return msg.channel.send(Embed.error('error fetching joke', `\`\`\`\n${err}\n\`\`\``));
     }
   }
 }

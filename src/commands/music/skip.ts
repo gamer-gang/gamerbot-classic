@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 
 import { Command, CommandDocs } from '..';
 import { CmdArgs } from '../../types';
-import { Embed } from '../../util';
+import { codeBlock, Embed } from '../../util';
 
 export class CommandSkip implements Command {
   cmd = 'skip';
@@ -12,28 +12,19 @@ export class CommandSkip implements Command {
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, queueStore } = cmdArgs;
-    const queue = queueStore.get(msg.guild?.id as string);
+    const queue = queueStore.get(msg.guild.id);
 
-    if (!queue.playing)
-      return msg.channel.send(new Embed({ intent: 'error', title: 'not playing' }));
+    if (!queue.playing) return msg.channel.send(Embed.error('not playing'));
 
     const voice = msg.member?.voice;
     if (!voice?.channel || voice.channel.id !== queue.voiceConnection?.channel.id)
-      return msg.channel.send(
-        new Embed({ intent: 'error', title: 'you are not in the voice channel' })
-      );
+      return msg.channel.send(Embed.error('you are not in the music channel'));
 
     try {
       queue.voiceConnection?.dispatcher?.end('skip command');
-      return msg.channel.send(new Embed({ intent: 'success', title: 'skipped' }));
+      return msg.channel.send(Embed.success('skipped'));
     } catch (err) {
-      return msg.channel.send(
-        new Embed({
-          intent: 'error',
-          title: 'error',
-          description: `\n\`\`\`\n${err.stack}\n\`\`\``,
-        })
-      );
+      return msg.channel.send(Embed.error(codeBlock(err)));
     }
   }
 }
