@@ -4,6 +4,7 @@ import { Guild, Message } from 'discord.js';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import _ from 'lodash/fp';
+import { inspect } from 'util';
 import yargsParser from 'yargs-parser';
 
 import { commands } from './commands';
@@ -90,27 +91,36 @@ Object.keys(fonts).forEach(filename =>
 
     const [cmd, ...argv] = msg.content.slice(config.prefix.length).replace(/ +/g, ' ').split(' ');
 
-    const commandClass = commands.find(v => {
+    let commandClass = commands.find(v => {
       if (Array.isArray(v.cmd)) return v.cmd.some(c => c.toLowerCase() === cmd.toLowerCase());
       else return v.cmd.toLowerCase() === cmd.toLowerCase();
     });
     if (!commandClass) return;
 
-    const args = yargsParser.detailed(
-      argv,
-      _.merge(commandClass.yargsSchema ?? {}, {
-        alias: _.merge(commandClass.yargsSchema?.alias, { help: 'h' }),
-        boolean: _.merge(commandClass.yargsSchema?.boolean, ['help']),
-        configuration: { 'flatten-duplicate-arrays': false },
-      } as yargsParser.Options)
-    );
+    const yargsConfig = _.merge(commandClass.yargsSchema ?? {}, {
+      alias: _.merge(commandClass.yargsSchema?.alias, { help: 'h' }),
+      boolean: commandClass.yargsSchema?.boolean
+        ? ['help'].concat(...commandClass.yargsSchema?.boolean)
+        : ['help'],
+      default: _.merge(commandClass.yargsSchema?.default, { help: false }),
+      configuration: { 'flatten-duplicate-arrays': false },
+    } as yargsParser.Options);
+
+    const args = yargsParser.detailed(argv, yargsConfig);
+
+    console.log(inspect(yargsConfig, true, 2, true));
+    console.log(inspect(args, true, 2, true));
 
     if (args.error) msg.channel.send(Embed.warning(codeBlock(args.error)));
+    if (args.argv.help) {
+      args.argv._ = [cmd];
+      commandClass = new CommandHelp();
+    }
 
-    await (args.argv.help ? new CommandHelp() : commandClass).executor({
+    await commandClass.executor({
       msg: msg as Message & { guild: Guild },
       cmd,
-      args: { ...args.argv, _: args.argv.help ? [cmd] : args.argv._ },
+      args: args.argv,
       em: orm.em,
       config,
       queueStore,
