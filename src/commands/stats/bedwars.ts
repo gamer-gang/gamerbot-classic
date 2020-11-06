@@ -1,40 +1,13 @@
 import { Canvas } from 'canvas';
 
-import { BedwarsStats } from '../../hypixelapi';
-
-// https://hypixel.net/threads/get-bedwars-level-in-hypixel-json-api.1562117/
-const getBedwarsLevel = (exp: number) => {
-  const BEDWARS_EXP_PER_PRESTIGE = 489000;
-  const BEDWARS_LEVELS_PER_PRESTIGE = 100;
-  let prestige = Math.floor(exp / BEDWARS_EXP_PER_PRESTIGE);
-  exp = exp % BEDWARS_EXP_PER_PRESTIGE;
-  if (prestige > 5) {
-    const over = prestige % 5;
-    exp += over * BEDWARS_EXP_PER_PRESTIGE;
-    prestige -= over;
-  }
-
-  const prestigeLevel = prestige * BEDWARS_LEVELS_PER_PRESTIGE;
-
-  // first few levels are different
-  if (exp < 500) return prestigeLevel;
-  if (exp < 1500) return 1 + prestigeLevel;
-  if (exp < 3500) return 2 + prestigeLevel;
-  if (exp < 5500) return 3 + prestigeLevel;
-  if (exp < 9000) return 4 + prestigeLevel;
-
-  exp -= 9000;
-  return exp / 5000 + 4 + prestigeLevel;
-};
-
 export const makeBedwarsStats = ({
   data,
   playername,
-  botUserTag,
+  clientTag,
 }: {
-  data: BedwarsStats;
+  data: HypixelAPI.BedwarsStats;
   playername: string;
-  botUserTag: string;
+  clientTag: string;
 }): Buffer => {
   if (!data) throw new Error('no data');
 
@@ -103,6 +76,7 @@ export const makeBedwarsStats = ({
 
   const canvas = new Canvas(1760, 1232);
   const c = canvas.getContext('2d');
+
   const padding = 16;
 
   c.fillStyle = '#36393f';
@@ -119,14 +93,14 @@ export const makeBedwarsStats = ({
 
   c.textAlign = 'right';
   c.fillText(
-    data.coins.toLocaleString() + ' coins   ' + getBedwarsLevel(data.Experience).toFixed(2) + '★',
+    data.coins.toLocaleString() + ' coins   ' + getLevelForExp(data.Experience).toFixed(2) + '★',
     canvas.width - padding,
     padding + 48
   );
 
   c.font = '40px Fira Sans';
   c.textAlign = 'left';
-  c.fillText(botUserTag as string, padding, padding + 48 + padding + 40);
+  c.fillText(clientTag as string, padding, padding + 48 + padding + 40);
 
   c.save();
   c.transform(1, 0, 0, 1, 0, 48 + 40 + padding * 2);
@@ -173,3 +147,70 @@ export const makeBedwarsStats = ({
 
   return canvas.toBuffer();
 };
+
+// stolen from https://github.com/Plancke/hypixel-php/tree/master/src/util/games/bedwars
+
+const EASY_LEVELS = 4;
+const EASY_LEVELS_XP = 7000;
+const XP_PER_PRESTIGE = 96 * 5000 + EASY_LEVELS_XP;
+const LEVELS_PER_PRESTIGE = 100;
+
+const getLevelForExp = (exp: number) => {
+  const prestiges = Math.floor(exp / XP_PER_PRESTIGE);
+
+  let level = prestiges * LEVELS_PER_PRESTIGE;
+
+  let expWithoutPrestiges = exp - prestiges * XP_PER_PRESTIGE;
+
+  for (let i = 1; i <= EASY_LEVELS; ++i) {
+    const expForEasyLevel = getExpForLevel(i);
+    if (expWithoutPrestiges < expForEasyLevel) break;
+    level++;
+    expWithoutPrestiges -= expForEasyLevel;
+  }
+
+  level += expWithoutPrestiges / 5000;
+
+  return level;
+};
+
+const getExpForLevel = (level: number) => {
+  if (level == 0) return 0;
+
+  const respectedLevel = getLevelRespectingPrestige(level);
+  if (respectedLevel > EASY_LEVELS) {
+    return 5000;
+  }
+
+  switch (respectedLevel) {
+    case 1:
+      return 500;
+    case 2:
+      return 1000;
+    case 3:
+      return 2000;
+    case 4:
+      return 3500;
+  }
+  return 5000;
+};
+
+const getLevelRespectingPrestige = (level: number) => {
+  return level > Prestige.RAINBOW * LEVELS_PER_PRESTIGE
+    ? level - Prestige.RAINBOW * LEVELS_PER_PRESTIGE
+    : level % LEVELS_PER_PRESTIGE;
+};
+
+enum Prestige {
+  NONE = 0,
+  IRON = 1,
+  GOLD = 2,
+  DIAMOND = 3,
+  EMERALD = 4,
+  SAPPHIRE = 5,
+  RUBY = 6,
+  CRYSTAL = 7,
+  OPAL = 8,
+  AMETHYST = 9,
+  RAINBOW = 10,
+}

@@ -1,14 +1,8 @@
+import _ from 'lodash';
 import moment from 'moment';
 import { Duration } from 'simple-youtube-api';
 
-import { GuildQueue } from '../types';
-
-let currentVideoSecondsRemaining = 0;
-
-export const getPlayingSecondsRemaining = (): number => currentVideoSecondsRemaining;
-export const setPlayingSecondsRemaining = (value: number): void => {
-  currentVideoSecondsRemaining = value;
-};
+import { GuildQueue, TrackType } from '../types';
 
 const isDuration = (value: Duration | number): value is Duration => {
   return (
@@ -27,36 +21,60 @@ export function formatDuration(length: Duration | number): string {
     duration = length;
   } else {
     const len = moment.duration(length, 'seconds');
-    duration = {
-      hours: len.hours(),
-      minutes: len.minutes(),
-      seconds: len.seconds(),
-    };
+    duration = fromMoment(len);
   }
 
-  return (
-    (duration.hours
-      ? duration.hours + ':' + `${duration.minutes}`.padStart(2, '0')
-      : duration.minutes) +
-    ':' +
-    `${duration.minutes}`.padStart(2, '0')
-  );
+  return [
+    duration.hours ?? '',
+    (duration.minutes ?? 0).toString().padStart(2, '0'),
+    (duration.seconds ?? 0).toString().padStart(2, '0'),
+  ].join(':');
 }
+
+const fromMoment = (duration?: moment.Duration): Duration =>
+  duration
+    ? {
+        hours: duration.hours(),
+        minutes: duration.minutes(),
+        seconds: duration.seconds(),
+      }
+    : { hours: 0, minutes: 0, seconds: 0 };
+
+export const toDuration = (
+  amount?: number | moment.Duration,
+  type?: moment.unitOfTime.DurationConstructor
+): Duration =>
+  fromMoment(typeof amount === 'number' ? moment.duration(amount, type ?? 'seconds') : amount);
 
 export const toDurationSeconds = (duration: Duration): number => {
   const { hours, minutes, seconds } = duration;
   return (hours ?? 0) * 60 * 60 + (minutes ?? 0) * 60 + (seconds ?? 0);
 };
 
-export const getQueueLength = (queue: GuildQueue, includeCurrent = false): string => {
+export const getCurrentSecondsRemaining = (queue: GuildQueue): number => {
+  if (!queue.playing || !queue.voiceConnection?.dispatcher) return 0;
+  return (
+    toDurationSeconds(queue.tracks[0].data.duration) -
+    Math.floor(
+      queue.voiceConnection.dispatcher.totalStreamTime - queue.voiceConnection.dispatcher.pausedTime
+    ) /
+      1000
+  );
+};
+
+export const getQueueLength = (
+  queue: GuildQueue,
+  include?: { first?: boolean; last?: boolean }
+): string => {
+  const tracks = _.dropRight(queue.tracks, include?.last ?? true ? 0 : 1);
+
+  if (tracks.find(v => v.type === TrackType.YOUTUBE && v.data.livestream)) return '?';
+
   const totalDurationSeconds =
-    queue.videos
-      .slice(1)
-      .map(v => toDurationSeconds(v.duration as Duration))
+    _.drop(tracks, 1)
+      .map(t => toDurationSeconds(t.data.duration as Duration))
       .reduce((a, b) => a + Math.round(b), 0) +
-    (includeCurrent ? currentVideoSecondsRemaining ?? 0 : 0);
+    (include?.first ?? false ? getCurrentSecondsRemaining(queue) : 0);
 
-  const totalDuration = formatDuration(totalDurationSeconds);
-
-  return totalDuration;
+  return formatDuration(isNaN(totalDurationSeconds) ? 0 : totalDurationSeconds);
 };

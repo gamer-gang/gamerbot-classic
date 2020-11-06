@@ -4,13 +4,13 @@ import yaml from 'js-yaml';
 import _ from 'lodash';
 import sharp from 'sharp';
 
-import { Command, unknownFlags } from '..';
-import { Embed } from '../../embed';
+import { Command } from '..';
 import { LiarsDice, LiarsDicePlayer } from '../../entities/LiarsDice';
 import { Die } from '../../gamemanagers/common';
 import { LiarsDiceManager } from '../../gamemanagers/liarsdicemanager';
+import { client } from '../../providers';
 import { CmdArgs, GameReactionCollector } from '../../types';
-import { hasFlags, resolvePath, spliceFlag } from '../../util';
+import { Embed, resolvePath } from '../../util';
 
 type Bid = [quantity: number, value: number];
 
@@ -38,13 +38,11 @@ export class CommandLiarsDice implements Command {
   ];
 
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, flags, args, client, em } = cmdArgs;
+    const { msg, args, em } = cmdArgs;
 
     const manager = new LiarsDiceManager(em);
 
-    if (unknownFlags(cmdArgs, 'c|-create|s|-start|n|d|-cancel')) return;
-
-    if (hasFlags(flags, ['--cancel'])) {
+    if (args.cancel) {
       const game = await manager.get(msg.author?.id as string);
 
       if (!game) return msg.channel.send('not in game');
@@ -56,7 +54,7 @@ export class CommandLiarsDice implements Command {
       return;
     }
 
-    if (hasFlags(flags, ['-s', '--start'])) {
+    if (args.start) {
       const game = await manager.get(msg.author?.id as string);
 
       if (!game) return msg.channel.send('not in game');
@@ -71,36 +69,16 @@ export class CommandLiarsDice implements Command {
     }
 
     // create game
-    if (!hasFlags(flags, ['-c', '--create'])) {
+    if (!args.create) {
       return msg.channel.send(`usage: \`${this.docs.map(d => d.usage).join('`, `')}\``);
     }
 
-    let diceAmount = 5;
-    let diceSides = 6;
+    const diceAmount = args.dice ?? 5;
+    if (diceAmount > 10 || diceAmount < 1) return msg.channel.send('1-10 dice allowed');
+    const diceSides = args.sides ?? 6;
+    if (diceSides > 6 || diceSides < 4) return msg.channel.send('4-6 dice sides allowed');
 
-    if (hasFlags(flags, ['-d'])) {
-      const providedDiceAmount = spliceFlag(flags, args, '-d', true);
-      if (!providedDiceAmount) return msg.channel.send('need # of dice after `-d`');
-
-      const parsed = parseInt(providedDiceAmount);
-      if (isNaN(parseInt(providedDiceAmount))) return msg.channel.send('invalid # of dice');
-      if (parsed > 10 || parsed < 1) return msg.channel.send('1-10 dice allowed');
-
-      diceAmount = parsed;
-    }
-
-    if (hasFlags(flags, ['-n'])) {
-      const providedDiceSides = spliceFlag(flags, args, '-n', true);
-      if (!providedDiceSides) return msg.channel.send('need # of dice sides safter `-n`');
-
-      const parsed = parseInt(providedDiceSides);
-      if (isNaN(parsed)) return msg.channel.send('invalid # of sides');
-      if (parsed > 6 || parsed < 4) return msg.channel.send('4-6 dice sides allowed');
-
-      diceSides = parsed;
-    }
-
-    if (hasFlags(flags, ['--how2play'])) {
+    if (args.how2play) {
       // read the ymal file
       const file = (await fse.readFile(resolvePath('assets/dice-man.yaml'))).toString('utf-8');
       const { how2play } = yaml.load(file);
@@ -304,7 +282,7 @@ export class CommandLiarsDice implements Command {
     game: LiarsDice;
   }): Promise<void> {
     return new Promise<void>(resolve => {
-      const { em, client } = cmdArgs;
+      const { em } = cmdArgs;
       em.findOneOrFail(LiarsDicePlayer, { playerId }).then(player => {
         this.makeDiceImage(player.hand).then(bufer => {
           const embed = new Embed()

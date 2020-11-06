@@ -1,39 +1,53 @@
-import { MikroORM } from '@mikro-orm/core/MikroORM';
-import { SqlEntityManager } from '@mikro-orm/knex';
-import Discord from 'discord.js';
+import { MikroORM } from '@mikro-orm/core';
+import { SqlEntityManager } from '@mikro-orm/postgresql';
+import { registerFont } from 'canvas';
+import { Guild, Message } from 'discord.js';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
-import YouTube from 'simple-youtube-api';
+import _ from 'lodash/fp';
+import path from 'path';
+import { inspect } from 'util';
+import yargsParser from 'yargs-parser';
 
 import { commands } from './commands';
-import { onMessageReactionAdd, onMessageReactionRemove } from './commands/role';
+import { CommandHelp } from './commands/general/help';
 import { Config } from './entities/Config';
 import { LiarsDice, LiarsDicePlayer } from './entities/LiarsDice';
+import * as eggs from './listeners/eggs';
+import * as reactions from './listeners/reactions';
+import * as voice from './listeners/voice';
+import * as welcome from './listeners/welcome';
 import mikroOrmConfig from './mikro-orm.config';
-import { Store } from './store';
-import { GuildGames, GuildQueue } from './types';
-import { dbFindOneError, resolvePath, updateFlags } from './util';
+import { client, logger, queueStore, spotify } from './providers';
+import { codeBlock, dbFindOneError, Embed, resolvePath } from './util';
 
-dotenv.config();
+dotenv.config({ path: resolvePath('.env') });
 
 fse.mkdirp(resolvePath('data'));
+fse.mkdirp(resolvePath('data/gifs'));
 
-export const client = new Discord.Client({ partials: ['MESSAGE', 'REACTION'] });
-export const youtube = new YouTube(process.env.YT_API_KEY as string);
+export const setPresence = (): void => {
+  const num = eggs.get();
+  const s = num === 1 ? '' : 's';
+  client.user?.setPresence({
+    activity: {
+      name: `with ${num.toLocaleString()} egg${s} | $help`,
+      type: 'PLAYING',
+    },
+  });
+};
 
-const queueStore = new Store<GuildQueue>({
-  path: 'data/queue.yaml',
-  writeOnSet: false,
-  readImmediately: false,
-  dataLanguage: 'yaml',
-});
+// register fonts for canvas
+const fonts: Record<string, { family: string; weight?: string; style?: string }> = {
+  'FiraSans-Regular.ttf': { family: 'Fira Sans' },
+  'FiraSans-Italic.ttf': { family: 'Fira Sans', style: 'italic' },
+  'FiraSans-Bold.ttf': { family: 'Fira Sans', weight: 'bold' },
+  'FiraSans-BoldItalic.ttf': { family: 'Fira Sans', weight: 'bold', style: 'italic' },
+};
 
-const gameStore = new Store<GuildGames>({
-  path: 'data/games.yaml',
-  writeOnSet: true,
-  readImmediately: true,
-  dataLanguage: 'yaml',
-});
+Object.keys(fonts).forEach(filename =>
+  registerFont(resolvePath('assets/fonts/' + filename), fonts[filename])
+);
 
 (async () => {
   // init db
@@ -45,75 +59,107 @@ const gameStore = new Store<GuildGames>({
   (orm.em as SqlEntityManager).createQueryBuilder(LiarsDicePlayer).delete().execute();
   (orm.em as SqlEntityManager).createQueryBuilder(LiarsDice).delete().execute();
 
-  client.on('message', async (msg: Discord.Message) => {
+  // init spotify
+  const getSpotifyAccessToken = async () => {
+    const grant = await spotify.clientCredentialsGrant();
+    logger.info(`new spotify access token granted, expires in ${grant.body.expires_in} seconds`);
+    spotify.setAccessToken(grant.body.access_token);
+    setTimeout(getSpotifyAccessToken, grant.body.expires_in * 1000);
+  };
+
+  setTimeout(getSpotifyAccessToken, 0);
+
+  client.on('message', async msg => {
     if (msg.author.bot) return;
     if (msg.author.id == client.user?.id) return;
-    // don't respond to DMs
-    if (!msg.guild) return;
+    if (!msg.guild) return; // don't respond to DMs
 
-    queueStore.setIfUnset(msg.guild?.id as string, {
-      videos: [],
+    queueStore.setIfUnset(msg.guild.id, {
+      tracks: [],
       playing: false,
+      current: {},
     });
 
-    const config =
-      (await orm.em.findOne(Config, { guildId: msg.guild.id as string })) ??
-      (await (async () => {
-        const config = orm.em.create(Config, { guildId: msg.guild?.id as string });
-        await orm.em.persistAndFlush(config);
-        return await orm.em.findOneOrFail(
-          Config,
-          { guildId: msg.guild?.id as string },
-          { failHandler: dbFindOneError(msg.channel) }
-        );
-      })());
+    const config = await (async (msg: Message) => {
+      const existing = await orm.em.findOne(Config, { guildId: msg.guild?.id });
+      if (existing) return existing;
+
+      const fresh = orm.em.create(Config, { guildId: msg.guild?.id });
+      await orm.em.persistAndFlush(fresh);
+      return await orm.em.findOneOrFail(
+        Config,
+        { guildId: msg.guild?.id },
+        { failHandler: dbFindOneError(msg.channel) }
+      );
+    })(msg);
+
+    eggs.onMessage(msg, config)();
 
     if (!msg.content.startsWith(config.prefix)) return;
 
-    const [cmd, ...args] = msg.content.slice(config.prefix.length).replace('  ', ' ').split(' ');
-    const flags: Record<string, number> = {};
+    const [cmd, ...argv] = msg.content.slice(config.prefix.length).replace(/ +/g, ' ').split(' ');
 
-    const commandClass = commands.find(v => {
+    let commandClass = commands.find(v => {
       if (Array.isArray(v.cmd)) return v.cmd.some(c => c.toLowerCase() === cmd.toLowerCase());
       else return v.cmd.toLowerCase() === cmd.toLowerCase();
     });
-
-    updateFlags(flags, args);
-
     if (!commandClass) return;
 
-    // console.debug(inspect(cmd, true, null, true));
-    // console.debug(inspect(args, true, null, true));
+    const yargsConfig = _.merge(commandClass.yargsSchema ?? {}, {
+      alias: _.merge(commandClass.yargsSchema?.alias, { help: 'h' }),
+      boolean: commandClass.yargsSchema?.boolean
+        ? ['help'].concat(...commandClass.yargsSchema?.boolean)
+        : ['help'],
+      default: _.merge(commandClass.yargsSchema?.default, { help: false }),
+      configuration: { 'flatten-duplicate-arrays': false },
+    } as yargsParser.Options);
+
+    const args = yargsParser.detailed(argv, yargsConfig);
+
+    console.log(inspect(yargsConfig, true, 2, true));
+    console.log(inspect(args, true, 2, true));
+
+    if (args.error) msg.channel.send(Embed.warning(codeBlock(args.error)));
+    if (args.argv.help) {
+      args.argv._ = [cmd];
+      commandClass = new CommandHelp();
+    }
 
     await commandClass.executor({
-      msg,
+      msg: msg as Message & { guild: Guild },
       cmd,
-      args,
-      flags,
-      client,
-      youtube,
+      args: args.argv,
       em: orm.em,
+      config,
       queueStore,
-      gameStore,
     });
 
     orm.em.flush();
   });
+
+  client.on('ready', () => {
+    logger.info(`${client.user?.tag} ready`);
+    setPresence();
+    setInterval(setPresence, 1000 * 60 * 10);
+  });
+
   client
-    .on('warn', console.warn)
-    .on('error', console.error)
-    // .on('debug', console.info)
-    .on('disconnect', () => console.log('client disconnected'))
-    .on('ready', () => {
-      console.log(`${client.user?.tag} ready`);
-      client.user?.setPresence({
-        activity: {
-          name: 'your mom | $help',
-          type: 'PLAYING',
-        },
-      });
+    .on('warn', logger.warn)
+    .on('error', logger.error)
+    .on('disconnect', () => logger.warn('client disconnected!'))
+    .on('guildCreate', async guild => {
+      const fresh = orm.em.create(Config, { guildId: guild.id });
+      await orm.em.persistAndFlush(fresh);
     })
-    .on('messageReactionAdd', onMessageReactionAdd(orm.em))
-    .on('messageReactionRemove', onMessageReactionRemove(orm.em))
+    .on('guildDelete', async guild => {
+      const config = await orm.em.findOne(Config, { guildId: guild.id });
+      config && (await orm.em.removeAndFlush(config));
+    })
+    .on('guildMemberAdd', welcome.onGuildMemberAdd(orm.em))
+    .on('messageDelete', eggs.onMessageDelete(orm.em))
+    .on('messageUpdate', eggs.onMessageUpdate(orm.em))
+    .on('voiceStateUpdate', voice.onVoiceStateUpdate())
+    .on('messageReactionAdd', reactions.onMessageReactionAdd(orm.em))
+    .on('messageReactionRemove', reactions.onMessageReactionRemove(orm.em))
     .login(process.env.DISCORD_TOKEN);
-})().catch(console.error);
+})().catch(err => logger.error(err));

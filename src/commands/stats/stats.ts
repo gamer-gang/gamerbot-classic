@@ -2,10 +2,12 @@ import axios from 'axios';
 import { Message, TextChannel } from 'discord.js';
 import yaml from 'js-yaml';
 import _ from 'lodash';
+import yargsParser from 'yargs-parser';
 
-import { Command } from '..';
-import { Embed } from '../../embed';
+import { Command, CommandDocs } from '..';
+import { client } from '../../providers';
 import { CmdArgs } from '../../types';
+import { codeBlock, Embed } from '../../util';
 import { makeBedwarsStats } from './bedwars';
 
 const uuidRegex = /^\b[0-9a-f]{8}\b-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?\b[0-9a-f]{12}\b$/i;
@@ -15,32 +17,36 @@ const uuidCache: Record<string, string> = {};
 
 export class CommandStats implements Command {
   cmd = 'stats';
-  docs = {
+  yargsSchema = {} as yargsParser.Options;
+  docs: CommandDocs = {
     usage: 'stats <username|uuid> [game]',
-    description: 'hypixel stats',
+    description: 'hypixel stats (game defaults to bedwars)',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
     const { msg, args } = cmdArgs;
-    if (args.length !== 1 && args.length !== 2) return msg.channel.send('expected 1 or 2 args');
+    if (args._.length !== 1 && args._.length !== 2)
+      return msg.channel.send(Embed.error('expected 1 or 2 args'));
 
-    const isUuid = uuidRegex.test(args[0]);
-    let uuid = isUuid ? args[0].replace('-', '') : uuidCache[args[0]];
+    const isUuid = uuidRegex.test(args._[0]);
+    let uuid = isUuid ? args._[0].replace('-', '') : uuidCache[args._[0]];
 
     if (!statsCache[uuid]) {
       msg.channel.send('fetching data...');
       const response = await axios.get('https://api.hypixel.net/player', {
         params: {
           key: process.env.HYPIXEL_API_KEY,
-          uuid: isUuid ? encodeURIComponent(args[0]) : undefined,
-          name: isUuid ? undefined : encodeURIComponent(args[0]),
+          uuid: isUuid ? encodeURIComponent(args._[0]) : undefined,
+          name: isUuid ? undefined : encodeURIComponent(args._[0]),
         },
       });
 
       const data = _.cloneDeep(response.data);
       if (response.status !== 200 || !data.success) {
-        return msg.channel.send('request failed\n```yaml\n' + yaml.safeDump(data) + '\n```');
+        return msg.channel.send(
+          Embed.error('request failed', codeBlock(yaml.safeDump(data), 'yaml'))
+        );
       } else {
-        if (!data.player) return msg.channel.send('player does not exist');
+        if (!data.player) return msg.channel.send(Embed.error('player does not exist'));
 
         uuid = data.player.uuid;
         const { playername } = data.player;
@@ -60,7 +66,7 @@ export class CommandStats implements Command {
     return this.sendData({
       channel: msg.channel as TextChannel,
       playerData: _.cloneDeep(statsCache[uuid]),
-      type: args[1],
+      type: args._[1],
       cmdArgs,
     });
   }
@@ -76,8 +82,6 @@ export class CommandStats implements Command {
     type: string;
     cmdArgs: CmdArgs;
   }): Promise<Message | void> {
-    const { client } = cmdArgs;
-
     let attachment: Buffer;
 
     try {
@@ -86,29 +90,33 @@ export class CommandStats implements Command {
           makeBedwarsStats({
             data: (playerData.stats as { Bedwars }).Bedwars,
             playername: playerData.playername as string,
-            botUserTag: client.user?.tag as string,
+            clientTag: client.user?.tag as string,
           }),
       } as Record<string, () => Buffer>;
 
       const exec = new RegExp(`(${Object.keys(gamemodes).join('|')})`, 'gi').exec(type);
-      if (!exec)
+      if (!exec && type !== undefined)
         return channel.send(
-          'invalid game type, supported types: ' + Object.keys(gamemodes).join(', ')
+          Embed.error(
+            'invalid game type',
+            `supported types: \`\`\`\n${Object.keys(gamemodes).join('\n')}\n\`\`\``
+          )
         );
 
-      attachment = gamemodes[exec[1]]();
+      attachment = gamemodes[exec ? exec[1] : 'bedwars']();
 
       if (!attachment) throw new Error('invalid state: attatchment is null after regexp exec');
 
       channel.send(
         new Embed()
+          .setDefaultAuthor()
           .setImage('attachment://stats.png')
           .attachFiles([{ attachment, name: 'stats.png' }])
       );
     } catch (err) {
       if ((err.toString() as string).includes('no data'))
-        return channel.send('player has no data for that game');
-      return channel.send(`error: \`\`\`${err}\n\n${err.stack}\`\`\``);
+        return channel.send(Embed.warning(`${playerData.playername} has no data for that game`));
+      return channel.send(Embed.error(codeBlock(err)));
     }
   }
 }

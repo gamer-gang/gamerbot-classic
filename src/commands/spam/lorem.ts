@@ -1,46 +1,48 @@
 import { Message } from 'discord.js';
 import { LoremIpsum } from 'lorem-ipsum';
+import yargsParser from 'yargs-parser';
 
-import { Command } from '..';
-import { Config } from '../../entities/Config';
+import { Command, CommandDocs } from '..';
 import { CmdArgs } from '../../types';
-import { dbFindOneError } from '../../util';
+import { Embed } from '../../util';
 
 export class CommandLorem implements Command {
   cmd = 'lorem';
-  docs = {
-    usage: 'lorem [msgs=1]',
+  yargsSchema: yargsParser.Options = {
+    number: ['messages'],
+    alias: {
+      messages: 'm',
+    },
+    default: {
+      messages: 1,
+    },
+  };
+  docs: CommandDocs = {
+    usage: 'lorem [-m, --messages <int>]',
     description: 'ok',
   };
   async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, em } = cmdArgs;
+    const {
+      msg,
+      args,
+      em,
+      config: { allowSpam },
+    } = cmdArgs;
 
-    const config = await em.findOneOrFail(
-      Config,
-      { guildId: msg.guild?.id as string },
-      { failHandler: dbFindOneError(msg.channel) }
-    );
+    if (!allowSpam) return msg.channel.send(Embed.error('spam commands are off'));
 
-    if (!config.allowSpam) {
-      return msg.channel.send('spam commands are off');
-    }
+    const lorem = new LoremIpsum({ seed: Date.now().toString() });
 
     const messages: string[] = [];
+    const amount = args.messages;
 
-    const lorem = new LoremIpsum({
-      seed: Date.now().toString(),
-    });
-
-    let amount = 1;
-    if (args[0]) {
-      if (isNaN(parseInt(args[0]))) return msg.channel.send('invalid amount');
-      else if (amount > 10) return msg.channel.send('too many, max 10');
-      else amount = parseInt(args[0]);
-    }
+    const errors: string[] = [];
+    if (isNaN(amount)) errors.push('invalid message amount');
+    if (amount > 10) errors.push('too many messages, max 10');
+    if (errors.length) return msg.channel.send(Embed.error('errors', errors.join('\n')));
 
     for (let i = 0; i < amount; i++) {
       let text = '';
-      // eslint-disable-next-line no-constant-condition
       while (true) {
         const append = ' ' + lorem.generateSentences(1);
         if (text.length + append.length > 2000) break;
@@ -49,8 +51,6 @@ export class CommandLorem implements Command {
       messages.push(text);
     }
 
-    for (const message of messages) {
-      msg.channel.send(message);
-    }
+    for (const message of messages) msg.channel.send(message);
   }
 }

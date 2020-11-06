@@ -2,7 +2,7 @@ import ForkTsCheckerPlugin from 'fork-ts-checker-webpack-plugin';
 import NodemonPlugin from 'nodemon-webpack-plugin';
 import path from 'path';
 import TerserPlugin from 'terser-webpack-plugin';
-import webpack, { ProgressPlugin } from 'webpack';
+import webpack, { EnvironmentPlugin, ProgressPlugin } from 'webpack';
 import nodeExternals from 'webpack-node-externals';
 
 const devMode = process.env.NODE_ENV !== 'production';
@@ -16,15 +16,38 @@ export default <webpack.Configuration>{
     libraryTarget: 'commonjs',
     chunkFilename: '[name].js',
     publicPath: path.resolve(__dirname, 'dist'),
+    devtoolModuleFilenameTemplate: '[absolute-resource-path]',
+    devtoolFallbackModuleFilenameTemplate: '[absolute-resource-path]?[hash]',
   },
-  devtool: devMode ? 'eval-cheap-module-source-map' : 'source-map',
+  devtool: devMode
+    ? process.env.NODEMON
+      ? 'eval-cheap-module-source-map'
+      : 'inline-source-map'
+    : 'source-map',
   resolve: {
     extensions: ['.ts', '.js'],
     symlinks: false,
   },
-  plugins: [new ProgressPlugin({}), new NodemonPlugin(), new ForkTsCheckerPlugin()],
+  plugins: [
+    ...(process.env.DOCKER || process.env.CI ? [] : [new ProgressPlugin({})]),
+    ...(process.env.NODEMON ? [new NodemonPlugin()] : []),
+    new EnvironmentPlugin({ WEBPACK: true }),
+    new ForkTsCheckerPlugin({
+      eslint: {
+        enabled: true,
+        files: './src/**/*.{ts,tsx,js,jsx}',
+      },
+      logger: {
+        devServer: false,
+        infrastructure: 'silent',
+        issues: 'webpack-infrastructure',
+      },
+    }),
+  ],
+  stats: { preset: 'normal', colors: true },
   externals: [nodeExternals()],
   target: 'node',
+  node: { __dirname: true },
   experiments: {
     topLevelAwait: true,
   },

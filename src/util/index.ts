@@ -1,6 +1,11 @@
+import { resolvePath } from './path';
+import { Store, StoreOptions } from './store';
+
 export * from './db';
 export * from './duration';
-export * from './flags';
+export * from './embed';
 export * from './map';
 export * from './message';
-export * from './path';
+export * from './music';
+export * from './regexp';
+export { resolvePath, Store, StoreOptions };

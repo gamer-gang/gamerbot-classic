@@ -1,0 +1,32 @@
+import { Message } from 'discord.js';
+
+import { Command, CommandDocs } from '..';
+import { CmdArgs } from '../../types';
+import { codeBlock, Embed, updatePlayingEmbed } from '../../util';
+
+export class CommandPause implements Command {
+  cmd = 'pause';
+  docs: CommandDocs = {
+    usage: 'pause',
+    description: 'pauses playback',
+  };
+  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
+    const { msg, queueStore } = cmdArgs;
+    const queue = queueStore.get(msg.guild.id);
+
+    if (!queue.playing) return msg.channel.send(Embed.error('not playing'));
+
+    const voice = msg.member?.voice;
+    if (!voice?.channel || voice.channel.id !== queue.voiceConnection?.channel.id)
+      return msg.channel.send(Embed.error('you are not in the music channel'));
+
+    try {
+      queue.voiceConnection?.dispatcher?.pause(true);
+      updatePlayingEmbed({ guildId: msg.guild.id, playing: false });
+    } catch (err) {
+      return msg.channel.send(Embed.error(codeBlock(err)));
+    }
+
+    return msg.channel.send(Embed.success('paused'));
+  }
+}

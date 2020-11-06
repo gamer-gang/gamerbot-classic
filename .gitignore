@@ -5,11 +5,9 @@ dist
 .env
 data
 sounds
+logs
 
 assets/parrot*/
-
-.vscode/launch.json
-.vscode/tasks.json
 
 deploy
 gamerbot

@@ -1,31 +1,22 @@
 import { Connection, EntityManager, IDatabaseDriver } from '@mikro-orm/core';
-import Discord from 'discord.js';
-import YouTube from 'simple-youtube-api';
+import { Guild, Message } from 'discord.js';
+import yargsParser from 'yargs-parser';
 
-import { Store } from '../store';
-import { GuildGames } from './games';
-import { GuildQueue } from './youtube';
+import { Config } from '../entities/Config';
+import { Store } from '../util';
+import { GuildQueue } from './music';
 
 export * from './economy';
 export * from './games';
-export * from './youtube';
+export * from './music';
 
 export type MikroOrmEm = EntityManager<IDatabaseDriver<Connection>>;
 
-// export interface GuildConfig {
-//   prefix: string;
-//   allowSpam: boolean;
-// }
-
 export interface CmdArgs {
-  msg: Discord.Message | Discord.PartialMessage;
-  args: string[];
-  flags: Record<string, number>;
+  msg: Message & { guild: Guild };
+  args: yargsParser.Arguments;
   cmd: string;
-  youtube: YouTube;
-  client: Discord.Client;
-  // configStore: Store<GuildConfig>;
+  config: Config;
   queueStore: Store<GuildQueue>;
-  gameStore: Store<GuildGames>;
   em: MikroOrmEm;
 }
