@@ -21,7 +21,7 @@ export class CommandGif implements Command {
       list: 'l',
       add: 'a',
       remove: ['r', 'rm'],
-      rename: ['n', 'mv'],
+      rename: ['m', 'mv'],
     },
   };
   docs = [
@@ -42,7 +42,7 @@ export class CommandGif implements Command {
       description: 'remove gif',
     },
     {
-      usage: 'gif -n, --mv, --rename <name> <newName>',
+      usage: 'gif -m, --mv, --rename <name> <newName>',
       description: 'rename gif',
     },
   ];
@@ -50,7 +50,8 @@ export class CommandGif implements Command {
   invalidChars = (msg: Message | PartialMessage): Promise<Message> =>
     msg.channel.send(
       Embed.error(
-        `**invalid characters in filename**\nonly letters, numbers, dashes, and underscores allowed`
+        'invalid characters in filename',
+        'only letters, numbers, dashes, and underscores allowed'
       )
     );
 
