@@ -80,6 +80,7 @@ export class CommandGif implements Command {
         )
       );
   }
+
   async show(msg: Message | PartialMessage, args: yargsParser.Arguments): Promise<Message> {
     const name = args._[0];
 
@@ -101,8 +102,10 @@ export class CommandGif implements Command {
     if (files.includes(name)) return msg.channel.send(Embed.error('filename in use'));
     if (!regExps.url.test(url)) return msg.channel.send(Embed.error('invalid URL'));
 
-    msg.channel.send(Embed.info('downloading...'));
-    return msg.channel.send(await this.downloadGif(name, url));
+    const downloadEmbed = msg.channel.send(Embed.info('downloading...'));
+    const gif = await this.downloadGif(name, url);
+    (await downloadEmbed).delete();
+    return msg.channel.send(gif);
   }
 
   async remove(msg: Message | PartialMessage, args: yargsParser.Arguments): Promise<Message> {
@@ -146,7 +149,7 @@ export class CommandGif implements Command {
 
         response.pipe(fse.createWriteStream(resolvePath(`${gifDir}/${name}.gif`)));
 
-        resolve(Embed.error(`done, saved file \`${name}\``));
+        resolve(Embed.success(`done, saved file \`${name}\``));
       });
     });
   }

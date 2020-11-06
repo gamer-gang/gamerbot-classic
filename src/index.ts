@@ -154,4 +154,4 @@ Object.keys(fonts).forEach(filename =>
     .on('messageReactionAdd', reactions.onMessageReactionAdd(orm.em))
     .on('messageReactionRemove', reactions.onMessageReactionRemove(orm.em))
     .login(process.env.DISCORD_TOKEN);
-})().catch(logger.error);
+})().catch(err => logger.error(err));
