@@ -17,4 +17,5 @@ export interface CmdArgs {
   config: Config;
   queueStore: Store<GuildQueue>;
   em: EntityManager<IDatabaseDriver<Connection>>;
+  startTime: [number, number];
 }

@@ -11,6 +11,7 @@ import { CommandCowsay } from './messages/cowsay';
 import { CommandEcho } from './messages/echo';
 import { CommandEz } from './messages/ez';
 import { CommandJoke } from './messages/joke';
+import { CommandPing } from './messages/ping';
 import { CommandBan } from './moderation/ban';
 import { CommandConfig } from './moderation/config/config';
 import { CommandKick } from './moderation/kick';
@@ -64,6 +65,7 @@ export const commands: Command[] = [
   new CommandEcho(),
   new CommandEz(),
   new CommandJoke(),
+  new CommandPing(),
 
   // spammable
   new CommandLorem(),

@@ -62,6 +62,8 @@ Object.keys(fonts).forEach(filename =>
   setTimeout(getSpotifyAccessToken, 0);
 
   client.on('message', async msg => {
+    const start = process.hrtime();
+
     if (msg.author.bot) return;
     if (msg.author.id == client.user?.id) return;
     if (!msg.guild) return; // don't respond to DMs
@@ -124,6 +126,7 @@ Object.keys(fonts).forEach(filename =>
       em: orm.em,
       config,
       queueStore,
+      startTime: start,
     });
 
     orm.em.flush();
