@@ -17,7 +17,7 @@ export class CommandPing implements Command {
 
     msg.channel.send('Pong!').then(ping => {
       const end = process.hrtime(startTime);
-      ping.edit(`Pong! \`${end[1] / 10 ** 6}ms\``);
+      ping.edit(`Pong! \`${(end[0] * 1e9 + end[1]) / 1e6}ms\``);
     });
   }
 }
