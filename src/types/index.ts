@@ -10,7 +10,7 @@ export * from './economy';
 export * from './games';
 export * from './music';
 
-export interface CmdArgs {
+export interface Context {
   msg: Message & { guild: Guild };
   args: yargsParser.Arguments;
   cmd: string;

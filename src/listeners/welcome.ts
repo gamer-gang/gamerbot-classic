@@ -1,10 +1,10 @@
 import { GuildMember, PartialGuildMember, TextChannel } from 'discord.js';
 
 import { Config } from '../entities/Config';
-import { CmdArgs } from '../types';
+import { Context } from '../types';
 import { dbFindOneError, parseDiscohookJSON } from '../util';
 
-export const onGuildMemberAdd = (em: CmdArgs['em']) => async (
+export const onGuildMemberAdd = (em: Context['em']) => async (
   member: GuildMember | PartialGuildMember
 ): Promise<void> => {
   const config = await em.findOneOrFail(

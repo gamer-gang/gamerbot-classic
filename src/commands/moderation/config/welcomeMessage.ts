@@ -1,10 +1,10 @@
 import { Message, MessageReaction, User } from 'discord.js';
 
 import { Config } from '../../../entities/Config';
-import { CmdArgs } from '../../../types';
+import { Context } from '../../../types';
 import { codeBlock, Embed, parseDiscohookJSON } from '../../../util';
 
-const replacer = (msg: CmdArgs['msg']) => (json: string) =>
+const replacer = (msg: Context['msg']) => (json: string) =>
   json
     .replace('%USER%', `<@!${msg.author.id}>`)
     .replace('%USERTAG%', `${msg.author.tag}`)
@@ -12,10 +12,10 @@ const replacer = (msg: CmdArgs['msg']) => (json: string) =>
 
 export const welcomeMessage = async (
   config: Config,
-  cmdArgs: CmdArgs,
+  context: Context,
   value?: string
 ): Promise<void | Message | Message[]> => {
-  const { msg } = cmdArgs;
+  const { msg } = context;
 
   const replace = replacer(msg);
 
@@ -52,7 +52,7 @@ export const welcomeMessage = async (
       collector.on('collect', (reaction, user) => {
         if (reaction.emoji.name === '❌') return msg.channel.send('cancelled');
         collector.stop();
-        confirmMessage(value, config, cmdArgs);
+        confirmMessage(value, config, context);
       });
 
       await confirmation.react('✅');
@@ -60,14 +60,14 @@ export const welcomeMessage = async (
       return;
     }
 
-    confirmMessage(value, config, cmdArgs);
+    confirmMessage(value, config, context);
   } catch (err) {
     msg.channel.send(Embed.error(codeBlock(err)));
   }
 };
 
-const confirmMessage = async (json: string, config: Config, cmdArgs: CmdArgs) => {
-  const { msg } = cmdArgs;
+const confirmMessage = async (json: string, config: Config, context: Context) => {
+  const { msg } = context;
 
   await msg.channel.send(parseDiscohookJSON(replacer(msg)(json)));
   const confirmation = await msg.channel.send('set this as the welcome message?');

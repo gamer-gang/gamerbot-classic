@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 import _ from 'lodash';
 
 import { Command, CommandDocs } from '..';
-import { CmdArgs, Track } from '../../types';
+import { Context, Track } from '../../types';
 import { codeBlock, Embed } from '../../util';
 
 export class CommandStop implements Command {
@@ -11,8 +11,8 @@ export class CommandStop implements Command {
     usage: 'stop',
     description: 'stops playback',
   };
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, queueStore } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, queueStore } = context;
     const queue = queueStore.get(msg.guild.id);
 
     if (!queue.playing) return msg.channel.send(Embed.error('not playing'));

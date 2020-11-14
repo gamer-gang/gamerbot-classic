@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { Embed } from '../../util';
 
 export class CommandEcho implements Command {
@@ -23,8 +23,8 @@ export class CommandEcho implements Command {
     },
   ];
 
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
 
     if (args._.length == 0 || /^\s+$/.test(args._.join(' ')))
       return msg.channel.send(Embed.error('**nothing to say**'));

@@ -2,13 +2,13 @@ import { Message, MessageReaction, PartialMessage, PartialUser, User } from 'dis
 
 import { ReactionRole, RoleEmoji } from '../entities/ReactionRole';
 import { client, getLogger, LoggerType } from '../providers';
-import { CmdArgs } from '../types';
+import { Context } from '../types';
 import { Embed } from '../util';
 
 type Reaction = MessageReaction;
 type MessagePart = Message | PartialMessage;
 type UserPart = User | PartialUser;
-type EM = CmdArgs['em'];
+type EM = Context['em'];
 
 const verifyReaction = async (reaction: Reaction, user: UserPart): Promise<boolean> => {
   if (!reaction.partial) return true;

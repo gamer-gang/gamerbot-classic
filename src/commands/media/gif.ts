@@ -5,7 +5,7 @@ import * as https from 'https';
 import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { codeBlock, Embed, regExps, resolvePath } from '../../util';
 
 const fileRegExp = /^[A-Za-z0-9\-_]+$/;
@@ -60,8 +60,8 @@ export class CommandGif implements Command {
     return ext ? files : files.map(f => f.replace('.gif', ''));
   }
 
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
 
     if (args.list) {
       const files = await this.getGifs();

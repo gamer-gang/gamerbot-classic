@@ -9,7 +9,7 @@ import ytdl from 'ytdl-core';
 
 import { Command, CommandDocs } from '..';
 import { client, getLogger, LoggerType, queueStore, spotify, youtube } from '../../providers';
-import { CmdArgs, Track, TrackType } from '../../types';
+import { Context, Track, TrackType } from '../../types';
 import {
   codeBlock,
   Embed,
@@ -34,8 +34,8 @@ export class CommandPlay implements Command {
       description: 'search for a video, and choose from the top 5 results.',
     },
   ];
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, queueStore } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args, queueStore } = context;
 
     const voice = msg.member?.voice;
     if (!voice?.channel) return msg.channel.send(Embed.error('you are not in a voice channel'));
@@ -64,7 +64,7 @@ export class CommandPlay implements Command {
               duration: toDuration(metadata.format.duration),
             },
           } as Track,
-          { cmdArgs }
+          { context }
         );
 
         return;
@@ -79,16 +79,16 @@ export class CommandPlay implements Command {
       return msg.channel.send(Embed.error('expected at least one arg'));
     }
 
-    if (regExps.youtube.playlist.test(args._[0])) return this.getYoutubePlaylist(cmdArgs);
-    else if (regExps.youtube.video.test(args._[0])) return this.getYoutubeVideo(cmdArgs);
-    else if (regExps.spotify.playlist.test(args._[0])) return this.getSpotifyPlaylist(cmdArgs);
-    else if (regExps.spotify.album.test(args._[0])) return this.getSpotifyAlbum(cmdArgs);
-    else if (regExps.spotify.track.test(args._[0])) return this.getSpotifyTrack(cmdArgs);
-    else return this.searchYoutube(cmdArgs);
+    if (regExps.youtube.playlist.test(args._[0])) return this.getYoutubePlaylist(context);
+    else if (regExps.youtube.video.test(args._[0])) return this.getYoutubeVideo(context);
+    else if (regExps.spotify.playlist.test(args._[0])) return this.getSpotifyPlaylist(context);
+    else if (regExps.spotify.album.test(args._[0])) return this.getSpotifyAlbum(context);
+    else if (regExps.spotify.track.test(args._[0])) return this.getSpotifyTrack(context);
+    else return this.searchYoutube(context);
   }
 
-  async getYoutubePlaylist(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async getYoutubePlaylist(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
     try {
       const playlist = await youtube.getPlaylist(args._[0]);
       if (!playlist)
@@ -106,7 +106,7 @@ export class CommandPlay implements Command {
               data: { ...v, livestream: isLivestream(v) },
               requesterId: msg.author?.id,
             } as Track,
-            { cmdArgs, silent: true, beginPlaying: false }
+            { context, silent: true, beginPlaying: false }
           )
       );
 
@@ -122,7 +122,7 @@ export class CommandPlay implements Command {
       const queue = queueStore.get(msg.guild.id);
       if (queue?.current.embed) updatePlayingEmbed({ guildId: msg.guild.id });
 
-      this.playNext(cmdArgs);
+      this.playNext(context);
     } catch (err) {
       getLogger(LoggerType.MESSAGE, msg.id).error(err);
       if (err.toString() === 'Error: resource youtube#playlistListResponse not found')
@@ -134,8 +134,8 @@ export class CommandPlay implements Command {
     }
   }
 
-  async getYoutubeVideo(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async getYoutubeVideo(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
 
     try {
       const video = await youtube.getVideo(args._[0]);
@@ -149,7 +149,7 @@ export class CommandPlay implements Command {
           requesterId: msg.author?.id as string,
           type: TrackType.YOUTUBE,
         },
-        { cmdArgs }
+        { context }
       );
     } catch (err) {
       getLogger(LoggerType.MESSAGE, msg.id).error(err);
@@ -162,8 +162,8 @@ export class CommandPlay implements Command {
     }
   }
 
-  async getSpotifyAlbum(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async getSpotifyAlbum(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
     const albumId = regExps.spotify.album.exec(args._[0]);
     if (!albumId) return msg.channel.send(Embed.error('invalid album'));
 
@@ -183,7 +183,7 @@ export class CommandPlay implements Command {
           },
           requesterId: msg.author?.id as string,
         },
-        { cmdArgs, silent: true, beginPlaying: false }
+        { context, silent: true, beginPlaying: false }
       );
     }
 
@@ -197,11 +197,11 @@ export class CommandPlay implements Command {
     const queue = queueStore.get(msg.guild.id);
     if (queue?.current.embed) updatePlayingEmbed({ guildId: msg.guild.id });
 
-    this.playNext(cmdArgs);
+    this.playNext(context);
   }
 
-  async getSpotifyPlaylist(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async getSpotifyPlaylist(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
     const playlistId = regExps.spotify.playlist.exec(args._[0]);
     if (!playlistId) return msg.channel.send(Embed.error('invalid playlist'));
 
@@ -225,7 +225,7 @@ export class CommandPlay implements Command {
           },
           requesterId: msg.author?.id as string,
         },
-        { cmdArgs, silent: true, beginPlaying: false }
+        { context, silent: true, beginPlaying: false }
       );
     }
 
@@ -239,11 +239,11 @@ export class CommandPlay implements Command {
     const queue = queueStore.get(msg.guild.id);
     queue.current.embed && updatePlayingEmbed({ guildId: msg.guild.id });
 
-    !queue.playing && this.playNext(cmdArgs);
+    !queue.playing && this.playNext(context);
   }
 
-  async getSpotifyTrack(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async getSpotifyTrack(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
     const trackId = regExps.spotify.track.exec(args._[0]);
     if (!trackId) return msg.channel.send('invalid track');
 
@@ -262,12 +262,12 @@ export class CommandPlay implements Command {
         },
         requesterId: msg.author?.id as string,
       },
-      { cmdArgs }
+      { context }
     );
   }
 
-  async searchYoutube(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, config } = cmdArgs;
+  async searchYoutube(context: Context): Promise<void | Message> {
+    const { msg, args, config } = context;
 
     try {
       const searchMessage = await msg.channel.send(Embed.info('loading...'));
@@ -341,7 +341,7 @@ export class CommandPlay implements Command {
         if (!video)
           throw new Error('invalid state: video is null after selecting valid returned search');
 
-        this.queueTrack(video, { cmdArgs });
+        this.queueTrack(video, { context });
       });
     } catch (err) {
       getLogger(LoggerType.MESSAGE, msg.id).error(err);
@@ -351,15 +351,15 @@ export class CommandPlay implements Command {
 
   async queueTrack(
     track: Track,
-    options: { cmdArgs: CmdArgs; silent?: boolean; beginPlaying?: boolean }
+    options: { context: Context; silent?: boolean; beginPlaying?: boolean }
   ): Promise<void> {
-    const { msg, queueStore } = options.cmdArgs;
+    const { msg, queueStore } = options.context;
 
     const queue = queueStore.get(msg.guild.id);
     queue.tracks.push(track);
     queue.textChannel = msg.channel as TextChannel;
 
-    if (!queue.playing && (options?.beginPlaying ?? true)) this.playNext(options.cmdArgs);
+    if (!queue.playing && (options?.beginPlaying ?? true)) this.playNext(options.context);
     else if (!(options?.silent ?? false)) {
       msg.channel.send(
         Embed.success(
@@ -375,8 +375,8 @@ export class CommandPlay implements Command {
     }
   }
 
-  async playNext(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, queueStore } = cmdArgs;
+  async playNext(context: Context): Promise<void | Message> {
+    const { msg, queueStore } = context;
 
     let queue = queueStore.get(msg.guild.id);
 
@@ -413,7 +413,7 @@ export class CommandPlay implements Command {
       updatePlayingEmbed({ guildId: msg.guild.id, playing: false });
       delete queue.current.embed;
 
-      this.playNext(cmdArgs);
+      this.playNext(context);
     };
 
     switch (track.type) {

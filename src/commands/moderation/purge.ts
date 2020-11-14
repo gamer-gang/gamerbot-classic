@@ -1,7 +1,7 @@
 import { Message, TextChannel } from 'discord.js';
 
 import { Command, CommandDocs } from '..';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { Embed } from '../../util';
 
 export class CommandPurge implements Command {
@@ -13,8 +13,8 @@ export class CommandPurge implements Command {
       'minimum 2, maximum 1000 (command is repeatable)\n' +
       'only deletes messages up to 14 days old because of a discord limitation',
   };
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
 
     const n = parseInt(args._[0], 10);
 

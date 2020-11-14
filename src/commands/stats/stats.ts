@@ -6,7 +6,7 @@ import yargsParser from 'yargs-parser';
 
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { codeBlock, Embed } from '../../util';
 import { makeBedwarsStats } from './bedwars';
 
@@ -22,8 +22,8 @@ export class CommandStats implements Command {
     usage: 'stats <username|uuid> [game]',
     description: 'hypixel stats (game defaults to bedwars)',
   };
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
     if (args._.length !== 1 && args._.length !== 2)
       return msg.channel.send(Embed.error('expected 1 or 2 args'));
 
@@ -67,7 +67,7 @@ export class CommandStats implements Command {
       channel: msg.channel as TextChannel,
       playerData: _.cloneDeep(statsCache[uuid]),
       type: args._[1],
-      cmdArgs,
+      context,
     });
   }
 
@@ -75,12 +75,12 @@ export class CommandStats implements Command {
     channel,
     playerData,
     type,
-    cmdArgs,
+    context,
   }: {
     channel: TextChannel;
     playerData: Record<string, unknown>;
     type: string;
-    cmdArgs: CmdArgs;
+    context: Context;
   }): Promise<Message | void> {
     let attachment: Buffer;
 

@@ -119,7 +119,7 @@ Object.keys(fonts).forEach(filename =>
       commandClass = new CommandHelp();
     }
 
-    await commandClass.executor({
+    await commandClass.execute({
       msg: msg as Message & { guild: Guild },
       cmd,
       args: args.argv,

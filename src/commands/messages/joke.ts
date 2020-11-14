@@ -5,7 +5,7 @@ import he from 'he';
 import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { Embed } from '../../util';
 
 export class CommandJoke implements Command {
@@ -55,8 +55,8 @@ export class CommandJoke implements Command {
     return response.data;
   }
 
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
     try {
       let joke: string;
 

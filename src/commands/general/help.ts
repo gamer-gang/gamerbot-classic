@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 import _ from 'lodash';
 
 import { Command, CommandDocs, commands } from '..';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { codeBlock, Embed } from '../../util';
 
 export class CommandHelp implements Command {
@@ -11,8 +11,8 @@ export class CommandHelp implements Command {
     usage: 'help',
     description: 'Show this message.',
   };
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, config } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args, config } = context;
 
     if (args._[0]) {
       const command = commands.find(({ cmd }) =>

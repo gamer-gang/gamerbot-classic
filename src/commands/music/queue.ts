@@ -4,7 +4,7 @@ import _ from 'lodash';
 import yargsParser from 'yargs-parser';
 
 import { Command, CommandDocs } from '..';
-import { CmdArgs, GuildQueue, Track, TrackType } from '../../types';
+import { Context, GuildQueue, Track, TrackType } from '../../types';
 import {
   Embed,
   formatDuration,
@@ -37,8 +37,8 @@ export class CommandQueue implements Command {
       description: 'remove video at `<index>` from queue',
     },
   ];
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, queueStore } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args, queueStore } = context;
 
     const queue = queueStore.get(msg.guild.id);
 

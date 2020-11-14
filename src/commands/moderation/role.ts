@@ -4,7 +4,7 @@ import yargsParser from 'yargs-parser';
 
 import { Command, CommandDocs } from '..';
 import { ReactionRole, RoleEmoji } from '../../entities/ReactionRole';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { codeBlock, Embed } from '../../util';
 
 export class CommandRole implements Command {
@@ -30,8 +30,8 @@ export class CommandRole implements Command {
       description: 'list the boyes',
     },
   ];
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, em } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args, em } = context;
 
     if (!msg.guild?.members.resolve(msg.author as User)?.hasPermission('MANAGE_ROLES'))
       return msg.channel.send(Embed.error('you are missing the `MANAGE_ROLES` permission'));
