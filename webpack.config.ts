@@ -1,3 +1,4 @@
+import { execSync } from 'child_process';
 import ForkTsCheckerPlugin from 'fork-ts-checker-webpack-plugin';
 import NodemonPlugin from 'nodemon-webpack-plugin';
 import path from 'path';
@@ -31,7 +32,10 @@ export default <webpack.Configuration>{
   plugins: [
     ...(process.env.DOCKER || process.env.CI ? [] : [new ProgressPlugin({})]),
     ...(process.env.NODEMON ? [new NodemonPlugin()] : []),
-    new EnvironmentPlugin({ WEBPACK: true }),
+    new EnvironmentPlugin({
+      WEBPACK: true,
+      LATEST_COMMIT_HASH: execSync('git rev-parse HEAD').toString().trim(),
+    }),
     new ForkTsCheckerPlugin({
       eslint: {
         enabled: true,
