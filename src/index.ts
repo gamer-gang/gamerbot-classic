@@ -153,8 +153,8 @@ Object.keys(fonts).forEach(filename =>
       config && (await orm.em.removeAndFlush(config));
     })
     .on('guildMemberAdd', welcome.onGuildMemberAdd(orm.em))
-    .on('messageDelete', eggs.onMessageDelete(orm.em))
-    .on('messageUpdate', eggs.onMessageUpdate(orm.em))
+    // .on('messageDelete', eggs.onMessageDelete(orm.em))
+    // .on('messageUpdate', eggs.onMessageUpdate(orm.em))
     .on('voiceStateUpdate', voice.onVoiceStateUpdate())
     .on('messageReactionAdd', reactions.onMessageReactionAdd(orm.em))
     .on('messageReactionRemove', reactions.onMessageReactionRemove(orm.em))

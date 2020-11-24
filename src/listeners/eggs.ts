@@ -4,16 +4,24 @@ import { Message, PartialMessage, User } from 'discord.js';
 import { setPresence } from '..';
 import { Config } from '../entities/Config';
 import { EggLeaderboard } from '../entities/EggLeaderboard';
-import { client } from '../providers';
 import { Context } from '../types';
 
 const eggy = (msg: Message | PartialMessage, prefix: string) =>
   ['🥚', 'egg'].some(egg => msg.content?.toLowerCase().includes(egg)) &&
   !msg.content?.toLowerCase().startsWith(prefix);
 
-// const EGGFILE = resolvePath('data/eggcount.txt');
+const cooldown = 5000;
 
-// fse.ensureFileSync(EGGFILE);
+class EggCooldown {
+  constructor(public timestamp: number, public warned = false) {}
+
+  expired(): boolean {
+    return Date.now() > this.timestamp + cooldown;
+  }
+}
+
+const cooldowns: Record<string, EggCooldown> = {};
+
 const getEggsFromDB = async (em: Context['em']) => {
   const builder = (em as EntityManager).createQueryBuilder(EggLeaderboard);
   const eggsObjects: { eggs: number }[] = await builder.select('eggs').execute();
@@ -39,15 +47,6 @@ const getLeaderboardEntry = async (user: User, em: Context['em']) => {
   return entry;
 };
 
-// export const get = (): number => eggCount;
-// export const change = (delta: number): void => set(eggCount + delta);
-// export const set = (count: number): void => {
-//   if (eggCount === count) return;
-//   eggCount = count;
-//   fse.writeFile(EGGFILE, eggCount.toString());
-//   setPresence();
-// };
-
 export const get = async (em: Context['em']): Promise<number> => {
   if (eggCount == null) eggCount = await getEggsFromDB(em);
   return eggCount;
@@ -61,61 +60,77 @@ export const onMessage = (
   if (!config || msg.author?.bot || !config.egg) return;
 
   if (eggy(msg, config.prefix)) {
-    msg.react('🥚');
-
-    eggCount++;
-    setPresence();
-
-    const lb = await getLeaderboardEntry(msg.author as User, em);
-    lb.eggs++;
-
-    em.flush();
+    if (!cooldowns[msg.author?.id as string]) {
+      cooldowns[msg.author?.id as string] = new EggCooldown(Date.now());
+      grantEgg(msg, em);
+      return;
+    } else {
+      const cooldown = cooldowns[msg.author?.id as string];
+      if (cooldown.expired()) {
+        grantEgg(msg, em);
+      } else if (!cooldown.warned) {
+        msg.channel.send(`<@${msg.author?.id}> enter the chill zone`);
+        cooldown.warned = true;
+      }
+    }
   }
 };
 
-export const onMessageDelete = (em: Context['em']) => async (
-  msg: Message | PartialMessage
-): Promise<void> => {
-  const config = await em.findOne(Config, { guildId: msg.guild?.id as string });
-  if (!config || msg.author?.bot || !config.egg) return;
+const grantEgg = async (msg: Message | PartialMessage, em: Context['em']) => {
+  msg.react('🥚');
 
-  if (eggy(msg, config.prefix)) {
-    eggCount--;
-    setPresence();
+  eggCount++;
+  setPresence();
 
-    const lb = await getLeaderboardEntry(msg.author as User, em);
-    lb.eggs--;
+  const lb = await getLeaderboardEntry(msg.author as User, em);
+  lb.eggs++;
 
-    em.flush();
-  }
+  em.flush();
 };
 
-export const onMessageUpdate = (em: Context['em']) => async (
-  prev: Message | PartialMessage,
-  next: Message | PartialMessage
-): Promise<void> => {
-  const config = await em.findOne(Config, { guildId: next.guild?.id as string });
-  if (!config || next.author?.bot || !config.egg) return;
+// export const onMessageDelete = (em: Context['em']) => async (
+//   msg: Message | PartialMessage
+// ): Promise<void> => {
+//   const config = await em.findOne(Config, { guildId: msg.guild?.id as string });
+//   if (!config || msg.author?.bot || !config.egg) return;
 
-  if (!eggy(prev, config.prefix) && eggy(next, config.prefix)) {
-    next.react('🥚');
+//   if (eggy(msg, config.prefix)) {
+//     eggCount--;
+//     setPresence();
 
-    eggCount++;
-    setPresence();
+//     const lb = await getLeaderboardEntry(msg.author as User, em);
+//     lb.eggs--;
 
-    const lb = await getLeaderboardEntry(next.author as User, em);
-    lb.eggs++;
+//     em.flush();
+//   }
+// };
 
-    em.flush();
-  } else if (eggy(prev, config.prefix) && !eggy(next, config.prefix)) {
-    next.reactions.cache.get('🥚')?.users.remove(client.user as User);
+// export const onMessageUpdate = (em: Context['em']) => async (
+//   prev: Message | PartialMessage,
+//   next: Message | PartialMessage
+// ): Promise<void> => {
+//   const config = await em.findOne(Config, { guildId: next.guild?.id as string });
+//   if (!config || next.author?.bot || !config.egg) return;
 
-    eggCount--;
-    setPresence();
+//   if (!eggy(prev, config.prefix) && eggy(next, config.prefix)) {
+//     next.react('🥚');
 
-    const lb = await getLeaderboardEntry(next.author as User, em);
-    lb.eggs--;
+//     eggCount++;
+//     setPresence();
 
-    em.flush();
-  }
-};
+//     const lb = await getLeaderboardEntry(next.author as User, em);
+//     lb.eggs++;
+
+//     em.flush();
+//   } else if (eggy(prev, config.prefix) && !eggy(next, config.prefix)) {
+//     next.reactions.cache.get('🥚')?.users.remove(client.user as User);
+
+//     eggCount--;
+//     setPresence();
+
+//     const lb = await getLeaderboardEntry(next.author as User, em);
+//     lb.eggs--;
+
+//     em.flush();
+//   }
+// };
