@@ -1,10 +1,10 @@
+import { Connection, IDatabaseDriver } from '@mikro-orm/core';
 import { MikroORM } from '@mikro-orm/core/MikroORM';
 import { registerFont } from 'canvas';
 import { Guild, Message } from 'discord.js';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import _ from 'lodash/fp';
-import { inspect } from 'util';
 import yargsParser from 'yargs-parser';
 
 import { commands } from './commands';
@@ -23,8 +23,10 @@ dotenv.config({ path: resolvePath('.env') });
 fse.mkdirp(resolvePath('data'));
 fse.mkdirp(resolvePath('data/gifs'));
 
-export const setPresence = (): void => {
-  const num = eggs.get();
+let orm: MikroORM<IDatabaseDriver<Connection>>;
+
+export const setPresence = async (): Promise<void> => {
+  const num = await eggs.get(orm.em);
   const s = num === 1 ? '' : 's';
   client.user?.setPresence({
     activity: {
@@ -48,7 +50,7 @@ Object.keys(fonts).forEach(filename =>
 
 (async () => {
   // init db
-  const orm = await MikroORM.init(mikroOrmConfig);
+  orm = await MikroORM.init(mikroOrmConfig);
   await orm.getMigrator().up();
 
   // init spotify
@@ -87,7 +89,7 @@ Object.keys(fonts).forEach(filename =>
       );
     })(msg);
 
-    eggs.onMessage(msg, config)();
+    eggs.onMessage(msg, config, orm.em)();
 
     if (!msg.content.startsWith(config.prefix)) return;
 
@@ -110,8 +112,8 @@ Object.keys(fonts).forEach(filename =>
 
     const args = yargsParser.detailed(argv, yargsConfig);
 
-    console.log(inspect(yargsConfig, true, 2, true));
-    console.log(inspect(args, true, 2, true));
+    // console.log(inspect(yargsConfig, true, 2, true));
+    // console.log(inspect(args, true, 2, true));
 
     if (args.error) msg.channel.send(Embed.warning(codeBlock(args.error)));
     if (args.argv.help) {
