@@ -10,7 +10,7 @@ const eggy = (msg: Message | PartialMessage, prefix: string) =>
   ['🥚', 'egg'].some(egg => msg.content?.toLowerCase().includes(egg)) &&
   !msg.content?.toLowerCase().startsWith(prefix);
 
-const cooldown = 10000;
+const cooldown = 30000;
 
 class EggCooldown {
   constructor(public timestamp: number, public warned = false) {}
@@ -67,7 +67,7 @@ export const onMessage = (
     } else {
       const cooldown = cooldowns[msg.author?.id as string];
       if (cooldown.expired()) {
-        delete cooldowns[msg.author?.id as string];
+        cooldowns[msg.author?.id as string] = new EggCooldown(Date.now());
         grantEgg(msg, em);
       } else if (!cooldown.warned) {
         msg.channel.send(`<@${msg.author?.id}> enter the chill zone`);
