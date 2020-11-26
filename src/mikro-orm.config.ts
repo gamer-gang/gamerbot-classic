@@ -12,15 +12,15 @@ dotenv.config({ path: resolvePath('.env') });
 const getEntities = () => {
   let modules;
   if (process.env.WEBPACK) {
-    modules = require.context('./entities', true, /\.ts$/);
-    modules = modules.keys().map(r => modules(r));
+    const context = (modules = require.context('./entities', true, /\.ts$/));
+    modules = context.keys().map(r => context(r));
   } else {
     modules = fs
       .readdirSync(resolvePath('src/entities'))
       .map(file => require(`./entities/${file}`));
   }
 
-  return modules.flatMap(mod => Object.keys(mod).map(className => mod[className]));
+  return modules.flatMap(mod => (Object.keys(mod) as any).map((name: string) => mod[name]));
 };
 
 const getMigrations = () => {
@@ -37,7 +37,7 @@ const getMigrations = () => {
       .readdirSync(resolvePath('src/migrations'))
       .map(file => require(`./migrations/${file}`));
 
-    return Object.keys(modules).map(
+    return modules.map(
       name => <MigrationObject>{ name: basename(name), class: Object.values(modules[name])[0] }
     );
   }

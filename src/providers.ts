@@ -1,36 +1,15 @@
-import { Client } from 'discord.js';
+import { MikroORM } from '@mikro-orm/core';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import log4js from 'log4js';
-import YouTube from 'simple-youtube-api';
-import Spotify from 'spotify-web-api-node';
 
-import { GuildQueue } from './types';
-import { resolvePath, Store } from './util';
+import { Gamerbot } from './gamerbot';
+import mikroOrmConfig from './mikro-orm.config';
+import { resolvePath } from './util';
 
 dotenv.config({ path: resolvePath('.env') });
 
 fse.mkdirp(resolvePath('logs'));
-
-export const client = new Client({
-  partials: ['MESSAGE', 'REACTION'],
-});
-
-export const youtube = new YouTube(process.env.YT_API_KEY as string);
-
-export const spotify = new Spotify({
-  clientId: process.env.SPOTIFY_CLIENT_ID,
-  clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-});
-
-export const queueStore = new Store<GuildQueue>({
-  path: 'data/queue.yaml',
-  writeOnSet: false,
-  readImmediately: false,
-  dataLanguage: 'yaml',
-});
-
-fse.mkdirp('logs');
 
 log4js.configure({
   appenders: {
@@ -46,12 +25,13 @@ log4js.configure({
   },
 });
 
-export enum LoggerType {
-  VOICE = 'VOICE',
-  MESSAGE = 'MESSAGE',
-  REACTION = 'REACTION',
-}
 export const logger = log4js.getLogger('MAIN');
-export const getLogger = (type: LoggerType, category: string): log4js.Logger =>
-  log4js.getLogger(`${type} ${category}`);
+export const getLogger = (category: string): log4js.Logger => log4js.getLogger(category);
 export const dbLogger = log4js.getLogger('DB');
+
+// db
+const orm = await MikroORM.init(mikroOrmConfig);
+await orm.getMigrator().up();
+
+// client
+export const client = new Gamerbot({ em: orm.em });

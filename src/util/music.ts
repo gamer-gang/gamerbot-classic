@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 import { Video } from 'simple-youtube-api';
 
-import { queueStore } from '../providers';
+import { client } from '../providers';
 import { Track, TrackType } from '../types';
 import { formatDuration, getQueueLength } from './duration';
 import { Embed } from './embed';
@@ -42,7 +42,7 @@ export const updatePlayingEmbed = async (
 
   const { track, playing } = cache;
 
-  const queue = queueStore.get(guildId);
+  const queue = client.queues.get(guildId);
 
   if (!track) {
     throw new Error('track is null nerd');
@@ -70,11 +70,21 @@ export const updatePlayingEmbed = async (
   if (track.type === TrackType.YOUTUBE)
     embed
       .setThumbnail(track.data.thumbnails.maxres.url)
-      .addField('channel', track.data.channel.title, true);
+      .addField(
+        'channel',
+        `[${track.data.channel.title}](https://youtube.com/channel/${track.data.channel.id})`,
+        true
+      );
   else if (track.type === TrackType.SPOTIFY)
     embed
       .setThumbnail(track.data.cover.url)
-      .addField('artist', track.data.artists.map(a => a.name).join(', '), true);
+      .addField(
+        'artist',
+        track.data.artists
+          .map(a => `[${a.name}](https://open.spotify.com/artist/${a.id})`)
+          .join(', '),
+        true
+      );
 
   embed
     .addField('requested by', `<@!${track.requesterId}>`, true)

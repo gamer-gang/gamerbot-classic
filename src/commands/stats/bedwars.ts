@@ -27,7 +27,7 @@ export const makeBedwarsStats = ({
   };
   const columnNames = Object.keys(columns);
 
-  const gamemodes: Record<string, string> = {
+  const gamemodes = {
     Solos: 'eight_one_',
     Doubles: 'eight_two_',
     '3v3v3v3': 'four_three_',
@@ -52,11 +52,10 @@ export const makeBedwarsStats = ({
 
   for (const name of Object.keys(gamemodes)) {
     const apiName = gamemodes[name];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     stats[name] = {} as any;
     for (let i = 0; i < Object.keys(columns).length; i++) {
-      const key = `${apiName}${columns[columnNames[i]]}_bedwars`;
-      stats[name][columnNames[i]] = parseInt(data[key] ?? '0');
+      const key = `${apiName}${columns[columnNames[i]]}_bedwars` as keyof HypixelAPI.BedwarsStats;
+      stats[name][columnNames[i]] = parseInt((data[key] as keyof HypixelAPI.BedwarsStats) ?? '0');
     }
     stats[name].KDR =
       parseFloat(((stats[name].K as number) / (stats[name].D as number)).toFixed(2)) || '-';
@@ -119,7 +118,7 @@ export const makeBedwarsStats = ({
   const widths = columnNames.map(col =>
     Math.max(
       c.measureText(col).width,
-      ...gamemodeNames.map(mode => c.measureText(stats[mode][col]).width)
+      ...gamemodeNames.map(mode => c.measureText(stats[mode][col].toString()).width)
     )
   );
 
@@ -137,7 +136,7 @@ export const makeBedwarsStats = ({
 
     gamemodeNames.forEach((mode, j) => {
       const value = stats[mode][col];
-      c.fillText(value, -padding, 88 + j * (40 + padding));
+      c.fillText(value.toString(), -padding, 88 + j * (40 + padding));
     });
 
     c.transform(1, 0, 0, 1, -(padding * 2 + widths[i]), 0);

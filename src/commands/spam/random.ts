@@ -8,7 +8,7 @@ import { Embed } from '../../util';
 
 export class CommandRandom implements Command {
   cmd = 'random';
-  yargsSchema: yargsParser.Options = {
+  yargs: yargsParser.Options = {
     number: ['messages'],
     alias: {
       messages: 'm',

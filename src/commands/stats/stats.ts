@@ -17,7 +17,7 @@ const uuidCache: Record<string, string> = {};
 
 export class CommandStats implements Command {
   cmd = 'stats';
-  yargsSchema = {} as yargsParser.Options;
+  yargs = {} as yargsParser.Options;
   docs: CommandDocs = {
     usage: 'stats <username|uuid> [game]',
     description: 'hypixel stats (game defaults to bedwars)',
@@ -88,7 +88,7 @@ export class CommandStats implements Command {
       const gamemodes = {
         bedwars: () =>
           makeBedwarsStats({
-            data: (playerData.stats as { Bedwars }).Bedwars,
+            data: (playerData.stats as { Bedwars: HypixelAPI.BedwarsStats }).Bedwars,
             playername: playerData.playername as string,
             clientTag: client.user?.tag as string,
           }),

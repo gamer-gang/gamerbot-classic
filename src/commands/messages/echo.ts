@@ -7,7 +7,7 @@ import { Embed } from '../../util';
 
 export class CommandEcho implements Command {
   cmd = 'echo';
-  yargsSchema: yargsParser.Options = {
+  yargs: yargsParser.Options = {
     boolean: ['delete'],
     alias: {
       delete: 'd',

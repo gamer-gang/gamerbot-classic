@@ -52,6 +52,7 @@ export interface GuildQueue {
   textChannel?: TextChannel;
   voiceConnection?: VoiceConnection;
   playing: boolean;
+  paused: boolean;
   current: {
     // secondsRemaining: number;
     startTime?: Date;

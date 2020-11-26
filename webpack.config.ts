@@ -37,14 +37,12 @@ export default <webpack.Configuration>{
       LATEST_COMMIT_HASH: execSync('git rev-parse HEAD').toString().trim(),
     }),
     new ForkTsCheckerPlugin({
+      typescript: {
+        configFile: path.resolve(__dirname, 'src/tsconfig.json'),
+      },
       eslint: {
         enabled: true,
         files: './src/**/*.{ts,tsx,js,jsx}',
-      },
-      logger: {
-        devServer: false,
-        infrastructure: 'silent',
-        issues: 'webpack-infrastructure',
       },
     }),
   ],

@@ -1,14 +1,13 @@
 {
-  "exclude": ["src"],
   "compilerOptions": {
-    "target": "es6",
-    "module": "commonjs",
+    "target": "es2017",
+    "module": "esnext",
     "lib": ["ESNext"],
     "incremental": true,
     "sourceMap": true,
-    "outDir": "dist",
+    "outDir": "../dist",
     "strict": true,
-    "noImplicitAny": false,
+    "noImplicitAny": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,

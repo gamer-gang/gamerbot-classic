@@ -7,7 +7,7 @@ import { Embed, hasMentions } from '../../util';
 
 export class CommandSpam implements Command {
   cmd = 'spam';
-  yargsSchema: yargsParser.Options = {
+  yargs: yargsParser.Options = {
     alias: {
       repetitions: 'r',
       messages: 'm',

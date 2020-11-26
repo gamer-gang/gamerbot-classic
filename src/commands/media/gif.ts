@@ -13,7 +13,7 @@ const gifDir = 'data/gifs';
 
 export class CommandGif implements Command {
   cmd = 'gif';
-  yargsSchema: yargsParser.Options = {
+  yargs: yargsParser.Options = {
     boolean: ['list'],
     string: ['remove'],
     array: ['add', 'rename'],

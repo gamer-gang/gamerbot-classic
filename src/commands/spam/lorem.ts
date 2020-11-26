@@ -8,7 +8,7 @@ import { Embed } from '../../util';
 
 export class CommandLorem implements Command {
   cmd = 'lorem';
-  yargsSchema: yargsParser.Options = {
+  yargs: yargsParser.Options = {
     number: ['messages'],
     alias: {
       messages: 'm',
@@ -25,7 +25,6 @@ export class CommandLorem implements Command {
     const {
       msg,
       args,
-      em,
       config: { allowSpam },
     } = context;
 

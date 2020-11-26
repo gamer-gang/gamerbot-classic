@@ -10,7 +10,7 @@ import { Embed } from '../../util';
 
 export class CommandJoke implements Command {
   cmd = 'joke';
-  yargsSchema: yargsParser.Options = {
+  yargs: yargsParser.Options = {
     boolean: ['codepen', 'programming'],
     alias: {
       codepen: 'c',

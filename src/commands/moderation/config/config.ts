@@ -13,7 +13,6 @@ import { welcomeMessage } from './welcomeMessage';
 
 const configHandlers: Record<
   string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (config: Config, context: Context, value?: string) => Promise<any>
 > = { welcomeChannel, welcomeMessage, prefix, egg, allowSpam };
 

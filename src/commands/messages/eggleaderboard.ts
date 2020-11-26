@@ -10,7 +10,7 @@ import { Embed } from '../../util';
 
 export class CommandEggLeaderboard implements Command {
   cmd = ['eggleaderboard', 'egglb'];
-  yargsSchema: yargsParser.Options = {
+  yargs: yargsParser.Options = {
     boolean: ['me'],
     alias: {
       me: '-m',
@@ -35,12 +35,12 @@ export class CommandEggLeaderboard implements Command {
   ];
 
   async execute(context: Context): Promise<void | Message> {
-    const { msg, args, em } = context;
+    const { msg, args } = context;
 
     const eggers: Pick<
       EggLeaderboard,
       'eggs' | 'userTag' | 'userId'
-    >[] = await (em as EntityManager)
+    >[] = await (client.em as EntityManager)
       .createQueryBuilder(EggLeaderboard)
       .select(['eggs', 'userTag', 'userId'])
       .execute();

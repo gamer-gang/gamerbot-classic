@@ -17,7 +17,7 @@ const intentEmojis = {
 };
 
 const intentText = (message: string, desc?: string) =>
-  message.match(/\*\*|```/) ? message : `**${message}**${desc ? `\n${desc}` : ''}`;
+  message.match(/\*\*|```/) ? `${message}\n${desc}` : `**${message}**${desc ? `\n${desc}` : ''}`;
 
 export class Embed extends MessageEmbed {
   static error(message: string, description?: string): Embed {
