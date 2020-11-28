@@ -16,7 +16,7 @@ export const welcomeChannel = async (
       return msg.channel.send(
         Embed.info(
           `welcome channel is set to <#${config.welcomeChannelId}>`,
-          'use `$config welcomeChannel unset` to remove'
+          `use \`${config.prefix}config welcomeChannel unset\` to remove`
         )
       );
     return msg.channel.send(Embed.warning('no welcome channel set'));

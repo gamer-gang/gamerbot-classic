@@ -23,7 +23,7 @@ export const welcomeMessage = async (
     if (!config.welcomeJson) return msg.channel.send(Embed.warning('no welcome message set'));
     await msg.channel.send(
       Embed.info(
-        msg.guild.name + ': current welcome message (`$config welcomeMessage unset to remove)',
+        `${msg.guild.name}: current welcome message (\`${config.prefix}config welcomeMessage\` unset to remove)`,
         codeBlock(JSON.stringify(JSON.parse(config.welcomeJson), null, 2), 'json')
       )
     );
