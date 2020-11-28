@@ -18,7 +18,11 @@ export class CommandAbout implements Command {
       .addField('Issues', '[Issues](https://github.com/gamer-gang/gamerbot/issues)')
       .addField('nice pfp', 'pfp made by @qqq#0447')
       .addField('Guilds', client.guilds.cache.size, true)
-      .addField('Users', client.users.cache.size, true)
+      .addField(
+        'Users',
+        client.guilds.cache.reduce((a, guild) => a + guild.memberCount, 0),
+        true
+      )
       .setThumbnail('attachment://hexagon.png');
 
     const hash = process.env.LATEST_COMMIT_HASH;
