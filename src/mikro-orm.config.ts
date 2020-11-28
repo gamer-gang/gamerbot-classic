@@ -37,8 +37,9 @@ const getMigrations = () => {
       .readdirSync(resolvePath('src/migrations'))
       .map(file => require(`./migrations/${file}`));
 
-    return modules.map(
-      name => <MigrationObject>{ name: basename(name), class: Object.values(modules[name])[0] }
+    return Object.keys(modules).map(
+      name =>
+        <MigrationObject>{ name: basename(name as string), class: Object.values(modules[name])[0] }
     );
   }
 };
@@ -56,5 +57,9 @@ export default {
   highlighter: new SqlHighlighter(),
   baseDir: resolvePath('.'),
   discovery: { disableDynamicFileAccess: true },
-  migrations: { migrationsList: getMigrations(), path: resolvePath('src/migrations') },
+  migrations: {
+    migrationsList: getMigrations(),
+    pattern: process.env.WEBPACK ? undefined : /^[\w-]+\d+\.ts$/,
+    path: process.env.WEBPACK ? undefined : resolvePath('src/migrations'),
+  },
 } as Parameters<typeof MikroORM.init>[0];
