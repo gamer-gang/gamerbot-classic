@@ -9,6 +9,7 @@ import { Command } from './commands';
 import { CommandHelp } from './commands/general/help';
 import { Config } from './entities/Config';
 import * as eggs from './listeners/eggs';
+import { LogEventHandler, logEvents, logHandlers } from './listeners/log/log';
 import * as reactions from './listeners/reactions';
 import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
@@ -116,9 +117,18 @@ client.on('ready', () => {
   setInterval(setPresence, 1000 * 60 * 10);
 });
 
+logEvents.forEach(event => {
+  const handlerName = `on${event[0].toUpperCase()}${event.slice(1)}` as LogEventHandler;
+  if (logHandlers[handlerName])
+    client.on(event, async (...args: any[]) => {
+      logHandlers[handlerName]!(...args).then(() => client.em.flush());
+    });
+});
+
 client
   .on('warn', logger.warn)
   .on('error', logger.error)
+  .on('debug', msg => logger.debug(msg))
   .on('disconnect', () => logger.warn('client disconnected!'))
   .on('guildCreate', async guild => {
     const fresh = client.em.create(Config, { guildId: guild.id });
