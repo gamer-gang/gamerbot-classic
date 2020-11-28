@@ -99,15 +99,15 @@ client.on('message', async msg => {
     command = new CommandHelp();
   }
 
-  await command.execute({
-    msg: msg as Message & { guild: Guild },
-    cmd,
-    args: args.argv,
-    config,
-    startTime: start,
-  });
-
-  client.em.flush();
+  command
+    .execute({
+      msg: msg as Message & { guild: Guild },
+      cmd,
+      args: args.argv,
+      config,
+      startTime: start,
+    })
+    .then(() => client.em.flush());
 });
 
 client.on('ready', () => {

@@ -19,7 +19,7 @@ export class CommandUptime implements Command {
 
     const uptime = moment.duration(Math.round(process.uptime()), 'seconds');
 
-    return msg.channel.send(Embed.info('uptime: ' + this.makeDurationString(uptime)));
+    return msg.channel.send(Embed.info('**uptime:** ' + this.makeDurationString(uptime)));
   }
 
   makeDurationString(duration: moment.Duration): string {
