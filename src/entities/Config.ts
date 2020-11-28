@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property, Unique } from '@mikro-orm/core';
+import { BigIntType, Entity, PrimaryKey, Property, Type, Unique } from '@mikro-orm/core';
 
 @Entity()
 export class Config {
@@ -29,4 +29,10 @@ export class Config {
 
   @Property({ type: 'text', nullable: true })
   welcomeChannelId?: string;
+
+  @Property({ type: BigIntType, default: 0 })
+  logSubscribedEvents!: bigint;
+
+  @Property({ type: 'text', nullable: true })
+  logChannelId?: string;
 }
