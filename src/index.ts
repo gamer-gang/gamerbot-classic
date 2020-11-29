@@ -1,5 +1,5 @@
 import { registerFont } from 'canvas';
-import { Guild, Message } from 'discord.js';
+import { Guild, GuildMember, Message } from 'discord.js';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import _ from 'lodash/fp';
@@ -41,6 +41,22 @@ const fonts: Record<string, { family: string; weight?: string; style?: string }>
 Object.keys(fonts).forEach(filename =>
   registerFont(resolvePath('assets/fonts/' + filename), fonts[filename])
 );
+
+// keep member caches up-to-date
+const fetchMemberCache = async (): Promise<void> => {
+  const guilds = client.guilds.cache.array();
+
+  await Promise.all(
+    guilds.map(
+      (guild, index) =>
+        new Promise<GuildMember[]>(resolve => {
+          setTimeout(() => guild.members.fetch().then(c => resolve(c.array())), index * 2500);
+        })
+    )
+  );
+
+  setTimeout(fetchMemberCache, 1000 * 60 * 5);
+};
 
 client.on('message', async msg => {
   const start = process.hrtime();
@@ -114,6 +130,7 @@ client.on('ready', () => {
   logger.info(`${client.user.tag} ready`);
   setPresence();
   setInterval(setPresence, 1000 * 60 * 10);
+  fetchMemberCache();
 });
 
 client
