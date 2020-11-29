@@ -13,7 +13,7 @@ import * as reactions from './listeners/reactions';
 import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
 import { client, logger } from './providers';
-import { codeBlock, dbFindOneError, Embed, resolvePath } from './util';
+import { codeBlock, dbFindOneError, Embed, emptyQueue, resolvePath } from './util';
 
 dotenv.config({ path: resolvePath('.env') });
 
@@ -65,12 +65,7 @@ client.on('message', async msg => {
   if (msg.author.id == client.user?.id) return;
   if (!msg.guild) return; // don't respond to DMs
 
-  client.queues.setIfUnset(msg.guild.id, {
-    tracks: [],
-    playing: false,
-    paused: false,
-    current: {},
-  });
+  client.queues.setIfUnset(msg.guild.id, emptyQueue());
 
   const config = await (async (msg: Message) => {
     const existing = await client.em.findOne(Config, { guildId: msg.guild?.id });

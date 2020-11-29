@@ -1,18 +1,14 @@
 import { Message, TextChannel, VoiceChannel, VoiceConnection } from 'discord.js';
 import { Duration, Video } from 'simple-youtube-api';
 
-export enum TrackType {
-  YOUTUBE,
-  FILE,
-  SPOTIFY,
-}
+export type TrackType = 'youtube' | 'file' | 'spotify';
 
 export type BaseTrack = {
   requesterId: string;
 };
 
 export interface YoutubeTrack extends BaseTrack {
-  type: TrackType.YOUTUBE;
+  type: 'youtube';
   data: YoutubeTrackData;
 }
 
@@ -21,7 +17,7 @@ export interface YoutubeTrackData extends Omit<Video, 'fetch'> {
 }
 
 export interface FileTrack extends BaseTrack {
-  type: TrackType.FILE;
+  type: 'file';
   data: FileTrackData;
 }
 
@@ -32,7 +28,7 @@ export interface FileTrackData {
 }
 
 export interface SpotifyTrack extends BaseTrack {
-  type: TrackType.SPOTIFY;
+  type: 'spotify';
   data: SpotifyTrackData;
 }
 
@@ -46,6 +42,8 @@ export interface SpotifyTrackData {
 
 export type Track = YoutubeTrack | FileTrack | SpotifyTrack;
 
+export type LoopMode = 'none' | 'one' | 'all';
+
 export interface GuildQueue {
   tracks: Track[];
   voiceChannel?: VoiceChannel;
@@ -53,8 +51,9 @@ export interface GuildQueue {
   voiceConnection?: VoiceConnection;
   playing: boolean;
   paused: boolean;
+  loop: LoopMode;
   current: {
-    // secondsRemaining: number;
+    index: number;
     startTime?: Date;
     pauseTime?: Date;
     embed?: Message;

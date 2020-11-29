@@ -24,7 +24,14 @@ export class CommandShuffle implements Command {
       return msg.channel.send(Embed.error('you are not in the music channel'));
 
     try {
-      queue.tracks = [queue.tracks[0], ..._.shuffle(queue.tracks.slice(1))];
+      const shuffled = _.shuffle(
+        // omit currently playing track (which is going to moved to the top)
+        _.clone(queue.tracks).filter((__, index) => index !== queue.current.index)
+      );
+
+      queue.tracks = [queue.tracks[queue.current.index], ...shuffled];
+      queue.current.index = 0;
+
       return msg.channel.send(Embed.success('queue shuffled'));
     } catch (err) {
       return msg.channel.send(Embed.error(codeBlock(err)));

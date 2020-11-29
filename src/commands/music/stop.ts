@@ -1,9 +1,8 @@
 import { Message } from 'discord.js';
-import _ from 'lodash';
 
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
-import { Context, Track } from '../../types';
+import { Context } from '../../types';
 import { codeBlock, Embed } from '../../util';
 
 export class CommandStop implements Command {
@@ -24,10 +23,10 @@ export class CommandStop implements Command {
         return msg.channel.send(Embed.error('you are not in the music channel'));
     }
     try {
-      queue.tracks = queue.tracks.length ? [_.head(queue.tracks) as Track] : [];
+      if (queue.voiceChannel?.members.size === 1) queue.tracks = [];
       queue.voiceConnection?.dispatcher?.end('disconnect command');
       msg.guild.me?.voice.kick();
-      return msg.channel.send(Embed.success('disconnected'));
+      return msg.channel.send(Embed.success('stopped'));
     } catch (err) {
       return msg.channel.send(Embed.error(codeBlock(err)));
     }
