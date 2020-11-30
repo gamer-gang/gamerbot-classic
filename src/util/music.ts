@@ -1,8 +1,8 @@
-import { Message } from 'discord.js';
+import { Guild, Message } from 'discord.js';
 import { Video } from 'simple-youtube-api';
 
 import { client } from '../providers';
-import { Track, TrackType } from '../types';
+import { GuildQueue, Track, TrackType } from '../types';
 import { formatDuration, getQueueLength } from './duration';
 import { Embed } from './embed';
 import { Store } from './store';
@@ -17,16 +17,27 @@ export const isLivestream = (video: Video): boolean =>
   (video.raw.snippet as Record<string, string>).liveBroadcastContent === 'live';
 
 export const getTrackLength = (track: Track): string =>
-  track.type === TrackType.YOUTUBE && track.data.livestream
+  track.type === 'youtube' && track.data.livestream
     ? 'livestream'
     : formatDuration(track.data.duration);
 
 export const getTrackUrl = (track: Track): string =>
-  track.type === TrackType.SPOTIFY
+  track.type === 'spotify'
     ? 'https://open.spotify.com/track/' + track.data.id
-    : track.type === TrackType.YOUTUBE
+    : track.type === 'youtube'
     ? 'https://youtube.com/watch?v=' + track.data.id
     : track.data.url;
+
+export const emptyQueue = (): GuildQueue => ({
+  tracks: [],
+  current: { index: 0 },
+  playing: false,
+  paused: false,
+  loop: 'none',
+});
+
+export const getLoopEmoji = (queue: GuildQueue): string =>
+  queue.loop === 'all' ? '🔁' : queue.loop === 'one' ? '🔂' : '';
 
 export const updatePlayingEmbed = async (
   opts: Partial<EmbedArgs> & { guildId: string }
@@ -55,40 +66,38 @@ export const updatePlayingEmbed = async (
   // queue.current.secondsRemaining = seconds - (thumbPosition / sliderLength) * seconds;
 
   const embed = new Embed({
-    title: playing ? 'now playing' : 'not playing',
+    title: `${playing ? 'Now Playing' : 'Not Playing'} ${getLoopEmoji(queue)}`,
     description: `**[${track.data.title}](${getTrackUrl(track)})** (${
-      track.type === TrackType.SPOTIFY
-        ? 'spotify'
-        : track.type === TrackType.YOUTUBE
+      track.type === 'spotify'
+        ? 'Spotify'
+        : track.type === 'youtube'
         ? track.data.livestream
-          ? 'youtube livestream'
-          : 'youtube'
-        : 'file'
+          ? 'Livestream'
+          : 'YouTube'
+        : 'File'
     })`,
   });
 
-  if (track.type === TrackType.YOUTUBE)
+  if (track.type === 'youtube')
     embed
       .setThumbnail(track.data.thumbnails.maxres.url)
       .addField(
-        'channel',
+        'Channel',
         `[${track.data.channel.title}](https://youtube.com/channel/${track.data.channel.id})`,
         true
       );
-  else if (track.type === TrackType.SPOTIFY)
+  else if (track.type === 'spotify')
     embed
       .setThumbnail(track.data.cover.url)
       .addField(
-        'artist',
+        'Artist',
         track.data.artists
           .map(a => `[${a.name}](https://open.spotify.com/artist/${a.id})`)
           .join(', '),
         true
       );
 
-  embed
-    .addField('requested by', `<@!${track.requesterId}>`, true)
-    .addField('queue length after', getQueueLength(queue, { first: false }), true);
+  embed.addField('Requested by', `<@!${track.requesterId}>`, true);
 
   if (queue.current.embed) return queue.current.embed?.edit(embed);
   else return;

@@ -1,4 +1,5 @@
 import { MessageOptions } from 'discord.js';
+import _ from 'lodash';
 
 import { Embed, EmbedOptions } from './embed';
 
@@ -15,9 +16,22 @@ export const sanitize = (content?: string): string =>
     .replace(/`/g, '\\`') ?? '';
 
 // eslint-disable-next-line
-export const codeBlock = (content?: any, language?: string): string => `\`\`\`${language}
+export const codeBlock = (content?: unknown, language?: string): string => `\`\`\`${language}
 ${content}
 \`\`\``;
+
+export const listify = (array: unknown[]): string => {
+  switch (array.length) {
+    case 0:
+      return '';
+    case 1:
+      return `${array[0]}`;
+    case 2:
+      return `${array[0]} and ${array[1]}`;
+    default:
+      return `${_.dropRight(array).join(', ')}, and ${_.last(array)}`;
+  }
+};
 
 export const parseDiscohookJSON = (json: string): MessageOptions => {
   const data = JSON.parse(json) as Discohook.Message;

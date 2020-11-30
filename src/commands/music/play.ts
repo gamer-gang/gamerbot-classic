@@ -1,4 +1,4 @@
-import { Message, TextChannel, VoiceChannel } from 'discord.js';
+import { Message, StreamOptions, TextChannel, VoiceChannel } from 'discord.js';
 import he from 'he';
 import _ from 'lodash';
 import miniget from 'miniget';
@@ -7,12 +7,11 @@ import yts from 'yt-search';
 import ytdl from 'ytdl-core';
 
 import { Command, CommandDocs } from '..';
-import { client, getLogger } from '../../providers';
-import { Context, Track, TrackType } from '../../types';
+import { client, getLogger, logger } from '../../providers';
+import { Context, Track } from '../../types';
 import {
   codeBlock,
   Embed,
-  getQueueLength,
   getTrackLength,
   getTrackUrl,
   isLivestream,
@@ -56,7 +55,7 @@ export class CommandPlay implements Command {
         this.queueTrack(
           {
             requesterId: msg.author?.id as string,
-            type: TrackType.FILE,
+            type: 'file',
             data: {
               title: attachment.name || _.last(attachment.url.split('/')),
               url: attachment.url,
@@ -69,11 +68,16 @@ export class CommandPlay implements Command {
         return;
       }
 
-      if (queue?.voiceConnection?.dispatcher.paused) {
+      if (queue?.voiceConnection?.dispatcher?.paused) {
         queue.voiceConnection?.dispatcher.resume();
         queue.paused = false;
         updatePlayingEmbed({ guildId: msg.guild.id, playing: true });
-        return msg.channel.send(new Embed({ intent: 'success', title: 'resumed' }));
+        return msg.channel.send(Embed.success('Resumed'));
+      }
+
+      if (!queue.playing && queue.tracks.length) {
+        queue.current.index = 0;
+        return this.playNext(context);
       }
 
       return msg.channel.send(Embed.error('expected at least one arg'));
@@ -103,7 +107,7 @@ export class CommandPlay implements Command {
           v &&
           this.queueTrack(
             {
-              type: TrackType.YOUTUBE,
+              type: 'youtube',
               data: { ...v, livestream: isLivestream(v) },
               requesterId: msg.author?.id,
             } as Track,
@@ -116,7 +120,7 @@ export class CommandPlay implements Command {
           intent: 'success',
           description:
             `queued ${videos.length.toString()} videos from ` +
-            `**[${playlist.title}](https://client.youtube.com/playlist?list=${playlist.id})**`,
+            `**[${playlist.title}](https://youtube.com/playlist?list=${playlist.id})**`,
         })
       );
 
@@ -148,7 +152,7 @@ export class CommandPlay implements Command {
         {
           data: { ...video, livestream: isLivestream(video) },
           requesterId: msg.author?.id as string,
-          type: TrackType.YOUTUBE,
+          type: 'youtube',
         },
         { context }
       );
@@ -174,7 +178,7 @@ export class CommandPlay implements Command {
     for (const { name, artists, duration_ms, id } of album.body.tracks.items) {
       this.queueTrack(
         {
-          type: TrackType.SPOTIFY,
+          type: 'spotify',
           data: {
             title: name,
             cover: album.body.images[0],
@@ -194,7 +198,7 @@ export class CommandPlay implements Command {
     msg.channel.send(
       Embed.success(
         `queued ${album.body.tracks.items.length} tracks from ` +
-          `**[${album.body.name}](https://open.client.spotify.com/album/${album.body.id})**`,
+          `**[${album.body.name}](https://open.spotify.com/album/${album.body.id})**`,
         queue.paused ? 'music is paused btw' : undefined
       )
     );
@@ -215,7 +219,7 @@ export class CommandPlay implements Command {
     } of playlist.body.tracks.items) {
       this.queueTrack(
         {
-          type: TrackType.SPOTIFY,
+          type: 'spotify',
           data: {
             title: name,
             cover: album.images[0],
@@ -235,7 +239,7 @@ export class CommandPlay implements Command {
     msg.channel.send(
       Embed.success(
         `queued ${playlist.body.tracks.items.length} tracks from ` +
-          `**[${playlist.body.name}](https://open.client.spotify.com/playlist/${playlist.body.id})**`,
+          `**[${playlist.body.name}](https://open.spotify.com/playlist/${playlist.body.id})**`,
         queue.paused ? 'music is paused btw' : undefined
       )
     );
@@ -253,7 +257,7 @@ export class CommandPlay implements Command {
 
     this.queueTrack(
       {
-        type: TrackType.SPOTIFY,
+        type: 'spotify',
         data: {
           title: track.body.name,
           cover: track.body.album.images[0],
@@ -285,10 +289,7 @@ export class CommandPlay implements Command {
             livestream: (v.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
           };
         })
-        .map(
-          data =>
-            ({ type: TrackType.YOUTUBE, requesterId: msg.author?.id as string, data } as Track)
-        );
+        .map(data => ({ type: 'youtube', requesterId: msg.author?.id as string, data } as Track));
 
       if (!videos.length) return searchMessage.edit(Embed.error('no results found'));
 
@@ -360,16 +361,15 @@ export class CommandPlay implements Command {
     queue.tracks.push(track);
     queue.textChannel = msg.channel as TextChannel;
 
-    if (!queue.playing && (options?.beginPlaying ?? true)) this.playNext(options.context);
-    else if (!(options?.silent ?? false)) {
+    if (!queue.playing && (options?.beginPlaying ?? true)) {
+      queue.current.index = queue.tracks.length - 1;
+      this.playNext(options.context);
+    } else if (!(options?.silent ?? false)) {
       msg.channel.send(
         Embed.success(
           `**[${track.data.title}](${getTrackUrl(track)})** queued (#${
             queue.tracks.length - 1
-          } in queue, approx. ${getQueueLength(queue, {
-            first: true,
-            last: false,
-          })} until playing)`,
+          } in queue)`,
           queue.paused ? 'music is paused btw' : undefined
         )
       );
@@ -380,27 +380,19 @@ export class CommandPlay implements Command {
   async playNext(context: Context): Promise<void | Message> {
     const { msg } = context;
 
-    let queue = client.queues.get(msg.guild.id);
+    const queue = client.queues.get(msg.guild.id);
 
-    const track = queue.tracks[0];
-
-    if (!track) {
-      // no more in queue
-      queue.voiceConnection?.disconnect();
-      queue = { tracks: [], current: {}, playing: false, paused: false };
-      client.queues.set(msg.guild.id, queue);
-      return;
-    }
+    const track = queue.tracks[queue.current.index];
 
     if (!queue.playing) {
       queue.voiceChannel = msg.member?.voice?.channel as VoiceChannel;
       queue.playing = true;
     }
 
-    queue.voiceChannel && (queue.voiceConnection ??= await queue.voiceChannel.join());
+    queue.voiceChannel && (queue.voiceConnection = await queue.voiceChannel.join());
     await queue.voiceConnection?.voice?.setSelfDeaf(true);
 
-    queue.current.embed = await msg.channel.send(Embed.info('loading...'));
+    queue.current.embed = await msg.channel.send(Embed.info('Loading...'));
     updatePlayingEmbed({ track, guildId: msg.guild.id, playing: true });
 
     const callback = (info: unknown) => {
@@ -408,22 +400,54 @@ export class CommandPlay implements Command {
 
       getLogger(`MESSAGE ${msg.id}`).debug(`track "${track.data.title}" ended with info "${info}"`);
 
-      queue.tracks.shift();
-
       updatePlayingEmbed({ guildId: msg.guild.id, playing: false });
       delete queue.current.embed;
 
-      this.playNext(context);
+      if (!queue.playing) {
+        queue.voiceConnection?.disconnect();
+        return;
+      }
+
+      if (queue.loop === 'one') return this.playNext(context);
+
+      const nextTrack = queue.tracks[queue.current.index + 1];
+      if (!nextTrack) {
+        if (queue.loop === 'all') {
+          queue.current.index = 0;
+          this.playNext(context);
+        } else {
+          // no more in queue and not looping
+          queue.voiceConnection?.disconnect();
+          delete queue.voiceConnection;
+          delete queue.voiceChannel;
+          queue.playing = false;
+          return;
+        }
+      } else {
+        queue.current.index++;
+        return this.playNext(context);
+      }
+    };
+
+    const options: StreamOptions = {
+      highWaterMark: 40,
+      volume: false,
     };
 
     switch (track.type) {
-      case TrackType.YOUTUBE:
-        queue.voiceConnection?.play(ytdl(track.data.id)).on('finish', callback);
+      case 'youtube':
+        queue.voiceConnection
+          ?.play(ytdl(track.data.id), options)
+          .on('close', callback)
+          .on('error', logger.error);
         break;
-      case TrackType.FILE:
-        queue.voiceConnection?.play(track.data.url).on('finish', callback);
+      case 'file':
+        queue.voiceConnection
+          ?.play(track.data.url, options)
+          .on('close', callback)
+          .on('error', logger.error);
         break;
-      case TrackType.SPOTIFY: {
+      case 'spotify': {
         const error = () => {
           queue.current.embed?.edit(
             Embed.error(
@@ -442,7 +466,10 @@ export class CommandPlay implements Command {
         const video = await client.youtube.getVideo(search.videos[0].url);
         if (!video) return error();
 
-        queue.voiceConnection?.play(ytdl(video.id)).on('finish', callback);
+        queue.voiceConnection
+          ?.play(ytdl(video.id), options)
+          .on('close', callback)
+          .on('error', logger.error);
       }
     }
   }

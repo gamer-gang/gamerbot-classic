@@ -1,4 +1,6 @@
 import { MessageEmbed, MessageEmbedOptions } from 'discord.js';
+import _ from 'lodash';
+import { capitalize } from 'lodash';
 
 import { resolvePath } from './path';
 
