@@ -48,68 +48,39 @@ const getLeaderboardEntry = async (user: User, em: Gamerbot['em']) => {
 };
 
 export const get = async (client: Gamerbot): Promise<number> => {
-  if (eggCount == null) eggCount = await getEggsFromDB(client.em);
-  return eggCount;
+  return (eggCount ??= await getEggsFromDB(client.em));
+};
+
+const grantEgg = async (msg: Message | PartialMessage, em: Gamerbot['em']) => {
+  msg.react('🥚');
+  eggCount++;
+  setPresence();
+
+  const lb = await getLeaderboardEntry(msg.author as User, em);
+  lb.eggs++;
+  em.flush();
 };
 
 export const onMessage = (
   msg: Message | PartialMessage,
   config: Config,
   em: Gamerbot['em']
-) => async (): Promise<void> => {
+) => async (): Promise<void | Message> => {
   if (!config || msg.author?.bot || !config.egg) return;
 
   if (eggy(msg, config.prefix)) {
-    msg.react('🥚');
-
-    if (!cooldowns[msg.author?.id as string]) {
-      cooldowns[msg.author?.id as string] = new EggCooldown(Date.now());
-      grantEgg(msg, em);
-      return;
-    } else {
+    if (cooldowns[msg.author?.id as string]) {
       const cooldown = cooldowns[msg.author?.id as string];
-      if (cooldown.expired()) {
-        cooldowns[msg.author?.id as string] = new EggCooldown(Date.now());
-        grantEgg(msg, em);
-      } else if (!cooldown.warned) {
-        msg.channel.send(`<@${msg.author?.id}> enter the chill zone`);
+      if (!cooldown.warned) {
         cooldown.warned = true;
+        return msg.channel.send(`<@${msg.author?.id}> enter the chill zone`);
       }
+
+      if (!cooldown.expired()) return;
     }
-  }
-};
 
-const grantEgg = async (msg: Message | PartialMessage, em: Gamerbot['em']) => {
-  eggCount++;
-  setPresence();
-
-  const lb = await getLeaderboardEntry(msg.author as User, em);
-  lb.eggs++;
-
-  em.flush();
-};
-
-export const onMessageDelete = (em: Gamerbot['em']) => async (
-  msg: Message | PartialMessage
-): Promise<void> => {
-  const config = await em.findOne(Config, { guildId: msg.guild?.id as string });
-  if (!config || msg.author?.bot || !config.egg) return;
-
-  if (eggy(msg, config.prefix)) {
-    msg.react('🥚');
-  }
-};
-
-export const onMessageUpdate = (client: Gamerbot) => async (
-  prev: Message | PartialMessage,
-  next: Message | PartialMessage
-): Promise<void> => {
-  const config = await client.em.findOne(Config, { guildId: next.guild?.id as string });
-  if (!config || next.author?.bot || !config.egg) return;
-
-  if (!eggy(prev, config.prefix) && eggy(next, config.prefix)) {
-    next.react('🥚');
-  } else if (eggy(prev, config.prefix) && !eggy(next, config.prefix)) {
-    next.reactions.cache.get('🥚')?.users.remove(client.user as User);
+    cooldowns[msg.author?.id as string] = new EggCooldown(Date.now());
+    grantEgg(msg, em);
+    return;
   }
 };
