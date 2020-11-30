@@ -71,7 +71,7 @@ export const onMessage = (
   if (eggy(msg, config.prefix)) {
     if (cooldowns[msg.author?.id as string]) {
       const cooldown = cooldowns[msg.author?.id as string];
-      if (!cooldown.warned) {
+      if (!cooldown.expired() && !cooldown.warned) {
         cooldown.warned = true;
         return msg.channel.send(`<@${msg.author?.id}> enter the chill zone`);
       }
