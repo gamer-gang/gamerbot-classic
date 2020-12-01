@@ -1,9 +1,8 @@
 import { GuildEmoji, TextChannel } from 'discord.js';
-import _ from 'lodash';
 
+import { intToLogEvents, LogHandlers } from '.';
 import { client } from '../../providers';
 import { Embed } from '../../util';
-import { intToLogEvents, LogHandlers } from './log';
 import { formatValue, getConfig, getLatestAuditEvent, logColorFor } from './utils';
 
 const auditChangeTable: Record<string, string> = {

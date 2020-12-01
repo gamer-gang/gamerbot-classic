@@ -1,10 +1,10 @@
 import { Guild, Invite, TextChannel } from 'discord.js';
 import moment from 'moment';
 
+import { intToLogEvents, LogHandlers } from '.';
 import { GuildInvite } from '../../entities/GuildInvite';
 import { client } from '../../providers';
 import { Embed } from '../../util';
-import { intToLogEvents, LogHandlers } from './log';
 import { getConfig, getLatestAuditEvent, logColorFor } from './utils';
 
 client.on('ready', () => {

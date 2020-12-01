@@ -1,5 +1,5 @@
 import { registerFont } from 'canvas';
-import { Guild, GuildMember, Message } from 'discord.js';
+import { ClientEvents, Guild, GuildMember, Message } from 'discord.js';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import _ from 'lodash/fp';
@@ -9,7 +9,7 @@ import { Command } from './commands';
 import { CommandHelp } from './commands/general/help';
 import { Config } from './entities/Config';
 import * as eggs from './listeners/eggs';
-import { LogEventHandler, logEvents, logHandlers } from './listeners/log/log';
+import { LogEventHandler, logEvents, logHandlers } from './listeners/log';
 import * as reactions from './listeners/reactions';
 import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
@@ -102,24 +102,34 @@ client.on('message', async msg => {
 
   const args = yargsParser.detailed(argv, yargsConfig);
 
-  // console.log(inspect(yargsConfig, true, 2, true));
-  // console.log(inspect(args, true, 2, true));
+  const context = {
+    msg: msg as Message & { guild: Guild },
+    cmd,
+    args: args.argv,
+    config,
+    startTime: start,
+  };
+
+  const logHandler = Array.isArray(command.cmd)
+    ? command.cmd.map(
+        cmd => logHandlers[`onGamerbotCommand${_.capitalize(cmd.toLowerCase())}` as LogEventHandler]
+      )[0]
+    : logHandlers[`onGamerbotCommand${_.capitalize(command.cmd.toLowerCase())}` as LogEventHandler];
+
+  console.log(logHandler);
+  console.log(logHandlers);
+
+  if (logHandler) logHandler(context);
 
   if (args.error) msg.channel.send(Embed.warning(codeBlock(args.error)));
-  if (args.argv.help) {
-    args.argv._ = [cmd];
+  if (context.args.help) {
+    context.args.argv._ = [cmd];
     command = new CommandHelp();
   }
 
-  command
-    .execute({
-      msg: msg as Message & { guild: Guild },
-      cmd,
-      args: args.argv,
-      config,
-      startTime: start,
-    })
-    .then(() => client.em.flush());
+  await command.execute(context);
+
+  client.em.flush();
 });
 
 client.on('ready', () => {
@@ -129,7 +139,7 @@ client.on('ready', () => {
   fetchMemberCache();
 });
 
-logEvents.forEach(event => {
+(logEvents.filter(e => e.includes('gamerbotCommand')) as (keyof ClientEvents)[]).forEach(event => {
   const handlerName = `on${event[0].toUpperCase()}${event.slice(1)}` as LogEventHandler;
   if (logHandlers[handlerName])
     client.on(event, async (...args: any[]) => {

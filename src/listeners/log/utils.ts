@@ -7,9 +7,9 @@ import {
   PartialMessage,
 } from 'discord.js';
 
+import { logColors, logEvents, LogEventType } from '.';
 import { Config } from '../../entities/Config';
 import { client } from '../../providers';
-import { logColors, logEvents, LogEventType } from './log';
 
 type GuildSource = Message | PartialMessage | GuildChannel | GuildEmoji | Guild;
 

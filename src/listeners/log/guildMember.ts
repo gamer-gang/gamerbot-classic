@@ -1,14 +1,10 @@
-import argon2 from 'argon2';
-import { Guild, GuildMember, Invite, TextChannel, User } from 'discord.js';
+import { GuildMember, TextChannel, User } from 'discord.js';
 import fse from 'fs-extra';
 import _ from 'lodash';
-import moment from 'moment';
-import { resolve } from 'path';
 
-import { GuildInvite } from '../../entities/GuildInvite';
+import { intToLogEvents, LogHandlers } from '.';
 import { client } from '../../providers';
-import { Embed, getDateFromSnowflake, resolvePath, Store } from '../../util';
-import { intToLogEvents, LogHandlers } from './log';
+import { Embed, getDateFromSnowflake, resolvePath } from '../../util';
 import { getConfig, getLatestAuditEvent, logColorFor } from './utils';
 
 fse.ensureFileSync(resolvePath('data/kicks.txt'));
@@ -94,8 +90,17 @@ export const guildMemberHandlers: LogHandlers = {
     logChannel.send(embed);
   },
   onGuildMemberUpdate: async (prev: GuildMember, next: GuildMember) => {
+    const guild = next.guild;
+    const config = await getConfig(guild);
+    if (!config.logChannelId) return;
+    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
+    if (!logChannel) console.warn('could not get log channel for ' + guild.name);
+    if (!intToLogEvents(config.logSubscribedEvents).includes('guildMemberRemove')) return;
+
     const changes = _.omitBy(next, (v, k) => _.isEqual(v, prev[k as keyof GuildMember]));
 
     console.log(changes);
+
+    logChannel.send('guildMemberUpdate');
   },
 };

@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 
 import { Config } from '../../../entities/Config';
-import { intToLogEvents, maxLogInteger } from '../../../listeners/log/log';
+import { intToLogEvents, maxLogInteger } from '../../../listeners/log';
 import { Context } from '../../../types';
 import { codeBlock, Embed } from '../../../util';
 

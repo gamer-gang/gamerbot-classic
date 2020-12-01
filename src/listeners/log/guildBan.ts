@@ -1,8 +1,8 @@
 import { Guild, TextChannel, User } from 'discord.js';
 
+import { intToLogEvents, LogHandlers } from '.';
 import { client } from '../../providers';
 import { Embed } from '../../util';
-import { intToLogEvents, LogHandlers } from './log';
 import { getConfig, getLatestAuditEvent, logColorFor } from './utils';
 
 export const guildBanHandlers: LogHandlers = {

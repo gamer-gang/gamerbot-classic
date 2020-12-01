@@ -1,4 +1,5 @@
 import { channelHandlers } from './channel';
+import { commandHandlers } from './command';
 import { emojiHandlers } from './emoji';
 import { guildHandlers } from './guild';
 import { guildBanHandlers } from './guildBan';
@@ -29,6 +30,24 @@ export const logEvents = [
   'roleDelete',
   'roleUpdate',
   'voiceStateUpdate',
+  'gamerbotCommandGif',
+  'gamerbotCommandApimessage',
+  'gamerbotCommandCowsay',
+  'gamerbotCommandEcho',
+  'gamerbotCommandEggleaderboard',
+  'gamerbotCommandEz',
+  'gamerbotCommandJoke',
+  'gamerbotCommandConfig',
+  'gamerbotCommandBan',
+  'gamerbotCommandKick',
+  'gamerbotCommandPurge',
+  'gamerbotCommandRole',
+  'gamerbotCommandUnban',
+  'gamerbotCommandPlay',
+  'gamerbotCommandPrevious',
+  'gamerbotCommandSkip',
+  'gamerbotCommandShuffle',
+  'gamerbotCommandStop',
 ] as const;
 
 // https://coolors.co/gradient-palette/40c9ff-e81cff
@@ -87,6 +106,7 @@ export const logEventsToInt = (subscribedEvents: LogEventType[]): bigint => {
 };
 
 export const logHandlers: LogHandlers = {
+  ...commandHandlers,
   ...channelHandlers,
   ...emojiHandlers,
   ...guildBanHandlers,
