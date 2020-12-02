@@ -1,8 +1,6 @@
 import { MessageEmbed, MessageEmbedOptions } from 'discord.js';
-import _ from 'lodash';
-import { capitalize } from 'lodash';
 
-import { resolvePath } from './path';
+import { getProfilePicture } from './message';
 
 type EmbedIntent = 'info' | 'success' | 'warning' | 'error';
 
@@ -68,7 +66,7 @@ export class Embed extends MessageEmbed {
 
   setDefaultAuthor(): this {
     this.setAuthor('gamerbot80', 'attachment://hexagon.png');
-    this.attachFiles([resolvePath('assets/hexagon.png')]);
+    this.attachFiles([getProfilePicture()]);
     return this;
   }
 

@@ -1,7 +1,9 @@
-import { MessageOptions } from 'discord.js';
+import { FileOptions, MessageOptions } from 'discord.js';
 import _ from 'lodash';
+import moment from 'moment';
 
 import { Embed, EmbedOptions } from './embed';
+import { resolvePath } from './path';
 
 export const hasMentions = (content: string, includeSingleUser = true): boolean =>
   content.includes('@everyone') ||
@@ -49,5 +51,19 @@ export const parseDiscohookJSON = (json: string): MessageOptions => {
   return {
     content: data.content,
     embed,
+  };
+};
+
+export const getProfilePicture = (): FileOptions => {
+  const dec = moment(moment.now()).month() === 11;
+  const dev = process.env.NODE_ENV === 'development';
+
+  const path = dev
+    ? resolvePath('assets/hexagon.dev.png')
+    : resolvePath(`assets/hexagon${dec ? '-hat' : ''}.png`);
+
+  return {
+    attachment: path,
+    name: 'hexagon.png',
   };
 };
