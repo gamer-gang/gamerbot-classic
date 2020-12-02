@@ -1,8 +1,6 @@
 declare module 'cowsay2' {
   /** Options for cowsay/think. */
   export interface CowOptions {
-    /** Text to say/think */
-    text: string;
     /** Wrap text at specified column. */
     W?: number;
     /** Cow name */
@@ -48,57 +46,6 @@ declare module 'cowsay2' {
   export function list(
     callback: (error: NodeJS.ErrnoException, cowNames: string[]) => void
   ): Promise<string[]>;
-  /**
-   * @example
-   * ```
-   * // custom cow and face
-   * cowsay.say({
-   *   text: 'Hello world!',
-   *   e: '^^', // eyes
-   *   T: 'U ', // tongue
-   *   f: 'USA' // name of the cow from `cows` folder
-   * })
-   *
-   * // using a random cow
-   * cowsay.say({
-   *   text: 'Hello world!',
-   *   e: 'xx', // eyes
-   *   r: true, // random mode - use a random cow.
-   * })
-   *
-   * // using a mode
-   * cowsay.say({
-   *   text: 'Hello world!',
-   *   y: true, // youthful
-   * })
-   * ```
-   */
-  export function say(options: CowOptions): string;
-
-  /**
-   * @example
-   * ```
-   * // custom cow and face
-   * cowsay.think({
-   *   text: 'Hello world!',
-   *   e: '^^', // eyes
-   *   T: 'U ', // tongue
-   *   f: 'USA' // name of the cow from `cows` folder
-   * })
-   *
-   * // using a random cow
-   * cowsay.think({
-   *   text: 'Hello world!',
-   *   e: 'xx', // eyes
-   *   r: true, // random mode - use a random cow.
-   * })
-   *
-   * // using a mode
-   * cowsay.think({
-   *   text: 'Hello world!',
-   *   y: true, // using y mode - youthful mode
-   * })
-   * ```
-   */
-  export function think(options: CowOptions): string;
+  export function say(text: string, options: CowOptions): string;
+  export function think(text: string, options: CowOptions): string;
 }

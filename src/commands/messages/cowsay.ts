@@ -31,8 +31,7 @@ export class CommandCowsay implements Command {
 
     return msg.channel.send(
       codeBlock(
-        say({
-          text: args._.join(' '),
+        say(args._.join(' '), {
           W: 48,
         })
       )
