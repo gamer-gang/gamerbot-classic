@@ -760,6 +760,13 @@
   resolved "https://registry.yarnpkg.com/@webpack-cli/serve/-/serve-1.1.0.tgz#13ad38f89b6e53d1133bac0006a128217a6ebf92"
   integrity sha512-7RfnMXCpJ/NThrhq4gYQYILB18xWyoQcBey81oIyVbmgbc6m5ZHHyFK+DyH7pLHJf0p14MxL4mTsoPAgBSTpIg==
 
+"@wiisportsresorts/cowsay@0.1.0":
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/@wiisportsresorts/cowsay/-/cowsay-0.1.0.tgz#d78e911ec503e5a05141a48d1dcc25769f18e829"
+  integrity sha512-L/8FPwMK38kIHoSBIJw5EMu1LL2+zSlgXO8RrY7gK/KBHNo6e21IDw50gAXOdN85vUKTSeg34g1onlW5My5viQ==
+  dependencies:
+    string-width "^4.2.0"
+
 "@xtuc/ieee754@^1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@xtuc/ieee754/-/ieee754-1.2.0.tgz#eef014a3145ae477a1cbc00cd1e552336dceb790"
@@ -1706,13 +1713,6 @@ cosmiconfig@^7.0.0:
     parse-json "^5.0.0"
     path-type "^4.0.0"
     yaml "^1.10.0"
-
-cowsay2@^2.0.4:
-  version "2.0.4"
-  resolved "https://registry.yarnpkg.com/cowsay2/-/cowsay2-2.0.4.tgz#7d785b566c4fe05b7ebcc74a6f8cc2d7c54ad993"
-  integrity sha512-q8iyB0HMF+HSoYeE5Pk4vNdk0mBDFakIzoFPmi1u5ZhcetvUogz2bdKM2pgF+Drn5oYoFr1a7OHwUq54A1HXlw==
-  dependencies:
-    string-width "^4"
 
 cross-env@^7.0.3:
   version "7.0.3"
@@ -5953,7 +5953,7 @@ string-width@^3.0.0, string-width@^3.1.0:
     is-fullwidth-code-point "^2.0.0"
     strip-ansi "^5.1.0"
 
-string-width@^4, string-width@^4.0.0, string-width@^4.1.0, string-width@^4.2.0:
+string-width@^4.0.0, string-width@^4.1.0, string-width@^4.2.0:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/string-width/-/string-width-4.2.0.tgz#952182c46cc7b2c313d1596e623992bd163b72b5"
   integrity sha512-zUz5JD+tgqtuDjMhwIg5uFVV3dtqZ9yQJlZVfq4I01/K5Paj5UHj7VyrQOJvzawSVlKpObApbfD0Ed6yJc+1eg==
