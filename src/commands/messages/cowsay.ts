@@ -45,7 +45,7 @@ export class CommandCowsay implements Command {
     const text = say(args._.join(' '), {
       W: 48,
       cow,
-    });
+    }).replace(/```/g, "'''"); // prevent codeblock escaping
 
     const messages = text
       .match(/(.|\n){1,1990}\n/g)
