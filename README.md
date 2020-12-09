@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/hexagon.png" alt="gamerbot logo" width="120">
+  <img src="https://github.com/gamer-gang/gamerbot/raw/master/assets/hexagon.png" alt="gamerbot logo" width="120">
 </p>
 
 <h1 align="center">gamerbot</h1>
