@@ -59,7 +59,7 @@ export const getProfilePicture = (): FileOptions => {
   const dev = process.env.NODE_ENV === 'development';
 
   const path = dev
-    ? resolvePath('assets/hexagon.dev.png')
+    ? resolvePath('assets/hexagon-dev.png')
     : resolvePath(`assets/hexagon${dec ? '-hat' : ''}.png`);
 
   return {
