@@ -1,5 +1,6 @@
 <p align="center">
-  <img src="https://github.com/gamer-gang/gamerbot/raw/master/assets/hexagon.png" alt="gamerbot logo" width="120">
+  <!-- classes for tailwindcss on website -->
+  <img src="https://github.com/gamer-gang/gamerbot/raw/master/assets/hexagon.png" class="rounded-lg shadow-lg w-60" alt="gamerbot logo" width="160">
 </p>
 
 <h1 align="center">gamerbot</h1>
