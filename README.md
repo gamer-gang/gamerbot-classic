@@ -6,11 +6,11 @@
 <h1 align="center">gamerbot</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/github/workflow/status/gamer-gang/gamerbot/webpack">
-  <img src="https://img.shields.io/github/repo-size/gamer-gang/gamerbot">
-  <img src="https://img.shields.io/github/license/gamer-gang/gamerbot">
-  <img src="https://img.shields.io/david/gamer-gang/gamerbot">
-  <img src="https://img.shields.io/badge/hotel-trivago-blue">
+  <img src="https://img.shields.io/github/workflow/status/gamer-gang/gamerbot/webpack" alt="build status">
+  <img src="https://img.shields.io/github/repo-size/gamer-gang/gamerbot" alt="repo size">
+  <img src="https://img.shields.io/github/license/gamer-gang/gamerbot" alt="license">
+  <img src="https://img.shields.io/david/gamer-gang/gamerbot" alt="dependency status">
+  <img src="https://img.shields.io/badge/hotel-trivago-blue" alt="hotel trivago">
 </p>
 
 Reasons to use gamerbot:
