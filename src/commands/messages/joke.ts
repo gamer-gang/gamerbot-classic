@@ -39,7 +39,7 @@ export class CommandJoke implements Command {
     const text = cheerio.load(response.data)('#loading-text').html();
     if (!text) throw new Error('no text in #loading-text');
 
-    return he.decode(text.replace('\n', '').replace(/<\/?code>/g, '`'));
+    return he.decode(text.replace(/\n/g, '').replace(/<\/?code>/g, '`'));
   }
 
   private makeUrl = (type: string) =>

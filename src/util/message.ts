@@ -18,7 +18,7 @@ export const sanitize = (content?: string): string =>
     .replace(/`/g, '\\`') ?? '';
 
 // eslint-disable-next-line
-export const codeBlock = (content?: unknown, language?: string): string => `\`\`\`${language}
+export const codeBlock = (content?: unknown, language?: string): string => `\`\`\`${language ?? ''}
 ${content}
 \`\`\``;
 
