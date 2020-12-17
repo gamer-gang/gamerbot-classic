@@ -118,7 +118,11 @@ client.on('message', async msg => {
       config,
       startTime: start,
     })
-    .then(() => client.em.flush());
+    .then(() => client.em.flush())
+    .catch(err => {
+      logger.error(err);
+      msg.channel.send(Embed.error(codeBlock(err)));
+    });
 });
 
 client.on('ready', () => {
@@ -126,6 +130,11 @@ client.on('ready', () => {
   setPresence();
   setInterval(setPresence, 1000 * 60 * 10);
   fetchMemberCache();
+});
+
+client.on('debug', content => {
+  if (content.includes('Remaining: '))
+    logger.info(`remaining gateway sessions: ${content.split(' ').reverse()[0]}`);
 });
 
 client
