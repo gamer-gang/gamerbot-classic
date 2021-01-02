@@ -1,19 +1,17 @@
-import { Message, TextChannel, VoiceChannel } from 'discord.js';
+import { Message, StreamOptions, TextChannel, VoiceChannel } from 'discord.js';
 import he from 'he';
 import _ from 'lodash';
 import miniget from 'miniget';
-import moment from 'moment';
 import * as mm from 'music-metadata';
 import yts from 'yt-search';
 import ytdl from 'ytdl-core';
 
 import { Command, CommandDocs } from '..';
-import { client, getLogger, LoggerType, queueStore, spotify, youtube } from '../../providers';
-import { CmdArgs, Track, TrackType } from '../../types';
+import { client, getLogger, logger } from '../../providers';
+import { Context, Track } from '../../types';
 import {
   codeBlock,
   Embed,
-  getQueueLength,
   getTrackLength,
   getTrackUrl,
   isLivestream,
@@ -34,13 +32,13 @@ export class CommandPlay implements Command {
       description: 'search for a video, and choose from the top 5 results.',
     },
   ];
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, queueStore } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
 
     const voice = msg.member?.voice;
     if (!voice?.channel) return msg.channel.send(Embed.error('you are not in a voice channel'));
 
-    const queue = queueStore.get(msg.guild.id);
+    const queue = client.queues.get(msg.guild.id);
 
     const permissions = voice.channel.permissionsFor(client.user?.id as string);
     if (!permissions?.has('CONNECT'))
@@ -57,56 +55,63 @@ export class CommandPlay implements Command {
         this.queueTrack(
           {
             requesterId: msg.author?.id as string,
-            type: TrackType.FILE,
+            type: 'file',
             data: {
               title: attachment.name || _.last(attachment.url.split('/')),
               url: attachment.url,
               duration: toDuration(metadata.format.duration),
             },
           } as Track,
-          { cmdArgs }
+          { context }
         );
 
         return;
       }
 
-      if (queue?.voiceConnection?.dispatcher.paused) {
+      if (queue?.voiceConnection?.dispatcher?.paused) {
         queue.voiceConnection?.dispatcher.resume();
+        queue.paused = false;
         updatePlayingEmbed({ guildId: msg.guild.id, playing: true });
-        return msg.channel.send(new Embed({ intent: 'success', title: 'resumed' }));
+        return msg.channel.send(Embed.success('Resumed'));
+      }
+
+      if (!queue.playing && queue.tracks.length) {
+        queue.current.index = 0;
+        return this.playNext(context);
       }
 
       return msg.channel.send(Embed.error('expected at least one arg'));
     }
 
-    if (regExps.youtube.playlist.test(args._[0])) return this.getYoutubePlaylist(cmdArgs);
-    else if (regExps.youtube.video.test(args._[0])) return this.getYoutubeVideo(cmdArgs);
-    else if (regExps.spotify.playlist.test(args._[0])) return this.getSpotifyPlaylist(cmdArgs);
-    else if (regExps.spotify.album.test(args._[0])) return this.getSpotifyAlbum(cmdArgs);
-    else if (regExps.spotify.track.test(args._[0])) return this.getSpotifyTrack(cmdArgs);
-    else return this.searchYoutube(cmdArgs);
+    if (regExps.youtube.playlist.test(args._[0])) return this.getYoutubePlaylist(context);
+    else if (regExps.youtube.video.test(args._[0])) return this.getYoutubeVideo(context);
+    else if (regExps.spotify.playlist.test(args._[0])) return this.getSpotifyPlaylist(context);
+    else if (regExps.spotify.album.test(args._[0])) return this.getSpotifyAlbum(context);
+    else if (regExps.spotify.track.test(args._[0])) return this.getSpotifyTrack(context);
+    else if (regExps.url.test(args._[0])) return msg.channel.send(Embed.error('invalid url'));
+    else return this.searchYoutube(context);
   }
 
-  async getYoutubePlaylist(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async getYoutubePlaylist(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
     try {
-      const playlist = await youtube.getPlaylist(args._[0]);
+      const playlist = await client.youtube.getPlaylist(args._[0]);
       if (!playlist)
         return msg.channel.send(
           Embed.error("playlist not found (either it doesn't exist or it's private)")
         );
 
       const videos = await playlist.getVideos();
-      (await Promise.all(videos.map(v => youtube.getVideoByID(v.id)))).map(
+      (await Promise.all(videos.map(v => client.youtube.getVideoByID(v.id)))).map(
         v =>
           v &&
           this.queueTrack(
             {
-              type: TrackType.YOUTUBE,
+              type: 'youtube',
               data: { ...v, livestream: isLivestream(v) },
               requesterId: msg.author?.id,
             } as Track,
-            { cmdArgs, silent: true, beginPlaying: false }
+            { context, silent: true, beginPlaying: false }
           )
       );
 
@@ -119,12 +124,12 @@ export class CommandPlay implements Command {
         })
       );
 
-      const queue = queueStore.get(msg.guild.id);
+      const queue = client.queues.get(msg.guild.id);
       if (queue?.current.embed) updatePlayingEmbed({ guildId: msg.guild.id });
 
-      this.playNext(cmdArgs);
+      this.playNext(context);
     } catch (err) {
-      getLogger(LoggerType.MESSAGE, msg.id).error(err);
+      getLogger(`MESSAGE ${msg.id}`).error(err);
       if (err.toString() === 'Error: resource youtube#playlistListResponse not found')
         return msg.channel.send(
           Embed.error("playlist not found (either it doesn't exist or it's private)")
@@ -134,11 +139,11 @@ export class CommandPlay implements Command {
     }
   }
 
-  async getYoutubeVideo(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async getYoutubeVideo(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
 
     try {
-      const video = await youtube.getVideo(args._[0]);
+      const video = await client.youtube.getVideo(args._[0]);
       if (!video)
         return msg.channel.send(
           Embed.error("video not found (either it doesn't exist or it's private)")
@@ -147,12 +152,12 @@ export class CommandPlay implements Command {
         {
           data: { ...video, livestream: isLivestream(video) },
           requesterId: msg.author?.id as string,
-          type: TrackType.YOUTUBE,
+          type: 'youtube',
         },
-        { cmdArgs }
+        { context }
       );
     } catch (err) {
-      getLogger(LoggerType.MESSAGE, msg.id).error(err);
+      getLogger(`MESSAGE ${msg.id}`).error(err);
       if (err.toString() === 'Error: resource youtube#videoListResponse not found')
         return msg.channel.send(
           Embed.error("video not found (either it doesn't exist or it's private)")
@@ -162,18 +167,18 @@ export class CommandPlay implements Command {
     }
   }
 
-  async getSpotifyAlbum(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async getSpotifyAlbum(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
     const albumId = regExps.spotify.album.exec(args._[0]);
     if (!albumId) return msg.channel.send(Embed.error('invalid album'));
 
-    const album = await spotify.getAlbum(albumId[1]);
+    const album = await client.spotify.getAlbum(albumId[1]);
     if (!album) return msg.channel.send(Embed.error('invalid album'));
 
     for (const { name, artists, duration_ms, id } of album.body.tracks.items) {
       this.queueTrack(
         {
-          type: TrackType.SPOTIFY,
+          type: 'spotify',
           data: {
             title: name,
             cover: album.body.images[0],
@@ -183,39 +188,38 @@ export class CommandPlay implements Command {
           },
           requesterId: msg.author?.id as string,
         },
-        { cmdArgs, silent: true, beginPlaying: false }
+        { context, silent: true, beginPlaying: false }
       );
     }
+
+    const queue = client.queues.get(msg.guild.id);
+    if (queue?.current.embed) updatePlayingEmbed({ guildId: msg.guild.id });
 
     msg.channel.send(
       Embed.success(
         `queued ${album.body.tracks.items.length} tracks from ` +
-          `**[${album.body.name}](https://open.spotify.com/album/${album.body.id})**`
+          `**[${album.body.name}](https://open.spotify.com/album/${album.body.id})**`,
+        queue.paused ? 'music is paused btw' : undefined
       )
     );
 
-    const queue = queueStore.get(msg.guild.id);
-    if (queue?.current.embed) updatePlayingEmbed({ guildId: msg.guild.id });
-
-    this.playNext(cmdArgs);
+    this.playNext(context);
   }
 
-  async getSpotifyPlaylist(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async getSpotifyPlaylist(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
     const playlistId = regExps.spotify.playlist.exec(args._[0]);
     if (!playlistId) return msg.channel.send(Embed.error('invalid playlist'));
 
-    const playlist = await spotify.getPlaylist(playlistId[1]);
+    const playlist = await client.spotify.getPlaylist(playlistId[1]);
     if (!playlist) return msg.channel.send(Embed.error('invalid playlist'));
 
     for (const {
       track: { name, artists, duration_ms, id, album },
     } of playlist.body.tracks.items) {
-      const duration = moment.duration(duration_ms, 'ms');
-
       this.queueTrack(
         {
-          type: TrackType.SPOTIFY,
+          type: 'spotify',
           data: {
             title: name,
             cover: album.images[0],
@@ -225,34 +229,35 @@ export class CommandPlay implements Command {
           },
           requesterId: msg.author?.id as string,
         },
-        { cmdArgs, silent: true, beginPlaying: false }
+        { context, silent: true, beginPlaying: false }
       );
     }
+
+    const queue = client.queues.get(msg.guild.id);
+    queue.current.embed && updatePlayingEmbed({ guildId: msg.guild.id });
 
     msg.channel.send(
       Embed.success(
         `queued ${playlist.body.tracks.items.length} tracks from ` +
-          `**[${playlist.body.name}](https://open.spotify.com/playlist/${playlist.body.id})**`
+          `**[${playlist.body.name}](https://open.spotify.com/playlist/${playlist.body.id})**`,
+        queue.paused ? 'music is paused btw' : undefined
       )
     );
 
-    const queue = queueStore.get(msg.guild.id);
-    queue.current.embed && updatePlayingEmbed({ guildId: msg.guild.id });
-
-    !queue.playing && this.playNext(cmdArgs);
+    !queue.playing && this.playNext(context);
   }
 
-  async getSpotifyTrack(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async getSpotifyTrack(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
     const trackId = regExps.spotify.track.exec(args._[0]);
     if (!trackId) return msg.channel.send('invalid track');
 
-    const track = await spotify.getTrack(trackId[1]);
+    const track = await client.spotify.getTrack(trackId[1]);
     if (!track) return msg.channel.send('invalid track');
 
     this.queueTrack(
       {
-        type: TrackType.SPOTIFY,
+        type: 'spotify',
         data: {
           title: track.body.name,
           cover: track.body.album.images[0],
@@ -262,12 +267,12 @@ export class CommandPlay implements Command {
         },
         requesterId: msg.author?.id as string,
       },
-      { cmdArgs }
+      { context }
     );
   }
 
-  async searchYoutube(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, config } = cmdArgs;
+  async searchYoutube(context: Context): Promise<void | Message> {
+    const { msg, args, config } = context;
 
     try {
       const searchMessage = await msg.channel.send(Embed.info('loading...'));
@@ -275,7 +280,7 @@ export class CommandPlay implements Command {
       const search = await yts({ query: args._.join(' '), category: 'music' });
 
       const videos = (
-        await Promise.all(search.videos.slice(0, 5).map(v => youtube.getVideo(v.url)))
+        await Promise.all(search.videos.slice(0, 5).map(v => client.youtube.getVideo(v.url)))
       )
         .flatMap(v => {
           if (!v) return [];
@@ -284,10 +289,7 @@ export class CommandPlay implements Command {
             livestream: (v.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
           };
         })
-        .map(
-          data =>
-            ({ type: TrackType.YOUTUBE, requesterId: msg.author?.id as string, data } as Track)
-        );
+        .map(data => ({ type: 'youtube', requesterId: msg.author?.id as string, data } as Track));
 
       if (!videos.length) return searchMessage.edit(Embed.error('no results found'));
 
@@ -317,13 +319,13 @@ export class CommandPlay implements Command {
       }
 
       let index: number;
-      collector.on('collect', (message: Message) => {
-        if (message.content.startsWith(`${config.prefix}cancel`))
+      collector.on('collect', (collected: Message) => {
+        if (collected.content.startsWith(`${config.prefix}cancel`))
           return collector.stop(StopReason.CANCEL);
-        if (message.content.startsWith(`${config.prefix}play`))
+        if (new RegExp(`^\\${config.prefix}p(lay)?`).test(collected.content))
           return collector.stop(StopReason.PLAYCMD);
 
-        const i = parseInt(message.content);
+        const i = parseInt(collected.content);
         if (isNaN(i) || i < 1 || i > videos.length)
           return msg.channel.send(Embed.warning('invalid selection, try again'));
 
@@ -341,89 +343,111 @@ export class CommandPlay implements Command {
         if (!video)
           throw new Error('invalid state: video is null after selecting valid returned search');
 
-        this.queueTrack(video, { cmdArgs });
+        this.queueTrack(video, { context });
       });
     } catch (err) {
-      getLogger(LoggerType.MESSAGE, msg.id).error(err);
+      getLogger(`MESSAGE ${msg.id}`).error(err);
       return msg.channel.send(codeBlock(err));
     }
   }
 
   async queueTrack(
     track: Track,
-    options: { cmdArgs: CmdArgs; silent?: boolean; beginPlaying?: boolean }
+    options: { context: Context; silent?: boolean; beginPlaying?: boolean }
   ): Promise<void> {
-    const { msg, queueStore } = options.cmdArgs;
+    const { msg } = options.context;
 
-    const queue = queueStore.get(msg.guild.id);
+    const queue = client.queues.get(msg.guild.id);
     queue.tracks.push(track);
     queue.textChannel = msg.channel as TextChannel;
 
-    if (!queue.playing && (options?.beginPlaying ?? true)) this.playNext(options.cmdArgs);
-    else if (!(options?.silent ?? false)) {
+    if (!queue.playing && (options?.beginPlaying ?? true)) {
+      queue.current.index = queue.tracks.length - 1;
+      this.playNext(options.context);
+    } else if (!(options?.silent ?? false)) {
       msg.channel.send(
         Embed.success(
           `**[${track.data.title}](${getTrackUrl(track)})** queued (#${
             queue.tracks.length - 1
-          } in queue, approx. ${getQueueLength(queue, {
-            first: true,
-            last: false,
-          })} until playing)`
+          } in queue)`,
+          queue.paused ? 'music is paused btw' : undefined
         )
       );
       updatePlayingEmbed({ guildId: msg.guild.id });
     }
   }
 
-  async playNext(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, queueStore } = cmdArgs;
+  async playNext(context: Context): Promise<void | Message> {
+    const { msg } = context;
 
-    let queue = queueStore.get(msg.guild.id);
+    const queue = client.queues.get(msg.guild.id);
 
-    const track = queue.tracks[0];
-
-    if (!track) {
-      // no more in queue
-      queue.voiceConnection?.disconnect();
-      queue = { tracks: [], current: {}, playing: false };
-      queueStore.set(msg.guild.id, queue);
-      return;
-    }
+    const track = queue.tracks[queue.current.index];
 
     if (!queue.playing) {
       queue.voiceChannel = msg.member?.voice?.channel as VoiceChannel;
       queue.playing = true;
     }
 
-    queue.voiceChannel && (queue.voiceConnection ??= await queue.voiceChannel.join());
+    queue.voiceChannel && (queue.voiceConnection = await queue.voiceChannel.join());
     await queue.voiceConnection?.voice?.setSelfDeaf(true);
 
-    queue.current.embed = await msg.channel.send(Embed.info('loading...'));
+    queue.current.embed = await msg.channel.send(Embed.info('Loading...'));
     updatePlayingEmbed({ track, guildId: msg.guild.id, playing: true });
 
     const callback = (info: unknown) => {
-      const queue = queueStore.get(msg.guild.id);
+      const queue = client.queues.get(msg.guild.id);
 
-      getLogger(LoggerType.MESSAGE, msg.id).debug(
-        `track "${track.data.title}" ended with info "${info}"`
-      );
-
-      queue.tracks.shift();
+      getLogger(`MESSAGE ${msg.id}`).debug(`track "${track.data.title}" ended with info "${info}"`);
 
       updatePlayingEmbed({ guildId: msg.guild.id, playing: false });
       delete queue.current.embed;
 
-      this.playNext(cmdArgs);
+      if (!queue.playing) {
+        queue.voiceConnection?.disconnect();
+        return;
+      }
+
+      if (queue.loop === 'one') return this.playNext(context);
+
+      const nextTrack = queue.tracks[queue.current.index + 1];
+      if (!nextTrack) {
+        if (queue.loop === 'all') {
+          queue.current.index = 0;
+          this.playNext(context);
+        } else {
+          // no more in queue and not looping
+          queue.voiceConnection?.disconnect();
+          delete queue.voiceConnection;
+          delete queue.voiceChannel;
+          queue.playing = false;
+          return;
+        }
+      } else {
+        queue.current.index++;
+        return this.playNext(context);
+      }
+    };
+
+    const options: StreamOptions = {
+      highWaterMark: 40,
+      volume: false,
     };
 
     switch (track.type) {
-      case TrackType.YOUTUBE:
-        queue.voiceConnection?.play(ytdl(track.data.id)).on('finish', callback);
+      case 'youtube':
+        queue.voiceConnection
+          ?.play(ytdl(track.data.id), options)
+          .on('close', callback)
+          .on('error', logger.error);
         break;
-      case TrackType.FILE:
-        queue.voiceConnection?.play(track.data.url).on('finish', callback);
+      case 'file':
+        queue.voiceConnection
+          ?.play(track.data.url, options)
+          .on('close', callback)
+          .on('error', logger.error);
         break;
-      case TrackType.SPOTIFY: {
+      case 'spotify': {
         const error = () => {
           queue.current.embed?.edit(
             Embed.error(
@@ -439,10 +463,13 @@ export class CommandPlay implements Command {
           category: 'music',
         });
         if (!search.videos.length) return error();
-        const video = await youtube.getVideo(search.videos[0].url);
+        const video = await client.youtube.getVideo(search.videos[0].url);
         if (!video) return error();
 
-        queue.voiceConnection?.play(ytdl(video.id)).on('finish', callback);
+        queue.voiceConnection
+          ?.play(ytdl(video.id), options)
+          .on('close', callback)
+          .on('error', logger.error);
       }
     }
   }

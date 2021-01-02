@@ -1,4 +1,4 @@
-namespace Discohook {
+declare namespace Discohook {
   export interface Message {
     content?: string;
     embeds?: Embed[];

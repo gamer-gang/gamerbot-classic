@@ -1,7 +1,6 @@
 import { Message } from 'discord.js';
-
 import { Command } from '..';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 
 export class CommandBlackjack implements Command {
   cmd = 'blackjack';
@@ -9,7 +8,7 @@ export class CommandBlackjack implements Command {
     usage: 'blackjack [bid=5]',
     description: 'play blackjac',
   };
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
+  async execute(cmdArgs: Context): Promise<void | Message> {
     return cmdArgs.msg.channel.send('not implemented sowwy');
   }
 }

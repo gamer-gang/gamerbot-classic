@@ -1,7 +1,8 @@
 import { Message } from 'discord.js';
 
 import { Command, CommandDocs } from '..';
-import { CmdArgs } from '../../types';
+import { client } from '../../providers';
+import { Context } from '../../types';
 import { Embed, updatePlayingEmbed } from '../../util';
 
 export class CommandPlaying implements Command {
@@ -12,10 +13,10 @@ export class CommandPlaying implements Command {
       description: 'show now playing embed',
     },
   ];
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, queueStore } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg } = context;
 
-    const queue = queueStore.get(msg.guild.id);
+    const queue = client.queues.get(msg.guild.id);
 
     if (!queue.playing) return msg.channel.send(Embed.error('not playing'));
 

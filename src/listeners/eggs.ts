@@ -1,65 +1,96 @@
-import { Message, PartialMessage } from 'discord.js';
+import { EntityManager } from '@mikro-orm/postgresql';
+import { Message, MessageReaction, PartialMessage, User } from 'discord.js';
 import fse from 'fs-extra';
+import yaml from 'js-yaml';
+import _ from 'lodash';
 
 import { setPresence } from '..';
 import { Config } from '../entities/Config';
-import { CmdArgs } from '../types';
+import { EggLeaderboard } from '../entities/EggLeaderboard';
+import { Gamerbot } from '../gamerbot';
 import { resolvePath } from '../util';
 
-type EventMessage = Message | PartialMessage;
+const eggfile = yaml.safeLoad(fse.readFileSync(resolvePath('assets/egg.yaml')).toString('utf-8'));
+if (typeof eggfile !== 'object') throw new Error('egg.yaml must be object');
 
-/** case insensitive */
-const include = (msg: EventMessage, content: string) =>
-  msg.content?.toLowerCase().includes(content);
+const eggs = _.uniq((eggfile as { eggs?: string[] }).eggs?.map(egg => egg.toLowerCase()));
+if (!eggs?.length) throw new Error('no eggs specified in assets/egg.yaml');
 
-const EGGFILE = resolvePath('data/eggcount.txt');
+const eggy = (msg: Message | PartialMessage, prefix: string) =>
+  eggs.some(egg => msg.content?.toLowerCase().includes(egg)) &&
+  !msg.content?.toLowerCase().startsWith(prefix);
 
-fse.ensureFileSync(EGGFILE);
-let eggCount: number = parseInt(fse.readFileSync(EGGFILE).toString('utf-8')) || 0;
+const cooldown = 30000;
 
-export const get = (): number => eggCount;
-export const increment = (deltaEggs: number): void => set(eggCount + deltaEggs);
-export const set = (count: number): void => {
-  if (eggCount === count) return;
-  eggCount = count;
-  fse.writeFile(EGGFILE, eggCount.toString());
-  setPresence();
-};
+class EggCooldown {
+  constructor(public timestamp: number, public warned = false) {}
 
-export const onMessage = (msg: EventMessage, config: Config) => (): void => {
-  if (
-    config.egg &&
-    msg.content?.toLowerCase().includes('egg') &&
-    !msg.content?.startsWith('$egg')
-  ) {
-    msg.react('🥚');
-    increment(1);
+  expired(): boolean {
+    return Date.now() > this.timestamp + cooldown;
   }
+}
+
+const cooldowns: Record<string, EggCooldown> = {};
+
+const getEggsFromDB = async (em: Gamerbot['em']) => {
+  const builder = (em as EntityManager).createQueryBuilder(EggLeaderboard);
+  const eggsObjects: { eggs: number }[] = await builder.select('eggs').execute();
+
+  return eggsObjects.reduce((a, b) => ({ eggs: a.eggs + b.eggs }), { eggs: 0 }).eggs;
 };
 
-export const onMessageDelete = (em: CmdArgs['em']) => async (msg: EventMessage): Promise<void> => {
-  const config = await em.findOne(Config, { guildId: msg.guild?.id as string });
+let eggCount: number;
+
+const getLeaderboardEntry = async (user: User, em: Gamerbot['em']) => {
+  const entry = await (async (user: User) => {
+    const existing = await em.findOne(EggLeaderboard, { userId: user.id });
+    if (existing) {
+      if (user.tag !== existing.userTag) existing.userTag = user.tag;
+      return existing;
+    }
+
+    const fresh = em.create(EggLeaderboard, { userId: user.id, userTag: user.tag });
+    await em.persistAndFlush(fresh);
+    return await em.findOneOrFail(EggLeaderboard, { userId: user.id });
+  })(user);
+
+  return entry;
+};
+
+export const get = async (client: Gamerbot): Promise<number> => {
+  return (eggCount ??= await getEggsFromDB(client.em));
+};
+
+const grantEgg = async (msg: Message | PartialMessage, em: Gamerbot['em']) => {
+  msg.react('🥚');
+  eggCount++;
+  setPresence();
+
+  const lb = await getLeaderboardEntry(msg.author as User, em);
+  lb.eggs++;
+  em.flush();
+};
+
+export const onMessage = (
+  msg: Message | PartialMessage,
+  config: Config,
+  em: Gamerbot['em']
+) => async (): Promise<void | Message | MessageReaction> => {
   if (!config || msg.author?.bot || !config.egg) return;
 
-  if (config.egg && include(msg, 'egg') && !msg.content?.startsWith('$egg')) increment(-1);
-};
+  if (eggy(msg, config.prefix)) {
+    if (cooldowns[msg.author?.id as string]) {
+      const cooldown = cooldowns[msg.author?.id as string];
+      if (!cooldown.expired() && !cooldown.warned) {
+        cooldown.warned = true;
+        return msg.react('❄️');
+      }
 
-export const onMessageUpdate = (em: CmdArgs['em']) => async (
-  prev: EventMessage,
-  next: EventMessage
-): Promise<void> => {
-  const config = await em.findOne(Config, { guildId: next.guild?.id as string });
-  if (!config || next.author?.bot || !config.egg) return;
-
-  if (!include(prev, 'egg') && include(next, 'egg') && !next.content?.startsWith('$egg')) {
-    next.react('🥚');
-    increment(1);
-  } else if (include(prev, 'egg') && !include(next, 'egg')) {
-    try {
-      next.reactions.cache.get('🥚')?.remove();
-      increment(-1);
-    } catch {
-      // no
+      if (!cooldown.expired()) return;
     }
+
+    cooldowns[msg.author?.id as string] = new EggCooldown(Date.now());
+    grantEgg(msg, em);
+    return;
   }
 };

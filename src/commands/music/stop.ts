@@ -1,8 +1,8 @@
 import { Message } from 'discord.js';
-import _ from 'lodash';
 
 import { Command, CommandDocs } from '..';
-import { CmdArgs, Track } from '../../types';
+import { client } from '../../providers';
+import { Context } from '../../types';
 import { codeBlock, Embed } from '../../util';
 
 export class CommandStop implements Command {
@@ -11,19 +11,21 @@ export class CommandStop implements Command {
     usage: 'stop',
     description: 'stops playback',
   };
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, queueStore } = cmdArgs;
-    const queue = queueStore.get(msg.guild.id);
+  async execute(context: Context): Promise<void | Message> {
+    const { msg } = context;
+    const queue = client.queues.get(msg.guild.id);
 
-    if (!queue.playing) return msg.channel.send(Embed.error('not playing'));
+    if (!msg.guild.me?.voice) return msg.channel.send(Embed.error('not connected'));
 
-    const voice = msg.member?.voice;
-    if (!voice?.channel || voice.channel.id !== queue.voiceConnection?.channel.id)
-      return msg.channel.send(Embed.error('you are not in the voice channel'));
-
+    if ((msg.guild.me?.voice?.channel?.members?.array().length ?? 2) > 1) {
+      const userVoice = msg.member?.voice;
+      if (!userVoice?.channel || userVoice.channel.id !== msg.guild.me.voice?.channel?.id)
+        return msg.channel.send(Embed.error('you are not in the music channel'));
+    }
     try {
-      queue.tracks = [_.head(queue.tracks) as Track];
-      queue.voiceConnection?.dispatcher?.end('stop command');
+      if (queue.voiceChannel?.members.size === 1) queue.tracks = [];
+      queue.voiceConnection?.dispatcher?.end('disconnect command');
+      msg.guild.me?.voice.kick();
       return msg.channel.send(Embed.success('stopped'));
     } catch (err) {
       return msg.channel.send(Embed.error(codeBlock(err)));

@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 import moment from 'moment';
 
 import { Command } from '..';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { Embed } from '../../util';
 
 export class CommandUptime implements Command {
@@ -14,12 +14,12 @@ export class CommandUptime implements Command {
     },
   ];
 
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg } = context;
 
     const uptime = moment.duration(Math.round(process.uptime()), 'seconds');
 
-    return msg.channel.send(Embed.info('uptime: ' + this.makeDurationString(uptime)));
+    return msg.channel.send(Embed.info('**uptime:** ' + this.makeDurationString(uptime)));
   }
 
   makeDurationString(duration: moment.Duration): string {

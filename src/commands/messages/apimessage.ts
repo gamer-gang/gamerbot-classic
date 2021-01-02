@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 
 import { Command } from '..';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { codeBlock, Embed, parseDiscohookJSON } from '../../util';
 
 // eslint-disable-next-line no-useless-escape
@@ -13,8 +13,8 @@ export class CommandApiMessage implements Command {
     usage: 'apimessage <json data>',
     description: 'create a message from api data (deletes source message)',
   };
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
 
     try {
       await msg.channel.send(parseDiscohookJSON(args._.join(' ')));

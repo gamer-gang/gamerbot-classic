@@ -4,22 +4,25 @@ import _ from 'lodash';
 import yargsParser from 'yargs-parser';
 
 import { Command, CommandDocs } from '..';
-import { CmdArgs, GuildQueue, Track, TrackType } from '../../types';
+import { client } from '../../providers';
+import { Context, GuildQueue } from '../../types';
 import {
   Embed,
   formatDuration,
-  getCurrentSecondsRemaining,
   getQueueLength,
+  getRemainingTime,
   getTrackLength,
   getTrackUrl,
+  listify,
 } from '../../util';
 
 export class CommandQueue implements Command {
   cmd = ['queue', 'q'];
-  yargsSchema: yargsParser.Options = {
+  yargs: yargsParser.Options = {
     boolean: ['clear'],
-    number: ['remove'],
+    string: ['remove'],
     alias: {
+      clear: ['c'],
       remove: ['rm', 'r'],
     },
   };
@@ -29,7 +32,7 @@ export class CommandQueue implements Command {
       description: 'list the things!!!',
     },
     {
-      usage: 'queue --clear',
+      usage: 'queue -c, --clear',
       description: 'clear queue',
     },
     {
@@ -37,56 +40,72 @@ export class CommandQueue implements Command {
       description: 'remove video at `<index>` from queue',
     },
   ];
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, queueStore } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
 
-    const queue = queueStore.get(msg.guild.id);
+    const queue = client.queues.get(msg.guild.id);
 
     if (args.clear) {
-      if (!queue.tracks.length) return msg.channel.send(Embed.error('nothing playing'));
+      if (!queue.tracks.length) return msg.channel.send(Embed.error('Nothing playing'));
 
-      queue.tracks = [_.head(queue.tracks) as Track];
+      queue.tracks = queue.playing ? [queue.tracks[queue.current.index]] : [];
 
-      return msg.channel.send(Embed.success('cleared queue'));
+      return msg.channel.send(Embed.success('Queue cleared'));
     }
 
     if (args.remove != null) {
-      const index = args.remove;
+      if (/^\d+-\d+$/.test(args.remove)) {
+        const [start, end] = args.remove.split('-').map((n: string) => parseInt(n, 10));
 
-      if (isNaN(index) || !index || index <= 0 || index > queue.tracks.length - 1)
-        return msg.channel.send(Embed.error('invalid removal index'));
-
-      const removed = queue.tracks.splice(index, 1)[0];
-
-      return msg.channel.send(
-        Embed.success(
-          '',
-          `removed **[${he.decode(removed.data.title)}](${getTrackUrl(removed)})** from the queue`
+        if (
+          [start, end].some(v => isNaN(v) || !v || v <= 1 || v > queue.tracks.length) ||
+          end < start
         )
-      );
+          return msg.channel.send(Embed.error('Invalid removal range'));
+
+        const removed = queue.tracks.splice(start - 1, end - start + 1);
+
+        const trackMarkup = removed.map(
+          track => `**[${he.decode(track.data.title)}](${getTrackUrl(track)})**`
+        );
+
+        return msg.channel.send(Embed.success(`Removed ${listify(trackMarkup)} from the queue`));
+      } else {
+        const index = parseInt(args.remove, 10);
+
+        if (isNaN(index) || !index || index <= 0 || index > queue.tracks.length - 1)
+          return msg.channel.send(Embed.error('Invalid removal index'));
+
+        const removed = queue.tracks.splice(index, 1)[0];
+
+        return msg.channel.send(
+          Embed.success(
+            '',
+            `Removed **[${he.decode(removed.data.title)}](${getTrackUrl(removed)})** from the queue`
+          )
+        );
+      }
     }
 
     const tracks = _.cloneDeep(queue.tracks);
-    if (!tracks.length) return msg.channel.send(Embed.warning('nothing playing'));
+    if (!tracks.length) return msg.channel.send(Embed.info('Nothing in queue'));
 
-    const nowPlaying = tracks.shift();
-    // shouldn't happen, we checked if the track list is empty
-    if (!nowPlaying) return;
-
-    const queueLines = tracks.length
-      ? tracks.map(
-          (track, i) =>
-            `${i + 1}. **[${he.decode(track.data.title)}](${getTrackUrl(
-              track
-            )})** (${getTrackLength(track)})`
-        )
-      : ['*queue is empty*'];
+    const queueLines = tracks.map(
+      (track, i) =>
+        `${i + 1}. **[${he.decode(track.data.title)}](${getTrackUrl(track)})** (${getTrackLength(
+          track
+        )})${
+          queue.playing && queue.current.index === i
+            ? ` **(now playing, ${formatDuration(getRemainingTime(queue))} remaining)**`
+            : ''
+        }`
+    );
 
     const queueSegments = _.chunk(queueLines, 10);
     let pageNumber = 0;
 
     const queueMessage = await msg.channel.send(
-      this.makeEmbed({ nowPlaying, queueSegments, pageNumber, queue })
+      this.makeEmbed({ queueSegments, pageNumber, queue })
     );
 
     if (queueSegments.length > 1) {
@@ -106,7 +125,7 @@ export class CommandQueue implements Command {
             pageNumber--;
             if (pageNumber === -1) pageNumber = queueSegments.length - 1;
           }
-          queueMessage.edit(this.makeEmbed({ nowPlaying, queueSegments, pageNumber, queue }));
+          queueMessage.edit(this.makeEmbed({ queueSegments, pageNumber, queue }));
 
           reaction.users.remove(user.id);
         })
@@ -117,25 +136,17 @@ export class CommandQueue implements Command {
   makeEmbed({
     pageNumber,
     queueSegments,
-    nowPlaying,
     queue,
   }: {
     pageNumber: number;
     queueSegments: string[][];
-    nowPlaying: Track;
     queue: GuildQueue;
   }): Embed {
     const embed = new Embed({
       title: 'queue',
-      description:
-        `**now playing: [${he.decode(nowPlaying.data.title)}](${getTrackUrl(nowPlaying)})** (${
-          nowPlaying.type === TrackType.YOUTUBE && nowPlaying.data.livestream
-            ? 'livestream'
-            : formatDuration(getCurrentSecondsRemaining(queue)) + ' remaining'
-        }${
-          queue.voiceConnection?.dispatcher.paused ? ', paused' : ''
-        })\n**queue length:** ${getQueueLength(queue, { first: true })}\n` +
-        queueSegments[pageNumber].join('\n'),
+      description: `**queue length:** ${getQueueLength(queue)}\n${queueSegments[pageNumber].join(
+        '\n'
+      )}`,
     });
 
     if (queueSegments.length > 1) embed.setFooter(`page ${pageNumber + 1}/${queueSegments.length}`);

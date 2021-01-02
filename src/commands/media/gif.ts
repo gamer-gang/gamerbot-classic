@@ -5,7 +5,7 @@ import * as https from 'https';
 import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { codeBlock, Embed, regExps, resolvePath } from '../../util';
 
 const fileRegExp = /^[A-Za-z0-9\-_]+$/;
@@ -13,7 +13,7 @@ const gifDir = 'data/gifs';
 
 export class CommandGif implements Command {
   cmd = 'gif';
-  yargsSchema: yargsParser.Options = {
+  yargs: yargsParser.Options = {
     boolean: ['list'],
     string: ['remove'],
     array: ['add', 'rename'],
@@ -21,7 +21,7 @@ export class CommandGif implements Command {
       list: 'l',
       add: 'a',
       remove: ['r', 'rm'],
-      rename: ['n', 'mv'],
+      rename: ['m', 'mv'],
     },
   };
   docs = [
@@ -42,7 +42,7 @@ export class CommandGif implements Command {
       description: 'remove gif',
     },
     {
-      usage: 'gif -n, --mv, --rename <name> <newName>',
+      usage: 'gif -m, --mv, --rename <name> <newName>',
       description: 'rename gif',
     },
   ];
@@ -50,7 +50,8 @@ export class CommandGif implements Command {
   invalidChars = (msg: Message | PartialMessage): Promise<Message> =>
     msg.channel.send(
       Embed.error(
-        `**invalid characters in filename**\nonly letters, numbers, dashes, and underscores allowed`
+        'invalid characters in filename',
+        'only letters, numbers, dashes, and underscores allowed'
       )
     );
 
@@ -59,8 +60,8 @@ export class CommandGif implements Command {
     return ext ? files : files.map(f => f.replace('.gif', ''));
   }
 
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
 
     if (args.list) {
       const files = await this.getGifs();

@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 
 import { Command } from '..';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { codeBlock, Embed } from '../../util';
 
 export class CommandUnban implements Command {
@@ -10,8 +10,8 @@ export class CommandUnban implements Command {
     usage: 'unban <user>',
     description: 'unbans',
   };
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
     if (!msg.guild?.members.resolve(msg.author?.id as string)?.hasPermission('BAN_MEMBERS'))
       return msg.channel.send(Embed.error('you have insufficient permissions to (un)ban members'));
     if (args._.length !== 1) return msg.channel.send(Embed.error('expected 1 argument'));

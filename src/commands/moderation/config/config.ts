@@ -3,7 +3,7 @@ import _ from 'lodash';
 
 import { Command } from '../..';
 import { Config } from '../../../entities/Config';
-import { CmdArgs } from '../../../types';
+import { Context } from '../../../types';
 import { codeBlock, Embed } from '../../../util';
 import { allowSpam } from './allowspam';
 import { egg } from './egg';
@@ -13,8 +13,7 @@ import { welcomeMessage } from './welcomeMessage';
 
 const configHandlers: Record<
   string,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (config: Config, cmdArgs: CmdArgs, value?: string) => Promise<any>
+  (config: Config, context: Context, value?: string) => Promise<any>
 > = { welcomeChannel, welcomeMessage, prefix, egg, allowSpam };
 
 export class CommandConfig implements Command {
@@ -23,8 +22,8 @@ export class CommandConfig implements Command {
     usage: 'config <option> [newValue]',
     description: 'get/set a config value',
   };
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, config } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args, config } = context;
 
     if (!msg.guild?.member(msg.author?.id as string)?.hasPermission('ADMINISTRATOR'))
       return msg.channel.send(Embed.error('you must be an administrator to use this command'));
@@ -37,6 +36,6 @@ export class CommandConfig implements Command {
         )
       );
 
-    configHandlers[args._[0]](config, cmdArgs, _.tail(args._).join(' '));
+    configHandlers[args._[0]](config, context, _.tail(args._).join(' '));
   }
 }

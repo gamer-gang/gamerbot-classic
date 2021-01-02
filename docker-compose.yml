@@ -12,9 +12,11 @@ services:
     build: .
     volumes:
       - app-data:/app/data
+      - app-logs:/app/logs
     depends_on:
       - db
 
 volumes:
   app-data: {}
+  app-logs: {}
   db-data: {}

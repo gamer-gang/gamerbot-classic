@@ -1,6 +1,6 @@
 import { MessageEmbed, MessageEmbedOptions } from 'discord.js';
 
-import { resolvePath } from './path';
+import { getProfilePicture } from './message';
 
 type EmbedIntent = 'info' | 'success' | 'warning' | 'error';
 
@@ -17,7 +17,9 @@ const intentEmojis = {
 };
 
 const intentText = (message: string, desc?: string) =>
-  message.match(/\*\*|```/) ? message : `**${message}**${desc ? `\n${desc}` : ''}`;
+  message.match(/\*\*|```/)
+    ? `${message}${desc ? `\n${desc}` : ''}`
+    : `**${message}**${desc ? `\n${desc}` : ''}`;
 
 export class Embed extends MessageEmbed {
   static error(message: string, description?: string): Embed {
@@ -64,7 +66,7 @@ export class Embed extends MessageEmbed {
 
   setDefaultAuthor(): this {
     this.setAuthor('gamerbot80', 'attachment://hexagon.png');
-    this.attachFiles([resolvePath('assets/hexagon.png')]);
+    this.attachFiles([getProfilePicture()]);
     return this;
   }
 

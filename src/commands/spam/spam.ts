@@ -2,12 +2,12 @@ import { Message } from 'discord.js';
 import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { Embed, hasMentions } from '../../util';
 
 export class CommandSpam implements Command {
   cmd = 'spam';
-  yargsSchema: yargsParser.Options = {
+  yargs: yargsParser.Options = {
     alias: {
       repetitions: 'r',
       messages: 'm',
@@ -29,12 +29,12 @@ export class CommandSpam implements Command {
       'spam [-r, --repetitions <int>] [-m, --messages <int>] [-f, --fill] [-t, --tts] <...text>',
     description: 'make the words appear on the screen',
   };
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
+  async execute(context: Context): Promise<void | Message> {
     const {
       msg,
       args,
       config: { allowSpam },
-    } = cmdArgs;
+    } = context;
 
     if (!allowSpam) return msg.channel.send(Embed.error('spam commands are off'));
     if (hasMentions(args._.join(' ') as string)) return msg.channel.send('no');

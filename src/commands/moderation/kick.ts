@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 
 import { Command, CommandDocs } from '..';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { codeBlock, Embed } from '../../util';
 
 export class CommandKick implements Command {
@@ -10,8 +10,8 @@ export class CommandKick implements Command {
     usage: 'kick <user> <...reason>',
     description: 'bans',
   };
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
     if (!msg.guild?.members.resolve(msg.author?.id as string)?.hasPermission('KICK_MEMBERS'))
       return msg.channel.send(Embed.error('you have insufficient permissions to kick members'));
 

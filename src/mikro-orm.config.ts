@@ -12,15 +12,15 @@ dotenv.config({ path: resolvePath('.env') });
 const getEntities = () => {
   let modules;
   if (process.env.WEBPACK) {
-    modules = require.context('./entities', true, /\.ts$/);
-    modules = modules.keys().map(r => modules(r));
+    const context = (modules = require.context('./entities', true, /\.ts$/));
+    modules = context.keys().map(r => context(r));
   } else {
     modules = fs
       .readdirSync(resolvePath('src/entities'))
       .map(file => require(`./entities/${file}`));
   }
 
-  return modules.flatMap(mod => Object.keys(mod).map(className => mod[className]));
+  return modules.flatMap(mod => (Object.keys(mod) as any).map((name: string) => mod[name]));
 };
 
 const getMigrations = () => {
@@ -38,7 +38,8 @@ const getMigrations = () => {
       .map(file => require(`./migrations/${file}`));
 
     return Object.keys(modules).map(
-      name => <MigrationObject>{ name: basename(name), class: Object.values(modules[name])[0] }
+      name =>
+        <MigrationObject>{ name: basename(name as string), class: Object.values(modules[name])[0] }
     );
   }
 };
@@ -56,5 +57,9 @@ export default {
   highlighter: new SqlHighlighter(),
   baseDir: resolvePath('.'),
   discovery: { disableDynamicFileAccess: true },
-  migrations: { migrationsList: getMigrations(), path: resolvePath('src/migrations') },
+  migrations: {
+    migrationsList: getMigrations(),
+    pattern: process.env.WEBPACK ? undefined : /^[\w-]+\d+\.ts$/,
+    path: process.env.WEBPACK ? undefined : resolvePath('src/migrations'),
+  },
 } as Parameters<typeof MikroORM.init>[0];
