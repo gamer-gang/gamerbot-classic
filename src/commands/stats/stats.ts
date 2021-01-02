@@ -3,7 +3,6 @@ import { Message, TextChannel } from 'discord.js';
 import yaml from 'js-yaml';
 import _ from 'lodash';
 import yargsParser from 'yargs-parser';
-
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context } from '../../types';
@@ -28,10 +27,12 @@ export class CommandStats implements Command {
       return msg.channel.send(Embed.error('expected 1 or 2 args'));
 
     const isUuid = uuidRegex.test(args._[0]);
-    let uuid = isUuid ? args._[0].replace('-', '') : uuidCache[args._[0]];
+    let uuid = isUuid ? args._[0].replace('-', '') : uuidCache[args._[0].toLowerCase()];
+
+    let message: Promise<Message> | undefined = undefined;
 
     if (!statsCache[uuid]) {
-      msg.channel.send('fetching data...');
+      message = msg.channel.send('fetching data...');
       const response = await axios.get('https://api.hypixel.net/player', {
         params: {
           key: process.env.HYPIXEL_API_KEY,
@@ -52,6 +53,7 @@ export class CommandStats implements Command {
         const { playername } = data.player;
 
         statsCache[uuid] = _.cloneDeep(data.player);
+
         setTimeout(() => {
           delete statsCache[uuid];
         }, 1000 * 60 * 5);
@@ -68,55 +70,64 @@ export class CommandStats implements Command {
       playerData: _.cloneDeep(statsCache[uuid]),
       type: args._[1],
       context,
+      message,
     });
   }
+
+  gamemodes: Record<string, (data: Record<string, unknown>) => Buffer> = {
+    bedwars: (data: Record<string, unknown>) =>
+      makeBedwarsStats({
+        data: (data.stats as { Bedwars: HypixelAPI.BedwarsStats }).Bedwars,
+        playername: data.displayname as string,
+        clientTag: client.user?.tag as string,
+      }),
+  };
 
   async sendData({
     channel,
     playerData,
     type,
     context,
+    message,
   }: {
     channel: TextChannel;
     playerData: Record<string, unknown>;
-    type: string;
+    type?: string;
     context: Context;
+    message?: Promise<Message>;
   }): Promise<Message | void> {
     let attachment: Buffer;
 
     try {
-      const gamemodes = {
-        bedwars: () =>
-          makeBedwarsStats({
-            data: (playerData.stats as { Bedwars: HypixelAPI.BedwarsStats }).Bedwars,
-            playername: playerData.playername as string,
-            clientTag: client.user?.tag as string,
-          }),
-      } as Record<string, () => Buffer>;
-
-      const exec = new RegExp(`(${Object.keys(gamemodes).join('|')})`, 'gi').exec(type);
+      const exec = new RegExp(`(${Object.keys(this.gamemodes).join('|')})`, 'g').exec(
+        type?.toLowerCase() ?? ''
+      );
       if (!exec && type !== undefined)
         return channel.send(
           Embed.error(
             'invalid game type',
-            `supported types: \`\`\`\n${Object.keys(gamemodes).join('\n')}\n\`\`\``
+            `supported types: ${codeBlock(Object.keys(this.gamemodes).join('\n'))}`
           )
         );
 
-      attachment = gamemodes[exec ? exec[1] : 'bedwars']();
+      // console.time('make image');
+      attachment = this.gamemodes[exec ? exec[1] : 'bedwars'](playerData);
+      // console.timeEnd('make image');
 
       if (!attachment) throw new Error('invalid state: attatchment is null after regexp exec');
 
-      channel.send(
-        new Embed()
-          .setDefaultAuthor()
-          .setImage('attachment://stats.png')
-          .attachFiles([{ attachment, name: 'stats.png' }])
-      );
+      const embed = new Embed()
+        .setDefaultAuthor()
+        .attachFiles([{ attachment, name: 'stats.png' }])
+        .setImage('attachment://stats.png');
+
+      context.msg.channel.send(embed);
+      if (message) (await message).delete();
     } catch (err) {
       if ((err.toString() as string).includes('no data'))
-        return channel.send(Embed.warning(`${playerData.playername} has no data for that game`));
-      return channel.send(Embed.error(codeBlock(err)));
+        channel.send(Embed.warning(`${playerData.playername} has no data for that game`));
+      else channel.send(Embed.error(codeBlock(err.stack ? err.stack : err)));
+      if (message) (await message).delete();
     }
   }
 }

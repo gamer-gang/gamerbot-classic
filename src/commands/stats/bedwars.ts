@@ -1,150 +1,172 @@
 import { Canvas } from 'canvas';
 
+const fontSize = (px: number) => px + 'px Roboto Mono';
+const round = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
+const headerHeight = 30;
+const mainHeight = 24;
+const padding = 8;
+
+const columns = {
+  K: 'kills',
+  D: 'deaths',
+  KDR: '',
+  FK: 'final_kills',
+  FD: 'final_deaths',
+  FKDR: '',
+  W: 'wins',
+  L: 'losses',
+  'W/L': '',
+  Beds: 'beds_broken',
+};
+
+const gamemodes = {
+  Solos: 'eight_one_',
+  Doubles: 'eight_two_',
+  '3v3v3v3': 'four_three_',
+  '4v4v4v4': 'four_four_',
+  '4v4': 'two_four_',
+  'Rush Solo': 'eight_one_rush_',
+  'Rush Doubles': 'eight_two_rush_',
+  'Rush 4v4v4v4': 'four_four_rush_',
+  'Ultimate Solo': 'eight_one_ultimate_',
+  'Ultimate Doubles': 'eight_two_ultimate_',
+  'Ultimate 4v4v4v4': 'eight_two_ultimate_',
+  'Armed Doubles': 'eight_two_armed_',
+  'Armed 4v4v4v4': 'four_four_armed_',
+  'Voidless Doubles': 'eight_two_voidless_',
+  'Voidless 4v4v4v4': 'four_four_voidless_',
+  'Lucky Doubles': 'eight_two_lucky_',
+  'Lucky 4v4v4v4': 'four_four_lucky_',
+  'Castle 40v40': 'castle_',
+  Overall: '',
+};
+const gamemodeNames = Object.keys(gamemodes);
+
 export const makeBedwarsStats = ({
   data,
   playername,
   clientTag,
 }: {
-  data: HypixelAPI.BedwarsStats;
+  data?: HypixelAPI.BedwarsStats;
   playername: string;
   clientTag: string;
 }): Buffer => {
   if (!data) throw new Error('no data');
 
-  const stats: Record<string, Record<keyof typeof columns, string | number>> = {};
+  const stats: Record<string, Record<keyof typeof columns, string>> = {};
 
-  const columns = {
-    K: 'kills',
-    D: 'deaths',
-    KDR: '',
-    FK: 'final_kills',
-    FD: 'final_deaths',
-    FKDR: '',
-    W: 'wins',
-    L: 'losses',
-    'W/L': '',
-    Beds: 'beds_broken',
-  };
-  const columnNames = Object.keys(columns);
+  Object.keys(gamemodes).forEach(game => {
+    const raw: Record<keyof typeof columns, number> = {} as any;
 
-  const gamemodes = {
-    Solos: 'eight_one_',
-    Doubles: 'eight_two_',
-    '3v3v3v3': 'four_three_',
-    '4v4v4v4': 'four_four_',
-    '4v4': 'two_four_',
-    'Rush Solo': 'eight_one_rush_',
-    'Rush Doubles': 'eight_two_rush_',
-    'Rush 4v4v4v4': 'four_four_rush_',
-    'Ultimate Solo': 'eight_one_ultimate_',
-    'Ultimate Doubles': 'eight_two_ultimate_',
-    'Ultimate 4v4v4v4': 'eight_two_ultimate_',
-    'Armed Doubles': 'eight_two_armed_',
-    'Armed 4v4v4v4': 'four_four_armed_',
-    'Voidless Doubles': 'eight_two_voidless_',
-    'Voidless 4v4v4v4': 'four_four_voidless_',
-    'Lucky Doubles': 'eight_two_lucky_',
-    'Lucky 4v4v4v4': 'four_four_lucky_',
-    'Castle 40v40': 'castle_',
-    Overall: '',
-  };
-  const gamemodeNames = Object.keys(gamemodes);
-
-  for (const name of Object.keys(gamemodes)) {
-    const apiName = gamemodes[name];
-    stats[name] = {} as any;
-    for (let i = 0; i < Object.keys(columns).length; i++) {
-      const key = `${apiName}${columns[columnNames[i]]}_bedwars` as keyof HypixelAPI.BedwarsStats;
-      stats[name][columnNames[i]] = parseInt((data[key] as keyof HypixelAPI.BedwarsStats) ?? '0');
-    }
-    stats[name].KDR =
-      parseFloat(((stats[name].K as number) / (stats[name].D as number)).toFixed(2)) || '-';
-    stats[name].FKDR =
-      parseFloat(((stats[name].FK as number) / (stats[name].FD as number)).toFixed(2)) || '-';
-    stats[name]['W/L'] =
-      parseFloat(((stats[name].W as number) / (stats[name].L as number)).toFixed(2)) || '-';
-
-    stats[name].KDR === Infinity && (stats[name].KDR = '-');
-    stats[name].FKDR === Infinity && (stats[name].FKDR = '-');
-    stats[name]['W/L'] === Infinity && (stats[name]['W/L'] = '-');
-
-    Object.keys(stats[name]).forEach(stat => {
-      stats[name][stat] = stats[name][stat].toLocaleString();
+    Object.keys(columns).forEach(col => {
+      const key = `${gamemodes[game]}${columns[col]}_bedwars` as keyof HypixelAPI.BedwarsStats;
+      raw[col] = parseInt(data[key]?.toString() ?? '0');
     });
-  }
 
-  const canvas = new Canvas(1760, 1232);
+    const obj = {
+      ...raw,
+      KDR: round(raw.K / raw.D),
+      FKDR: round(raw.FK / raw.FD),
+      'W/L': round(raw.W / raw.L),
+    };
+
+    stats[game] = {} as any;
+    (Object.entries(obj) as [keyof typeof columns, number][]).map(([stat, value]) => {
+      let stringVal = '';
+      if (['KDR', 'FKDR', 'W/L'].includes(stat)) {
+        if (value === 0) stringVal = ':(';
+      }
+      stats[game][stat] = stringVal || (isFinite(value) ? value.toLocaleString() : '-');
+    });
+  });
+
+  const canvas = new Canvas(1240, 21 * (mainHeight + 2 * padding) + headerHeight + padding);
   const c = canvas.getContext('2d');
-
-  const padding = 16;
 
   c.fillStyle = '#36393f';
   c.fillRect(0, 0, canvas.width, canvas.height);
 
   c.fillStyle = '#dddddd';
-  c.textDrawingMode = 'path';
+  c.textDrawingMode = 'glyph';
   c.textAlign = 'left';
   c.strokeStyle = '#dddddd';
-  c.lineWidth = 1;
+  c.lineWidth = 0.5;
 
-  c.font = '48px Fira Sans, DejaVu Sans';
-  c.fillText('bedwars stats: ' + playername, padding, padding + 48);
+  c.font = fontSize(headerHeight);
+  c.fillText('bedwars stats: ' + playername, padding, padding + headerHeight);
 
   c.textAlign = 'right';
   c.fillText(
-    data.coins.toLocaleString() + ' coins   ' + getLevelForExp(data.Experience).toFixed(2) + '★',
+    [
+      `${data.winstreak.toLocaleString()} ws`,
+      `${data.coins.toLocaleString()} coins`,
+      `${getLevelForExp(data.Experience).toFixed(2)}★`,
+    ].join('  '),
     canvas.width - padding,
-    padding + 48
+    padding + headerHeight
   );
 
-  c.font = '40px Fira Sans';
+  c.font = fontSize(mainHeight);
   c.textAlign = 'left';
-  c.fillText(clientTag as string, padding, padding + 48 + padding + 40);
+  c.fillText(clientTag as string, padding, headerHeight + mainHeight + 2 * padding);
 
   c.save();
-  c.transform(1, 0, 0, 1, 0, 48 + 40 + padding * 2);
+  c.transform(1, 0, 0, 1, 0, headerHeight + mainHeight + 3 * padding);
 
   gamemodeNames.forEach((mode, i) => {
-    c.fillText(mode, padding, i * (40 + padding) + 88);
+    const lineY = i * (mainHeight + padding * 2) + mainHeight + 2 * padding;
 
     c.beginPath();
-    c.moveTo(0, (i - 1) * (40 + padding) + 86 + padding);
-    c.lineTo(canvas.width, (i - 1) * (40 + padding) + 86 + padding);
+    c.moveTo(0, lineY);
+    c.lineTo(canvas.width, lineY);
     c.stroke();
+
+    c.fillText(mode, padding, i * (mainHeight + padding * 2) + 2.5 * padding + 2 * mainHeight);
   });
 
   c.textAlign = 'right';
 
-  const widths = columnNames.map(col =>
+  const widths = Object.keys(columns).map(col =>
     Math.max(
       c.measureText(col).width,
-      ...gamemodeNames.map(mode => c.measureText(stats[mode][col].toString()).width)
+      ...gamemodeNames.map(mode => c.measureText(stats[mode][col].toString()).width),
+      65
     )
   );
 
   c.transform(1, 0, 0, 1, canvas.width, 0);
 
-  columnNames.reverse().map((col, i) => {
-    i = columnNames.length - 1 - i;
+  Object.keys(columns)
+    .reverse()
+    .map((col, i) => {
+      i = Object.keys(columns).length - 1 - i;
 
-    c.fillText(col, -padding, 32);
+      c.fillText(col, -padding, mainHeight + padding);
 
-    c.beginPath();
-    c.moveTo(-(widths[i] + padding * 2), 0);
-    c.lineTo(-(widths[i] + padding * 2), canvas.height);
-    c.stroke();
+      const lineX = -(widths[i] + padding * 2);
 
-    gamemodeNames.forEach((mode, j) => {
-      const value = stats[mode][col];
-      c.fillText(value.toString(), -padding, 88 + j * (40 + padding));
+      c.beginPath();
+      c.moveTo(lineX, padding);
+      c.lineTo(lineX, canvas.height);
+      c.stroke();
+
+      gamemodeNames.forEach((mode, j) => {
+        const value = stats[mode][col];
+        c.fillText(
+          value.toString(),
+          -padding,
+          j * (mainHeight + padding * 2) + 2.5 * padding + 2 * mainHeight
+        );
+      });
+
+      c.transform(1, 0, 0, 1, -(padding * 2 + widths[i]), 0);
     });
-
-    c.transform(1, 0, 0, 1, -(padding * 2 + widths[i]), 0);
-  });
 
   c.setTransform(1, 0, 0, 1, 0, 0);
 
-  return canvas.toBuffer();
+  const buf = canvas.toBuffer();
+
+  return buf;
 };
 
 // stolen from https://github.com/Plancke/hypixel-php/tree/master/src/util/games/bedwars

@@ -4,7 +4,6 @@ import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import _ from 'lodash/fp';
 import yargsParser from 'yargs-parser';
-
 import { Command } from './commands';
 import { CommandHelp } from './commands/general/help';
 import { Config } from './entities/Config';
@@ -32,10 +31,7 @@ export const setPresence = async (): Promise<void> => {
 
 // register fonts for canvas
 const fonts: Record<string, { family: string; weight?: string; style?: string }> = {
-  'FiraSans-Regular.ttf': { family: 'Fira Sans' },
-  'FiraSans-Italic.ttf': { family: 'Fira Sans', style: 'italic' },
-  'FiraSans-Bold.ttf': { family: 'Fira Sans', weight: 'bold' },
-  'FiraSans-BoldItalic.ttf': { family: 'Fira Sans', weight: 'bold', style: 'italic' },
+  'RobotoMono-Regular-NF.ttf': { family: 'Roboto Mono' },
 };
 
 Object.keys(fonts).forEach(filename =>
