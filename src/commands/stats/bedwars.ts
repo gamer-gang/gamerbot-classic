@@ -1,10 +1,23 @@
 import { Canvas } from 'canvas';
+import { client } from '../../providers';
+import { byteSize } from '../../util';
 
-const fontSize = (px: number) => px + 'px Roboto Mono';
+const font = (px: number) => px + 'px Roboto Mono';
 const round = (num: number) => Math.round((num + Number.EPSILON) * 100) / 100;
 const headerHeight = 30;
 const mainHeight = 24;
 const padding = 8;
+
+const letterWidth = (fontSize: number) => {
+  const tester = new Canvas(fontSize, fontSize);
+  const c = tester.getContext('2d');
+  c.fillStyle = '#dddddd';
+  c.strokeStyle = '#dddddd';
+  c.textDrawingMode = 'glyph';
+  c.textAlign = 'left';
+  c.font = font(fontSize);
+  return c.measureText('A').width;
+};
 
 const columns = {
   K: 'kills',
@@ -45,12 +58,10 @@ const gamemodeNames = Object.keys(gamemodes);
 export const makeBedwarsStats = ({
   data,
   playername,
-  clientTag,
 }: {
-  data?: HypixelAPI.BedwarsStats;
+  data?: Hypixel.Bedwars;
   playername: string;
-  clientTag: string;
-}): Buffer => {
+}): [buffer: Buffer, metadata?: string] => {
   if (!data) throw new Error('no data');
 
   const stats: Record<string, Record<keyof typeof columns, string>> = {};
@@ -59,7 +70,7 @@ export const makeBedwarsStats = ({
     const raw: Record<keyof typeof columns, number> = {} as any;
 
     Object.keys(columns).forEach(col => {
-      const key = `${gamemodes[game]}${columns[col]}_bedwars` as keyof HypixelAPI.BedwarsStats;
+      const key = `${gamemodes[game]}${columns[col]}_bedwars` as keyof Hypixel.Bedwars;
       raw[col] = parseInt(data[key]?.toString() ?? '0');
     });
 
@@ -80,7 +91,10 @@ export const makeBedwarsStats = ({
     });
   });
 
-  const canvas = new Canvas(1240, 21 * (mainHeight + 2 * padding) + headerHeight + padding);
+  const canvas = new Canvas(
+    letterWidth(mainHeight) * 90,
+    21 * (mainHeight + 2 * padding) + headerHeight + padding
+  );
   const c = canvas.getContext('2d');
 
   c.fillStyle = '#36393f';
@@ -92,7 +106,7 @@ export const makeBedwarsStats = ({
   c.strokeStyle = '#dddddd';
   c.lineWidth = 0.5;
 
-  c.font = fontSize(headerHeight);
+  c.font = font(headerHeight);
   c.fillText('bedwars stats: ' + playername, padding, padding + headerHeight);
 
   c.textAlign = 'right';
@@ -106,9 +120,9 @@ export const makeBedwarsStats = ({
     padding + headerHeight
   );
 
-  c.font = fontSize(mainHeight);
+  c.font = font(mainHeight);
   c.textAlign = 'left';
-  c.fillText(clientTag as string, padding, headerHeight + mainHeight + 2 * padding);
+  c.fillText(client.user.tag, padding, headerHeight + mainHeight + 2 * padding);
 
   c.save();
   c.transform(1, 0, 0, 1, 0, headerHeight + mainHeight + 3 * padding);
@@ -164,9 +178,9 @@ export const makeBedwarsStats = ({
 
   c.setTransform(1, 0, 0, 1, 0, 0);
 
-  const buf = canvas.toBuffer();
+  const image = canvas.toBuffer('image/jpeg', { quality: 1 });
 
-  return buf;
+  return [image, `${canvas.width}x${canvas.height}  ${byteSize(image.byteLength)}`];
 };
 
 // stolen from https://github.com/Plancke/hypixel-php/tree/master/src/util/games/bedwars

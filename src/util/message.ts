@@ -1,7 +1,6 @@
 import { FileOptions, MessageOptions } from 'discord.js';
 import _ from 'lodash';
 import moment from 'moment';
-
 import { Embed, EmbedOptions } from './embed';
 import { resolvePath } from './path';
 
@@ -66,4 +65,13 @@ export const getProfilePicture = (): FileOptions => {
     attachment: path,
     name: 'hexagon.png',
   };
+};
+
+const mags = ' KMGTPEZY';
+
+export const byteSize = (bytes: number, precision = 2): string => {
+  const magnitude = Math.min((Math.log(bytes) / Math.log(1024)) | 0, mags.length - 1);
+  const result = bytes / Math.pow(1024, magnitude);
+  const suffix = mags[magnitude].trim() + 'B';
+  return result.toFixed(precision) + suffix;
 };
