@@ -11,12 +11,21 @@ RUN apt update && apt -y install yarn ffmpeg \
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+# bare minimum to install deps
+COPY package.json .yarnrc.yml yarn.lock .pnp.js ./
+COPY .yarn .yarn
 
 RUN yarn
 
-COPY . .
+# bare minimum to build
+COPY webpack.config.ts .eslintrc.json tsconfig.json ./
+COPY src src
+# needed for version info
+COPY .git .git
 
 RUN yarn build:prod
+
+# copy everything else
+COPY . .
 
 CMD [ "yarn", "start:prod" ]

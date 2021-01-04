@@ -3,14 +3,13 @@ import { Message, MessageReaction, PartialMessage, User } from 'discord.js';
 import fse from 'fs-extra';
 import yaml from 'js-yaml';
 import _ from 'lodash';
-
 import { setPresence } from '..';
 import { Config } from '../entities/Config';
 import { EggLeaderboard } from '../entities/EggLeaderboard';
 import { Gamerbot } from '../gamerbot';
 import { resolvePath } from '../util';
 
-const eggfile = yaml.safeLoad(fse.readFileSync(resolvePath('assets/egg.yaml')).toString('utf-8'));
+const eggfile = yaml.load(fse.readFileSync(resolvePath('assets/egg.yaml')).toString('utf-8'));
 if (typeof eggfile !== 'object') throw new Error('egg.yaml must be object');
 
 const eggs = _.uniq((eggfile as { eggs?: string[] }).eggs?.map(egg => egg.toLowerCase()));

@@ -1,5 +1,5 @@
-declare namespace HypixelAPI {
-  export interface BedwarsStats {
+declare namespace Hypixel {
+  export interface Bedwars {
     _items_purchased_bedwars: number;
     activeBedDestroy: string;
     activeDeathCry: string;

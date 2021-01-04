@@ -1,7 +1,6 @@
 import { FileOptions, MessageOptions } from 'discord.js';
 import _ from 'lodash';
 import moment from 'moment';
-
 import { Embed, EmbedOptions } from './embed';
 import { resolvePath } from './path';
 
@@ -18,9 +17,13 @@ export const sanitize = (content?: string): string =>
     .replace(/`/g, '\\`') ?? '';
 
 // eslint-disable-next-line
-export const codeBlock = (content?: unknown, language?: string): string => `\`\`\`${language ?? ''}
-${content}
-\`\`\``;
+export const codeBlock = (content?: unknown, language?: string): string => {
+  let cont: unknown;
+  if (((m => !!(m as Error).stack) as (m: unknown) => m is Error)(content))
+    cont = content.stack ?? content.toString();
+  else cont = content;
+  return `\`\`\`${language ?? ''}\n${cont}\n\`\`\``;
+};
 
 export const listify = (array: unknown[]): string => {
   switch (array.length) {
@@ -66,4 +69,13 @@ export const getProfilePicture = (): FileOptions => {
     attachment: path,
     name: 'hexagon.png',
   };
+};
+
+const mags = ' KMGTPEZY';
+
+export const byteSize = (bytes: number, precision = 2): string => {
+  const magnitude = Math.min((Math.log(bytes) / Math.log(1024)) | 0, mags.length - 1);
+  const result = bytes / Math.pow(1024, magnitude);
+  const suffix = mags[magnitude].trim() + 'B';
+  return result.toFixed(precision) + suffix;
 };
