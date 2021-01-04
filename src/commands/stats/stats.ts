@@ -86,7 +86,7 @@ export class CommandStats implements Command {
       context,
       loadingMessage,
       debug,
-      duration: Math.round((end![0] * 1e9 + end![1]) / 1e6),
+      duration: debug ? Math.round((end![0] * 1e9 + end![1]) / 1e6) : undefined,
     });
   }
 
@@ -157,7 +157,7 @@ export class CommandStats implements Command {
     } catch (err) {
       if ((err.toString() as string).includes('no data'))
         channel.send(Embed.warning(`${playerData.playername} has no data for that game`));
-      else channel.send(Embed.error(codeBlock(err.stack ? err.stack : err)));
+      else channel.send(Embed.error(codeBlock(err)));
       if (loadingMessage) (await loadingMessage).delete();
     }
   }
