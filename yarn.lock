@@ -519,6 +519,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/source-map-support@npm:^0":
+  version: 0.5.3
+  resolution: "@types/source-map-support@npm:0.5.3"
+  dependencies:
+    source-map: ^0.6.0
+  checksum: b91a22010f83efbcde37861af7d57fc7c62fef2510a6cb39ed3316ee31c6e76cf98445589a0cbb97b9262490b3e3d03748bdc5a1f640b3a03f6965d02eda82d4
+  languageName: node
+  linkType: hard
+
 "@types/spotify-api@npm:*":
   version: 2016.0.29
   resolution: "@types/spotify-api@npm:2016.0.29"
@@ -3581,6 +3590,7 @@ __metadata:
     "@types/node": ^14.14.19
     "@types/nodemon": ^1.19.0
     "@types/randomstring": ^1.1.6
+    "@types/source-map-support": ^0
     "@types/spotify-web-api-node": ^4.0.2
     "@types/temp": ^0.8.34
     "@types/terser-webpack-plugin": ^5.0.2
@@ -3627,6 +3637,7 @@ __metadata:
     randomstring: ^1.1.5
     simple-youtube-api: ^5.2.1
     source-map-loader: ^2.0.0
+    source-map-support: ^0.5.19
     spotify-web-api-node: ^5.0.0
     terser-webpack-plugin: ^5.0.3
     ts-loader: ^8.0.13
@@ -7238,7 +7249,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"source-map-support@npm:^0.5.17, source-map-support@npm:~0.5.19":
+"source-map-support@npm:^0.5.17, source-map-support@npm:^0.5.19, source-map-support@npm:~0.5.19":
   version: 0.5.19
   resolution: "source-map-support@npm:0.5.19"
   dependencies:

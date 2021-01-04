@@ -52,6 +52,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/node", "npm:14.14.19"],
             ["@types/nodemon", "npm:1.19.0"],
             ["@types/randomstring", "npm:1.1.6"],
+            ["@types/source-map-support", "npm:0.5.3"],
             ["@types/spotify-web-api-node", "npm:4.0.2"],
             ["@types/temp", "npm:0.8.34"],
             ["@types/terser-webpack-plugin", "npm:5.0.2"],
@@ -98,6 +99,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["randomstring", "npm:1.1.5"],
             ["simple-youtube-api", "npm:5.2.1"],
             ["source-map-loader", "virtual:1146e3009ff3e1a5581766c147edbc930ca669db3b39d1d6e699ae3ac247ff6a95863891d8eb3b970b1a1b938a06286c180ea01938ac6e0ba3c660c96e621580#npm:2.0.0"],
+            ["source-map-support", "npm:0.5.19"],
             ["spotify-web-api-node", "npm:5.0.0"],
             ["terser-webpack-plugin", "virtual:1146e3009ff3e1a5581766c147edbc930ca669db3b39d1d6e699ae3ac247ff6a95863891d8eb3b970b1a1b938a06286c180ea01938ac6e0ba3c660c96e621580#npm:5.0.3"],
             ["ts-loader", "virtual:1146e3009ff3e1a5581766c147edbc930ca669db3b39d1d6e699ae3ac247ff6a95863891d8eb3b970b1a1b938a06286c180ea01938ac6e0ba3c660c96e621580#npm:8.0.13"],
@@ -897,6 +899,16 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/@types-source-list-map-npm-0.1.2-1983e10da7-191f0e3b05.zip/node_modules/@types/source-list-map/",
           "packageDependencies": [
             ["@types/source-list-map", "npm:0.1.2"]
+          ],
+          "linkType": "HARD",
+        }]
+      ]],
+      ["@types/source-map-support", [
+        ["npm:0.5.3", {
+          "packageLocation": "./.yarn/cache/@types-source-map-support-npm-0.5.3-e889b6a035-b91a22010f.zip/node_modules/@types/source-map-support/",
+          "packageDependencies": [
+            ["@types/source-map-support", "npm:0.5.3"],
+            ["source-map", "npm:0.6.1"]
           ],
           "linkType": "HARD",
         }]
@@ -4471,6 +4483,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/node", "npm:14.14.19"],
             ["@types/nodemon", "npm:1.19.0"],
             ["@types/randomstring", "npm:1.1.6"],
+            ["@types/source-map-support", "npm:0.5.3"],
             ["@types/spotify-web-api-node", "npm:4.0.2"],
             ["@types/temp", "npm:0.8.34"],
             ["@types/terser-webpack-plugin", "npm:5.0.2"],
@@ -4517,6 +4530,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["randomstring", "npm:1.1.5"],
             ["simple-youtube-api", "npm:5.2.1"],
             ["source-map-loader", "virtual:1146e3009ff3e1a5581766c147edbc930ca669db3b39d1d6e699ae3ac247ff6a95863891d8eb3b970b1a1b938a06286c180ea01938ac6e0ba3c660c96e621580#npm:2.0.0"],
+            ["source-map-support", "npm:0.5.19"],
             ["spotify-web-api-node", "npm:5.0.0"],
             ["terser-webpack-plugin", "virtual:1146e3009ff3e1a5581766c147edbc930ca669db3b39d1d6e699ae3ac247ff6a95863891d8eb3b970b1a1b938a06286c180ea01938ac6e0ba3c660c96e621580#npm:5.0.3"],
             ["ts-loader", "virtual:1146e3009ff3e1a5581766c147edbc930ca669db3b39d1d6e699ae3ac247ff6a95863891d8eb3b970b1a1b938a06286c180ea01938ac6e0ba3c660c96e621580#npm:8.0.13"],
