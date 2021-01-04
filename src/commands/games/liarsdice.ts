@@ -3,6 +3,7 @@ import fse from 'fs-extra';
 import yaml from 'js-yaml';
 import _ from 'lodash';
 import sharp from 'sharp';
+import yargsParser from 'yargs-parser';
 
 import { Command } from '..';
 import { LiarsDice, LiarsDicePlayer } from '../../entities/LiarsDice';
@@ -10,7 +11,7 @@ import { Die } from '../../gamemanagers/common';
 import { LiarsDiceManager } from '../../gamemanagers/liarsdicemanager';
 import { client } from '../../providers';
 import { CmdArgs, GameReactionCollector } from '../../types';
-import { Embed, resolvePath } from '../../util';
+import { codeBlock, Embed, resolvePath } from '../../util';
 
 type Bid = [quantity: number, value: number];
 
@@ -18,21 +19,28 @@ const reactionCollectors: GameReactionCollector[] = [];
 
 export class CommandLiarsDice implements Command {
   cmd = 'dice';
+  yargsSchema: yargsParser.Options = {
+    boolean: ['start', 'cancel', 'how2play'],
+    alias: {
+      create: 'c',
+      start: 's',
+    },
+  };
   docs = [
     {
-      usage: 'liarsdice -c, --create [-d diceAmount=5] [-n diceSides=6]',
+      usage: 'dice -c, --create [-d diceAmount=5] [-n diceSides=6]',
       description: 'create dice game',
     },
     {
-      usage: 'liarsdice -s, --start',
+      usage: 'dice -s, --start',
       description: 'start dice game (game creator only)',
     },
     {
-      usage: 'liarsdice --cancel',
+      usage: 'dice --cancel',
       description: 'cancel dice game (game creator only)',
     },
     {
-      usage: 'liarsdice --how2play',
+      usage: 'dice --how2play',
       description: 'Hey Helper, how play game?',
     },
   ];
@@ -70,7 +78,12 @@ export class CommandLiarsDice implements Command {
 
     // create game
     if (!args.create) {
-      return msg.channel.send(`usage: \`${this.docs.map(d => d.usage).join('`, `')}\``);
+      // return msg.channel.send(`usage: \`${this.docs.map(d => d.usage).join('`, `')}\``);
+      return msg.channel.send(Embed.warning(
+        'incorrect usage',
+        'usage: \n' + codeBlock(this.docs.map(d => d.usage).join('\n'))
+      )
+      );
     }
 
     const diceAmount = args.dice ?? 5;
@@ -192,10 +205,12 @@ export class CommandLiarsDice implements Command {
 
         if (reason === 'cancel') {
           console.log('cancelling game');
+          em.nativeDelete(LiarsDicePlayer, { game: game.id });
           return em.removeAndFlush(game);
         }
 
         if (game.players.length < 2) {
+          em.nativeDelete(LiarsDicePlayer, { game: game.id });
           em.removeAndFlush(game);
           console.log('not enough players');
           return msg.channel.send('not enough players to start, aborting');
@@ -241,7 +256,7 @@ export class CommandLiarsDice implements Command {
       .addField('time to join', `${opts.timeLeft} seconds`, true)
       .addField(
         'dice',
-        `${opts.diceAmount} ${opts.diceSides}-sided ${opts.diceAmount === 1 ? 'die' : 'dice'}`,
+        `${opts.diceAmount} ${opts.diceAmount === 1 ? 'die' : 'dice'} with ${opts.diceSides} sides `,
         true
       )
       .addField('how 2 play?', 'type <prefix>dice --how2play', false)
@@ -354,24 +369,28 @@ export class CommandLiarsDice implements Command {
           );
           collector.on('collect', (msg: Message) => {
             if (!/^(\d \d|.*call.*)$/i.test(msg.content))
-              msg.channel.send('stinky syntax, try again');
-            else {
-              input = msg.content;
+              return msg.channel.send('stinky syntax, try again');
 
-              // check if bid is too low
-              const bidAmount = input.split(' ').map(v => parseInt(v)) as Bid;
-              if (
-                bidAmount[0] <= highestBid[0] &&
-                bidAmount.reduce((a, c) => a * c) <= highestBid.reduce((a, c) => a * c)
-              ) {
-                channel.send(
-                  'bid too low (either higher quantity or greater face value), try again'
-                );
-                return;
-              }
+            input = msg.content;
 
-              collector.stop();
+            // check if bid is too low
+            const bidAmount = input.split(' ').map(v => parseInt(v)) as Bid;
+            if (bidAmount[0] > game.diceAmount || bidAmount[1] > game.diceSides)
+              return channel.send('bid too high');
+
+            if ( // if lower quantity and same face value, or if same quantity and lower face value
+              bidAmount[0] < highestBid[0] ||
+              bidAmount[0] == highestBid[0] &&
+              bidAmount[1] < highestBid[1] ||
+              bidAmount[0] == 0 ||
+              bidAmount[1] == 0
+            ) {
+              input = "";
+              return channel.send('bid too low (either higher quantity or greater face value), try again');
             }
+
+            collector.stop();
+
           });
           collector.on('end', () => {
             clearInterval(interval);
@@ -423,8 +442,7 @@ export class CommandLiarsDice implements Command {
         }
 
         channel.send(
-          `<@${game.currentBidder}> called <@${game.playerOrder[playerIndex - 1]}> (${
-            (highestBid[0], highestBid[1])
+          `<@${game.currentBidder}> called <@${game.playerOrder[playerIndex - 1]}> (${(highestBid[0], highestBid[1])
           })`
         );
 
@@ -433,13 +451,17 @@ export class CommandLiarsDice implements Command {
         break;
       } catch (err) {
         if (err === 'timeout') {
+          const foo: Bid = [highestBid[0] == 0 ? 1 : highestBid[0], 0];
+
           const newBid: Bid =
-            highestBid[1] < game.diceSides
-              ? [highestBid[0], highestBid[1] + 1]
-              : [highestBid[0] + 1, highestBid[1]];
+            foo[1] < game.diceSides
+              ? [foo[0], foo[1] + 1]
+              : [foo[0] + 1, 1];
 
           channel.send(`no bid was made in time, your bid is now ${newBid[0]} ${newBid[1]}`);
           highestBid = newBid;
+
+          if (playerIndex === game.playerOrder.length - 1) playerIndex = -1;
         } else channel.send('caught error: ' + err);
       }
     }
