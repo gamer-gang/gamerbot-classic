@@ -3,7 +3,6 @@ import { Guild, GuildMember, Message } from 'discord.js';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import _ from 'lodash/fp';
-// source maps in production
 import 'source-map-support/register';
 import yargsParser from 'yargs-parser';
 import { Command } from './commands';

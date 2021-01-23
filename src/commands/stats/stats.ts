@@ -4,33 +4,129 @@ import yaml from 'js-yaml';
 import _ from 'lodash';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
+import { HypixelPlayer } from '../../entities/HypixelPlayer';
+import { client } from '../../providers';
 import { Context } from '../../types';
+import { Hypixel } from '../../types/declarations/hypixel';
 import { codeBlock, Embed } from '../../util';
 import { makeBedwarsStats } from './bedwars';
 
 const uuidRegex = /^\b[0-9a-f]{8}\b-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?\b[0-9a-f]{12}\b$/i;
+const usernameRegex = /^[A-Za-z0-9_]{3,16}$/;
 
-const statsCache: Record<string, Record<string, unknown>> = {};
+const statsCache: Record<string, Hypixel.Player> = {};
 const uuidCache: Record<string, string> = {};
 
 type Gamemode = 'bedwars';
 
 export class CommandStats implements Command {
   cmd = 'stats';
-  docs: CommandDocs = {
-    usage: 'stats <username|uuid> [game]',
-    description: 'hypixel stats (game defaults to bedwars)',
-  };
+  docs: CommandDocs = [
+    {
+      usage: 'stats <username|uuid> [game]',
+      description:
+        'hypixel stats (game defaults to bedwars)\nif you have a name set, you can use `-` in place (or omit entirely for bedwars)',
+    },
+    {
+      usage: 'stats -s, --set-username, <username>',
+      description: 'set your username for quicker commands',
+    },
+    {
+      usage: 'stats -g, --get-username [user]',
+      description: "get your username (or someone else's)",
+    },
+    {
+      usage: 'stats --clear-username',
+      description: 'clear a set username',
+    },
+  ];
   yargs: yargsParser.Options = {
-    alias: { debug: ['d'] },
-    boolean: ['debug'],
+    alias: { debug: ['d'], 'set-username': ['s'], 'get-username': ['g'] },
+    boolean: ['debug', 'clear-username'],
+    string: ['set-username', 'get-username'],
   };
   async execute(context: Context): Promise<void | Message> {
     const { msg, args } = context;
     const debug = !!args.debug;
 
-    if (args._.length !== 1 && args._.length !== 2)
-      return msg.channel.send(Embed.error('expected 1 or 2 args'));
+    if (args.clearUsername) {
+      const entity = await client.em.findOne(HypixelPlayer, { userId: msg.author.id });
+      if (!entity) return msg.channel.send(Embed.error(`no username set`));
+
+      client.em.removeAndFlush(entity);
+
+      return msg.channel.send(Embed.success(`cleared username **${entity.hypixelUsername}**`));
+    }
+
+    if (args.setUsername != null) {
+      if (args.setUsername === '') return msg.channel.send(Embed.error('no username provided'));
+      if (!usernameRegex.test(args.setUsername))
+        return msg.channel.send(Embed.error('invalid username'));
+
+      const entity = await client.em.findOne(HypixelPlayer, { userId: msg.author.id });
+      if (!entity) {
+        client.em.persistAndFlush(
+          client.em.create(HypixelPlayer, {
+            userId: msg.author.id,
+            hypixelUsername: args.setUsername,
+          })
+        );
+        return msg.channel.send(
+          Embed.success(`set your minecraft username to **${args.setUsername}**`)
+        );
+      } else {
+        const existingUsername = entity.hypixelUsername;
+        entity.hypixelUsername = args.setUsername;
+        client.em.flush();
+        return msg.channel.send(
+          Embed.success(
+            `set your minecraft username to **${args.setUsername}**`,
+            `(overwrote previous username **${existingUsername}**)`
+          )
+        );
+      }
+    }
+
+    if (args.getUsername != null) {
+      const userId =
+        client.users.resolve(args.getUsername)?.id ||
+        (args.getUsername as string | undefined) ||
+        msg.author.id;
+
+      const displayName = client.users.resolve(userId)?.tag ?? userId;
+
+      const entity = await client.em.findOne(HypixelPlayer, { userId });
+      if (!entity)
+        return msg.channel.send(
+          Embed.warning(
+            `no username set for **${displayName}**`,
+            'set with `$stats --set-username <username>`'
+          )
+        );
+
+      return msg.channel.send(
+        Embed.info(`username for ${displayName} is set to **${entity.hypixelUsername}**`)
+      );
+    }
+
+    if (args._.length !== 1 && args._.length !== 2) {
+      const entity = await client.em.findOne(HypixelPlayer, { userId: msg.author.id });
+      if (!entity) return msg.channel.send(Embed.error('expected 1 or 2 args'));
+      args._[0] = entity.hypixelUsername;
+    }
+
+    if (args._[0] === '-') {
+      const entity = await client.em.findOne(HypixelPlayer, { userId: msg.author.id });
+      if (!entity)
+        return msg.channel.send(
+          Embed.error(
+            "you don't have a username set!",
+            'set with `$stats --set-username <username>`'
+          )
+        );
+
+      args._[0] = entity.hypixelUsername;
+    }
 
     const isUuid = uuidRegex.test(args._[0]);
     let uuid = isUuid ? args._[0].replace('-', '') : uuidCache[args._[0].toLowerCase()];
@@ -92,11 +188,11 @@ export class CommandStats implements Command {
 
   readonly gamemodes: Record<
     Gamemode,
-    (data: Record<string, unknown>) => [image: Buffer, metadata?: string]
+    (data: Hypixel.Player) => [image: Buffer, metadata?: string]
   > = {
-    bedwars: (data: Record<string, unknown>) =>
+    bedwars: (data: Hypixel.Player) =>
       makeBedwarsStats({
-        data: (data.stats as { Bedwars: Hypixel.Bedwars }).Bedwars,
+        data: data.stats.Bedwars,
         playername: data.displayname as string,
       }),
   };
@@ -111,7 +207,7 @@ export class CommandStats implements Command {
     duration,
   }: {
     channel: TextChannel;
-    playerData: Record<string, unknown>;
+    playerData: Hypixel.Player;
     type?: string;
     context: Context;
     loadingMessage?: Promise<Message>;

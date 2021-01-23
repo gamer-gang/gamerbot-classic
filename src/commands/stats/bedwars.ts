@@ -1,5 +1,6 @@
 import { Canvas } from 'canvas';
 import { client } from '../../providers';
+import { Hypixel } from '../../types/declarations/hypixel';
 import { byteSize } from '../../util';
 
 const font = (px: number) => px + 'px Roboto Mono';
