@@ -20,7 +20,7 @@ const uuidCache: Record<string, string> = {};
 type Gamemode = 'bedwars';
 
 export class CommandStats implements Command {
-  cmd = 'stats';
+  cmd = ['stats', 's'];
   docs: CommandDocs = [
     {
       usage: 'stats <username|uuid> [game]',
