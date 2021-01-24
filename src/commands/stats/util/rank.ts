@@ -32,7 +32,7 @@ export const rankPrefixes: Record<Rank, string> = {
 
 export const isStaff = (player: Player): boolean => {
   const rank = player.rank ?? 'NORMAL';
-  return rank != 'NORMAL';
+  return rank !== 'NORMAL';
 };
 
 export const getRank = (player: Player): Rank => {
@@ -41,8 +41,10 @@ export const getRank = (player: Player): Rank => {
   if (isStaff(player)) out = player.rank as Rank;
 
   ['monthlyPackageRank', 'newPackageRank', 'packageRank'].forEach(key => {
-    const rank = player[key] as Rank;
-    if (rank && (!out || rankWeights[rank as Rank] > (out ? rankWeights[out] : 0))) out = rank;
+    const rank = player[key];
+    if (rank === 'NONE') return;
+    if (rank && (!out || (rankWeights[rank as Rank] ?? 0) > (out ? rankWeights[out] : 0)))
+      out = rank as Rank;
   });
 
   out ??= 'NON_DONOR';

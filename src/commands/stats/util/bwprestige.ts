@@ -11,7 +11,7 @@ export const EASY_LEVELS_XP = 7000;
 export const XP_PER_PRESTIGE = 96 * 5000 + EASY_LEVELS_XP;
 export const LEVELS_PER_PRESTIGE = 100;
 
-export const getLevelForExp = (exp: number) => {
+export const getLevelForExp = (exp: number): number => {
   const prestiges = Math.floor(exp / XP_PER_PRESTIGE);
 
   let level = prestiges * LEVELS_PER_PRESTIGE;
@@ -30,7 +30,7 @@ export const getLevelForExp = (exp: number) => {
   return level;
 };
 
-export const getExpForLevel = (level: number) => {
+export const getExpForLevel = (level: number): number => {
   if (level == 0) return 0;
 
   const respectedLevel = getLevelRespectingPrestige(level);
@@ -51,7 +51,7 @@ export const getExpForLevel = (level: number) => {
   return 5000;
 };
 
-export const getLevelRespectingPrestige = (level: number) => {
+export const getLevelRespectingPrestige = (level: number): number => {
   return level > Prestige.RAINBOW * LEVELS_PER_PRESTIGE
     ? level - Prestige.RAINBOW * LEVELS_PER_PRESTIGE
     : level % LEVELS_PER_PRESTIGE;
@@ -124,7 +124,7 @@ export const prestigeColors = {
   3000: [yellow, yellow, gold, gold, red, red, dark_red],
 };
 
-export const getPrestigePalette = (level: number) => {
+export const getPrestigePalette = (level: number): Color[] => {
   const keys = Object.keys(prestigeColors).reverse();
 
   for (const prestige of keys) {
