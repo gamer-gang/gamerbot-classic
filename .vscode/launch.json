@@ -4,14 +4,14 @@
       "name": "dev",
       "request": "launch",
       "type": "node",
-      "program": "${workspaceFolder}/dist/main.js",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["node", "${workspaceFolder}/dist/main.js"],
       "sourceMaps": true,
       "sourceMapPathOverrides": {
-        "webpack:///./*": "${workspaceFolder}/*"
+        "webpack:///./*": "${workspaceFolder}/*",
+        "internal:///./*": "${workspaceFolder}/*"
       },
-      "outFiles": [
-        "${workspaceFolder}/dist/**/*.js"
-      ],
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
       "env": {
         "NODE_ENV": "development"
       }
