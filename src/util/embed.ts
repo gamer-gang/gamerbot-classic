@@ -1,8 +1,15 @@
 import { MessageEmbed, MessageEmbedOptions } from 'discord.js';
-import { Colors } from '../constants';
+import { color } from './color';
 import { getProfilePicture } from './message';
 
 type EmbedIntent = 'info' | 'success' | 'warning' | 'error';
+
+export class Colors {
+  static readonly green = color(0x8eef43);
+  static readonly blue = color(0x209fd5);
+  static readonly red = color(0xfb4b4e);
+  static readonly orange = color(0xefa443);
+}
 
 export interface EmbedOptions {
   noColor?: boolean;

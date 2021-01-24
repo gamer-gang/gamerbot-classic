@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { Message, TextChannel } from 'discord.js';
+import { Message } from 'discord.js';
+import { Player, PlayerResponse } from 'hypixel-types';
 import yaml from 'js-yaml';
 import _ from 'lodash';
 import yargsParser from 'yargs-parser';
@@ -7,25 +8,25 @@ import { Command, CommandDocs } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
 import { client } from '../../providers';
 import { Context } from '../../types';
-import { Hypixel } from '../../types/declarations/hypixel';
 import { codeBlock, Embed } from '../../util';
 import { makeBedwarsStats } from './bedwars';
 
 const uuidRegex = /^\b[0-9a-f]{8}\b-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?\b[0-9a-f]{12}\b$/i;
 const usernameRegex = /^[A-Za-z0-9_]{3,16}$/;
 
-const statsCache: Record<string, Hypixel.Player> = {};
+const statsCache: Record<string, Player> = {};
 const uuidCache: Record<string, string> = {};
 
 type Gamemode = 'bedwars';
+export type StatsReturn = [image: Buffer, metadata?: (string | boolean)[]];
 
 export class CommandStats implements Command {
   cmd = ['stats', 's'];
   docs: CommandDocs = [
     {
-      usage: 'stats <username|uuid> [game]',
+      usage: 'stats <username|uuid> [game] [-q, --quality]',
       description:
-        'hypixel stats (game defaults to bedwars)\nif you have a name set, you can use `-` in place (or omit entirely for bedwars)',
+        'hypixel stats (game defaults to bedwars)\nif you have a name set, you can use `-` in place (or omit entirely for bedwars)\n`-q` to enable high quality mode',
     },
     {
       usage: 'stats -s, --set-username, <username>',
@@ -40,11 +41,17 @@ export class CommandStats implements Command {
       description: 'clear a set username',
     },
   ];
+
   yargs: yargsParser.Options = {
-    alias: { debug: ['d'], 'set-username': ['s'], 'get-username': ['g'] },
-    boolean: ['debug', 'clear-username'],
+    alias: { debug: ['d'], 'set-username': ['s'], 'get-username': ['g'], quality: ['q'] },
+    boolean: ['debug', 'clear-username', 'quality'],
     string: ['set-username', 'get-username'],
   };
+
+  readonly gamemodes: Record<Gamemode, (data: Player, quality: boolean) => StatsReturn> = {
+    bedwars: (data, quality) => makeBedwarsStats({ data, quality }),
+  };
+
   async execute(context: Context): Promise<void | Message> {
     const { msg, args } = context;
     const debug = !!args.debug;
@@ -133,13 +140,11 @@ export class CommandStats implements Command {
 
     let loadingMessage: Promise<Message> | undefined = undefined;
 
-    let start: [number, number];
-    debug && (start = process.hrtime());
+    const fetchStart = process.hrtime();
 
     if (!statsCache[uuid]) {
       loadingMessage = msg.channel.send('fetching data...');
-      // const end = process.hrtime(startTime);
-      // ping.edit(`Pong! \`${Math.round((end[0] * 1e9 + end[1]) / 1e6)}ms\``);
+
       const response = await axios.get('https://api.hypixel.net/player', {
         params: {
           key: process.env.HYPIXEL_API_KEY,
@@ -148,113 +153,73 @@ export class CommandStats implements Command {
         },
       });
 
-      const data = _.cloneDeep(response.data);
-      if (response.status !== 200 || !data.success) {
-        return msg.channel.send(
-          Embed.error('request failed', codeBlock(yaml.safeDump(data), 'yaml'))
-        );
-      } else {
-        if (!data.player) return msg.channel.send(Embed.error('player does not exist'));
+      const data = response.data as PlayerResponse;
 
-        uuid = data.player.uuid;
-        const { playername } = data.player;
+      if (response.status !== 200 || !data.success)
+        return msg.channel.send(Embed.error('request failed', codeBlock(yaml.dump(data), 'yaml')));
 
-        statsCache[uuid] = _.cloneDeep(data.player);
+      if (!data.player) return msg.channel.send(Embed.error('player does not exist'));
 
-        setTimeout(() => {
-          delete statsCache[uuid];
-        }, 1000 * 60 * 5);
+      uuid = data.player.uuid;
 
-        uuidCache[playername] = uuid;
-        setTimeout(() => {
-          delete uuidCache[playername];
-        }, 1000 * 60 * 15);
-      }
+      statsCache[uuid] = data.player;
+      setTimeout(() => delete statsCache[uuid], 1000 * 60 * 5);
+
+      uuidCache[data.player.playername] = uuid;
+      setTimeout(() => delete uuidCache[data.player!.playername], 1000 * 60 * 15);
     }
 
-    let end: [number, number];
-    debug && (end = process.hrtime(start!));
+    const fetchEnd = process.hrtime(fetchStart);
+    const fetchDuration = Math.round((fetchEnd![0] * 1e9 + fetchEnd![1]) / 1e6);
 
-    return this.sendData({
-      channel: msg.channel as TextChannel,
-      playerData: _.cloneDeep(statsCache[uuid]),
-      type: args._[1],
-      context,
-      loadingMessage,
-      debug,
-      duration: debug ? Math.round((end![0] * 1e9 + end![1]) / 1e6) : undefined,
-    });
-  }
+    const player = _.cloneDeep(statsCache[uuid]);
 
-  readonly gamemodes: Record<
-    Gamemode,
-    (data: Hypixel.Player) => [image: Buffer, metadata?: string]
-  > = {
-    bedwars: (data: Hypixel.Player) =>
-      makeBedwarsStats({
-        data: data.stats.Bedwars,
-        playername: data.displayname as string,
-      }),
-  };
-
-  async sendData({
-    channel,
-    playerData,
-    type,
-    context,
-    loadingMessage,
-    debug,
-    duration,
-  }: {
-    channel: TextChannel;
-    playerData: Hypixel.Player;
-    type?: string;
-    context: Context;
-    loadingMessage?: Promise<Message>;
-    debug: boolean;
-    duration?: number;
-  }): Promise<Message | void> {
     try {
       const exec = new RegExp(`^(${Object.keys(this.gamemodes).join('|')})$`).exec(
-        type?.toLowerCase() ?? ''
+        args._[1]?.toLowerCase() ?? ''
       );
-      if (!exec && type !== undefined)
-        return channel.send(
+
+      if (!exec && args._[1] !== undefined)
+        return msg.channel.send(
           Embed.error(
             'invalid game type',
             `supported types: ${codeBlock(Object.keys(this.gamemodes).join('\n'))}`
           )
         );
 
-      let start: [number, number];
-      debug && (start = process.hrtime());
-      const [image, info] = this.gamemodes[exec ? (exec[1] as Gamemode) : 'bedwars'](playerData);
-      let end: [number, number];
-      debug && (end = process.hrtime(start!));
+      const canvasStart = process.hrtime();
+      const [image, info] = this.gamemodes[exec ? (exec[1] as Gamemode) : 'bedwars'](
+        player,
+        !!args.quality
+      );
+      const canvasEnd = process.hrtime(canvasStart);
+      const canvasDuration = Math.round((canvasEnd![0] * 1e9 + canvasEnd![1]) / 1e6);
 
       if (!image) throw new Error('invalid state: attatchment is null after regexp exec');
 
+      const filename = `stats.${args.quality ? 'png' : 'jpeg'}`;
+
       const embed = new Embed()
         .setDefaultAuthor()
-        .attachFiles([{ attachment: image, name: 'stats.jpeg' }])
-        .setImage('attachment://stats.jpeg');
+        .attachFiles([{ attachment: image, name: filename }])
+        .setImage(`attachment://${filename}`);
 
       debug &&
         embed.setFooter(
           [
-            `${duration !== undefined && duration < 10 ? 'cached' : `fetch ${duration}ms`}`,
-            `img ${Math.round((end![0] * 1e9 + end![1]) / 1e6)}ms `,
-            info,
+            `${fetchDuration < 10 ? 'cached' : `fetch ${fetchDuration}ms`}`,
+            `img ${canvasDuration}ms `,
+            ...(info?.filter(v => !!v) ?? []),
           ].join('  ')
         );
 
-      context.msg.channel.send(embed);
-      if (loadingMessage) (await loadingMessage).delete();
+      await context.msg.channel.send(embed);
     } catch (err) {
       if ((err.toString() as string).includes('no data'))
-        channel.send(Embed.warning(`${playerData.playername} has no data for that game`));
-      else channel.send(Embed.error(codeBlock(err)));
-      if (loadingMessage) (await loadingMessage).delete();
+        await msg.channel.send(Embed.warning(`${player.playername} has no data for that game`));
+      else await msg.channel.send(Embed.error(codeBlock(err)));
     }
+
+    if (loadingMessage) (await loadingMessage).delete();
   }
 }

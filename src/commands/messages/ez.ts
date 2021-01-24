@@ -6,8 +6,9 @@ import { Command } from '..';
 import { Context } from '../../types';
 import { resolvePath, sanitize } from '../../util';
 
-const replacements = yaml.load(fse.readFileSync(resolvePath('assets/ez.yaml')).toString())
-  .replacements as string[];
+const replacements = (yaml.load(fse.readFileSync(resolvePath('assets/ez.yaml')).toString()) as {
+  replacements: string[];
+}).replacements;
 
 export class CommandEz implements Command {
   cmd = 'ez';

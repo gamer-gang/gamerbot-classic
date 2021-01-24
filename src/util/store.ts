@@ -57,10 +57,9 @@ export class Store<T> extends EventEmitter {
   readFile(): void {
     try {
       const raw = fse.readFileSync(this.options.path as string, 'utf-8');
-      const data =
-        this.options.dataLanguage === 'json'
-          ? (JSON.parse(raw) as { [key: string]: T })
-          : yaml.load(raw);
+      const data = (this.options.dataLanguage === 'json' ? JSON.parse(raw) : yaml.load(raw)) as {
+        [key: string]: T;
+      };
       this.map = objectToMap<T>(data) as Map<string, T>;
       this.emit('read');
     } catch (err) {
