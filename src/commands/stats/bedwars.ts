@@ -3,9 +3,10 @@ import { Player } from 'hypixel-types';
 import { client } from '../../providers';
 import { byteSize } from '../../util';
 import { StatsReturn } from './stats';
-import { drawPrestige, drawRank } from './util/bwprestige';
+import { drawPrestige, drawRank, getExpForLevel, getLevelForExp } from './util/bwprestige';
 import {
   colorCode,
+  drawColoredText,
   font,
   headerHeight,
   letterWidth,
@@ -132,10 +133,32 @@ export const makeBedwarsStats = ({
   c.save();
   c.font = font(32);
   c.fillStyle = colorCode(0x7)('hex');
-  c.fillText(`bedwars stats by ${client.user.tag}`, padding, headerHeight + 32 + 2 * padding * 1.1);
+  c.fillText(`bedwars stats by ${client.user.tag}`, padding, headerHeight + 32 + 2 * padding);
   c.fillText(
     `generated ${new Date().toISOString()}`,
     padding,
+    headerHeight + 64 + (3 * padding) / 1.1
+  );
+
+  const level = getLevelForExp(data.stats.Bedwars.Experience!);
+  const levelExp = getExpForLevel(level);
+  c.textAlign = 'right';
+  drawColoredText(
+    c,
+    `§b${Math.floor(((level % 1) * levelExp) / 100) * 100}§r/§a${levelExp}§r to next level`,
+    canvas.width - padding,
+    headerHeight + 32 + 2 * padding,
+    'right'
+  );
+
+  c.fillText(
+    [
+      `Games Played: ${data.stats.Bedwars.games_played_bedwars}`,
+      `BBLR: ${round(
+        (data.stats.Bedwars.beds_broken_bedwars ?? 0) / (data.stats.Bedwars.beds_lost_bedwars ?? 0)
+      )}`,
+    ].join('  '),
+    canvas.width - padding,
     headerHeight + 64 + (3 * padding) / 1.1
   );
   c.restore();
@@ -162,7 +185,7 @@ export const makeBedwarsStats = ({
     Math.max(
       c.measureText(col).width,
       ...gamemodeNames.map(mode => c.measureText(stats[mode][col].toString()).width),
-      65
+      letterWidth(c) * 5
     )
   );
 
