@@ -1,4 +1,5 @@
 import { Canvas } from 'canvas';
+import _ from 'lodash';
 import { Color, color } from '../../../util/color';
 
 export const headerHeight = 46;
@@ -25,26 +26,68 @@ export const colors = {
 
 export const colorCode = (num: number): Color => colors[Object.keys(colors)[num]];
 
-export const parseFormattedText = (text: string): { color: Color; text: string }[] => {
+type Text = {
+  color: Color;
+  text: string;
+};
+
+export const parseFormattedText = (text: string, defaultStyle = 0xdddddd): Text[] => {
   return text
     .split('§')
     .filter(t => !!t)
     .map(segment => {
       if (!/^[A-Za-z0-9]$/.test(segment[0] ?? '')) throw new Error('invalid formatted string');
 
-      return { color: colorCode(parseInt(segment[0], 16)), text: segment.substring(1) };
+      return {
+        color: segment[0] === 'r' ? color(defaultStyle) : colorCode(parseInt(segment[0], 16)),
+        text: segment.substring(1),
+      };
     });
 };
 
 export const font = (px: number): string => px + 'px Roboto Mono';
 export const round = (num: number): number => Math.round((num + Number.EPSILON) * 100) / 100;
-export const letterWidth = (fontSize: number): number => {
-  const tester = new Canvas(fontSize, fontSize);
-  const c = tester.getContext('2d');
-  c.fillStyle = '#dddddd';
-  c.strokeStyle = '#dddddd';
-  c.textDrawingMode = 'glyph';
-  c.textAlign = 'left';
-  c.font = font(fontSize);
-  return c.measureText('A').width;
+export const letterWidth = (measure: number | CanvasRenderingContext2D): number => {
+  if (typeof measure === 'number') {
+    const tester = new Canvas(measure, measure);
+    const c = tester.getContext('2d');
+    c.fillStyle = '#dddddd';
+    c.strokeStyle = '#dddddd';
+    c.textDrawingMode = 'glyph';
+    c.textAlign = 'left';
+    c.font = font(measure);
+    return c.measureText('A').width;
+  } else return letterWidth(+measure.font.split('px')[0]);
+};
+
+export const drawColoredText = (
+  c: CanvasRenderingContext2D,
+  text: Text[] | string,
+  x: number,
+  y: number,
+  textAlign: 'left' | 'right' = 'left'
+): number => {
+  const initialStyle = c.fillStyle;
+
+  if (typeof text === 'string')
+    text = parseFormattedText(text, parseInt(initialStyle.toString().replace(/#/g, ''), 16));
+
+  const charWidth = letterWidth(+c.font.split('px')[0]);
+
+  c.save();
+
+  c.textAlign = textAlign;
+
+  const textWidth = (textAlign === 'left' ? text : _.clone(text).reverse()).reduce((x, segment) => {
+    c.fillStyle = segment.color('hex');
+    c.fillText(segment.text, x, y);
+
+    return textAlign === 'left'
+      ? x + charWidth * segment.text.length
+      : x - charWidth * segment.text.length;
+  }, x);
+
+  c.restore();
+
+  return textWidth;
 };
