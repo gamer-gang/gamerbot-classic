@@ -52,24 +52,22 @@ export const getExpForLevel = (level: number): number => {
 };
 
 export const getLevelRespectingPrestige = (level: number): number => {
-  return level > Prestige.RAINBOW * LEVELS_PER_PRESTIGE
-    ? level - Prestige.RAINBOW * LEVELS_PER_PRESTIGE
-    : level % LEVELS_PER_PRESTIGE;
+  return level > 3000 ? level - 3000 : level % LEVELS_PER_PRESTIGE;
 };
 
-enum Prestige {
-  NONE = 0,
-  IRON = 1,
-  GOLD = 2,
-  DIAMOND = 3,
-  EMERALD = 4,
-  SAPPHIRE = 5,
-  RUBY = 6,
-  CRYSTAL = 7,
-  OPAL = 8,
-  AMETHYST = 9,
-  RAINBOW = 10,
-}
+// enum Prestige {
+//   NONE = 0,
+//   IRON = 1,
+//   GOLD = 2,
+//   DIAMOND = 3,
+//   EMERALD = 4,
+//   SAPPHIRE = 5,
+//   RUBY = 6,
+//   CRYSTAL = 7,
+//   OPAL = 8,
+//   AMETHYST = 9,
+//   RAINBOW = 10,
+// }
 
 const {
   aqua,
