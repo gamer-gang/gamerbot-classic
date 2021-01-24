@@ -1,13 +1,9 @@
 {
-  "include": [
-    "src"
-  ],
+  "exclude": ["src"],
   "compilerOptions": {
     "target": "es6",
     "module": "commonjs",
-    "lib": [
-      "ESNext"
-    ],
+    "lib": ["ESNext"],
     "incremental": true,
     "sourceMap": true,
     "outDir": "dist",

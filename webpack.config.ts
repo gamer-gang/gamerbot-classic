@@ -1,13 +1,13 @@
+import { execSync } from 'child_process';
 import ForkTsCheckerPlugin from 'fork-ts-checker-webpack-plugin';
 import NodemonPlugin from 'nodemon-webpack-plugin';
 import path from 'path';
 import TerserPlugin from 'terser-webpack-plugin';
-import webpack, { EnvironmentPlugin, ProgressPlugin } from 'webpack';
-import nodeExternals from 'webpack-node-externals';
+import { Configuration, EnvironmentPlugin, ProgressPlugin } from 'webpack';
 
 const devMode = process.env.NODE_ENV !== 'production';
 
-export default <webpack.Configuration>{
+export default <Configuration>{
   mode: devMode ? 'development' : 'production',
   entry: './src/index.ts',
   output: {
@@ -24,70 +24,43 @@ export default <webpack.Configuration>{
       ? 'eval-cheap-module-source-map'
       : 'inline-source-map'
     : 'source-map',
-  resolve: {
-    extensions: ['.ts', '.js'],
-    symlinks: false,
-  },
+  resolve: { extensions: ['.ts', '.js'] },
   plugins: [
     ...(process.env.DOCKER || process.env.CI ? [] : [new ProgressPlugin({})]),
     ...(process.env.NODEMON ? [new NodemonPlugin()] : []),
-    new EnvironmentPlugin({ WEBPACK: true }),
+    new EnvironmentPlugin({
+      WEBPACK: true,
+      LATEST_COMMIT_HASH: execSync('git rev-parse HEAD').toString().trim(),
+    }),
     new ForkTsCheckerPlugin({
-      eslint: {
-        enabled: true,
-        files: './src/**/*.{ts,tsx,js,jsx}',
+      async: devMode,
+      typescript: {
+        build: true,
+        mode: 'write-tsbuildinfo',
+        configFile: path.resolve(__dirname, 'src/tsconfig.json'),
+        profile: false,
       },
-      logger: {
-        devServer: false,
-        infrastructure: 'silent',
-        issues: 'webpack-infrastructure',
-      },
+      eslint: { enabled: true, files: './src/**/*.{ts,js}' },
     }),
   ],
   stats: { preset: 'normal', colors: true },
-  externals: [nodeExternals()],
-  target: 'node',
+  externalsPresets: { node: true },
+  // Every non-relative module is external
+  // TODO improve regexp
+  externals: [/^[^.][a-z\-0-9@/.]+$/],
+  target: 'async-node',
   node: { __dirname: true },
-  experiments: {
-    topLevelAwait: true,
-  },
+  experiments: { topLevelAwait: true },
   optimization: {
     emitOnErrors: false,
-    minimizer: devMode
-      ? undefined
-      : [
-          new TerserPlugin({
-            terserOptions: {
-              // We want to minify the bundle, but don't want Terser to change the names of our entity
-              // classes. This can be controlled in a more granular way if needed, (see
-              // https://terser.org/docs/api-reference.html#mangle-options) but the safest default
-              // config is that we simply disable mangling altogether but allow minification to proceed.
-              mangle: false,
-            },
-          }),
-        ],
+    minimizer: devMode ? undefined : [new TerserPlugin({ terserOptions: { mangle: false } })],
   },
   module: {
     rules: [
-      {
-        test: /\.js(x?)$/,
-        enforce: 'pre',
-        loader: 'source-map-loader',
-      },
-      {
-        test: /\.ts(x?)/,
-        loader: 'ts-loader',
-        options: { transpileOnly: true },
-      },
-      {
-        test: /\.node$/,
-        use: 'node-loader',
-      },
-      {
-        test: /\.mjs$/,
-        include: /node_modules/,
-        type: 'javascript/auto',
-      },
+      { test: /\.js(x?)$/, enforce: 'pre', loader: 'source-map-loader' },
+      { test: /\.ts(x?)/, loader: 'ts-loader', options: { transpileOnly: true } },
+      { test: /\.node$/, use: 'node-loader' },
+      { test: /\.mjs$/, include: /node_modules/, type: 'javascript/auto' },
     ],
   },
 };

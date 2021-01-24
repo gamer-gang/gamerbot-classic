@@ -12,9 +12,14 @@ services:
     build: .
     volumes:
       - app-data:/app/data
+      - app-logs:/app/logs
     depends_on:
       - db
+    env_file: .env
+    environment:
+      POSTGRES_HOST: db
 
 volumes:
   app-data: {}
+  app-logs: {}
   db-data: {}

@@ -4,12 +4,13 @@ import yargsParser from 'yargs-parser';
 
 import { Command, CommandDocs } from '..';
 import { ReactionRole, RoleEmoji } from '../../entities/ReactionRole';
-import { CmdArgs } from '../../types';
+import { client } from '../../providers';
+import { Context } from '../../types';
 import { codeBlock, Embed } from '../../util';
 
 export class CommandRole implements Command {
   cmd = 'role';
-  yargsSchema: yargsParser.Options = {
+  yargs: yargsParser.Options = {
     array: ['role'],
     boolean: ['list'],
     alias: {
@@ -30,8 +31,8 @@ export class CommandRole implements Command {
       description: 'list the boyes',
     },
   ];
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, em } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
 
     if (!msg.guild?.members.resolve(msg.author as User)?.hasPermission('MANAGE_ROLES'))
       return msg.channel.send(Embed.error('you are missing the `MANAGE_ROLES` permission'));
@@ -105,7 +106,7 @@ export class CommandRole implements Command {
 
       description += `${emoji}: ${role}\n`;
       roles.push(
-        em.create(RoleEmoji, {
+        client.em.create(RoleEmoji, {
           emoji: emoji instanceof GuildEmoji ? emoji.id : emoji,
           roleId: role.id,
         })
@@ -119,19 +120,19 @@ export class CommandRole implements Command {
     const embedMessage = await msg.channel.send(embed);
 
     // save message to db
-    const collector = em.create(ReactionRole, {
+    const collector = client.em.create(ReactionRole, {
       messageId: embedMessage.id,
       guildId: msg.guild?.id,
       roles: [],
     });
-    em.populate(collector, 'roles');
-    em.persist(collector);
+    client.em.populate(collector, 'roles');
+    client.em.persist(collector);
 
     roles.forEach(role => {
       role.message = collector;
       embedMessage.react(role.emoji);
-      em.populate(role, 'message');
-      em.persist(role);
+      client.em.populate(role, 'message');
+      client.em.persist(role);
     });
   }
 }

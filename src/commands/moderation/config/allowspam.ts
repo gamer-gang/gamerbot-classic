@@ -1,15 +1,15 @@
 import { Message } from 'discord.js';
 
 import { Config } from '../../../entities/Config';
-import { CmdArgs } from '../../../types';
+import { Context } from '../../../types';
 import { Embed } from '../../../util';
 
 export const allowSpam = async (
   config: Config,
-  cmdArgs: CmdArgs,
+  context: Context,
   value?: string
 ): Promise<void | Message> => {
-  const { msg } = cmdArgs;
+  const { msg } = context;
 
   if (!value) return msg.channel.send(Embed.info(`spam is ${config.allowSpam ? 'on' : 'off'}`));
 

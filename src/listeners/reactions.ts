@@ -1,23 +1,21 @@
 import { Message, MessageReaction, PartialMessage, PartialUser, User } from 'discord.js';
 
 import { ReactionRole, RoleEmoji } from '../entities/ReactionRole';
-import { client, getLogger, LoggerType } from '../providers';
-import { CmdArgs } from '../types';
+import { Gamerbot } from '../gamerbot';
+import { client, getLogger } from '../providers';
 import { Embed } from '../util';
 
-type Reaction = MessageReaction;
-type MessagePart = Message | PartialMessage;
-type UserPart = User | PartialUser;
-type EM = CmdArgs['em'];
-
-const verifyReaction = async (reaction: Reaction, user: UserPart): Promise<boolean> => {
+const verifyReaction = async (
+  reaction: MessageReaction,
+  user: User | PartialUser
+): Promise<boolean> => {
   if (!reaction.partial) return true;
 
   try {
     await reaction.fetch();
     return true;
   } catch (err) {
-    getLogger(LoggerType.REACTION, reaction.message.id).error('fetch error message: ', err);
+    getLogger(`REACTION ON ${reaction.message.id}`).error('fetch error message: ', err);
 
     const dm = await user.createDM();
     dm.send(
@@ -39,8 +37,8 @@ const roleError = async ({
   user,
   collector,
 }: {
-  reaction: Reaction;
-  user: UserPart;
+  reaction: MessageReaction;
+  user: User | PartialUser;
   collector: RoleEmoji;
 }) => {
   const dm = await user.createDM();
@@ -60,9 +58,9 @@ const getCollector = async ({
   msg,
   reaction,
 }: {
-  em: EM;
-  msg: MessagePart;
-  reaction: Reaction;
+  em: Gamerbot['em'];
+  msg: Message | PartialMessage;
+  reaction: MessageReaction;
 }) => {
   const collectorMessage = await em.findOne(ReactionRole, { messageId: msg.id });
   if (!collectorMessage) return;
@@ -71,7 +69,13 @@ const getCollector = async ({
   return items.find(e => e.emoji === reaction.emoji.toString() || e.emoji === reaction.emoji.id);
 };
 
-const missingPermissions = ({ msg, user }: { msg: MessagePart; user: UserPart }) => {
+const missingPermissions = ({
+  msg,
+  user,
+}: {
+  msg: Message | PartialMessage;
+  user: User | PartialUser;
+}) => {
   if (msg.guild?.me?.hasPermission('MANAGE_ROLES')) return true;
 
   msg.channel.send(
@@ -86,9 +90,9 @@ const missingPermissions = ({ msg, user }: { msg: MessagePart; user: UserPart })
   return false;
 };
 
-export const onMessageReactionAdd = (em: EM) => async (
-  reaction: Reaction,
-  user: UserPart
+export const onMessageReactionAdd = (em: Gamerbot['em']) => async (
+  reaction: MessageReaction,
+  user: User | PartialUser
 ): Promise<unknown> => {
   const { message: msg } = reaction;
   if (user.id === client.user?.id) return;
@@ -114,9 +118,9 @@ export const onMessageReactionAdd = (em: EM) => async (
   );
 };
 
-export const onMessageReactionRemove = (em: EM) => async (
-  reaction: Reaction,
-  user: UserPart
+export const onMessageReactionRemove = (em: Gamerbot['em']) => async (
+  reaction: MessageReaction,
+  user: User | PartialUser
 ): Promise<unknown> => {
   const { message: msg } = reaction;
   if (user.id === client.user?.id) return;

@@ -1,6 +1,6 @@
 import { MessageEmbed, MessageEmbedOptions } from 'discord.js';
-
-import { resolvePath } from './path';
+import { Colors } from '../constants';
+import { getProfilePicture } from './message';
 
 type EmbedIntent = 'info' | 'success' | 'warning' | 'error';
 
@@ -17,7 +17,9 @@ const intentEmojis = {
 };
 
 const intentText = (message: string, desc?: string) =>
-  message.match(/\*\*|```/) ? message : `**${message}**${desc ? `\n${desc}` : ''}`;
+  message.match(/\*\*|```/)
+    ? `${message}${desc ? `\n${desc}` : ''}`
+    : `**${message}**${desc ? `\n${desc}` : ''}`;
 
 export class Embed extends MessageEmbed {
   static error(message: string, description?: string): Embed {
@@ -47,24 +49,24 @@ export class Embed extends MessageEmbed {
     if (!this.color && !options?.noColor) {
       switch (options?.intent) {
         case 'error':
-          this.setColor(0xff1e20);
+          this.setColor(Colors.red());
           break;
         case 'warning':
-          this.setColor(0xff8d1e);
+          this.setColor(Colors.orange());
           break;
         case 'success':
-          this.setColor(0x58ff1e);
+          this.setColor(Colors.green());
           break;
         case 'info':
         default:
-          this.setColor(0x1e90ff);
+          this.setColor(Colors.blue());
       }
     }
   }
 
   setDefaultAuthor(): this {
     this.setAuthor('gamerbot80', 'attachment://hexagon.png');
-    this.attachFiles([resolvePath('assets/hexagon.png')]);
+    this.attachFiles([getProfilePicture()]);
     return this;
   }
 

@@ -3,12 +3,12 @@ import { LoremIpsum } from 'lorem-ipsum';
 import yargsParser from 'yargs-parser';
 
 import { Command, CommandDocs } from '..';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { Embed } from '../../util';
 
 export class CommandLorem implements Command {
   cmd = 'lorem';
-  yargsSchema: yargsParser.Options = {
+  yargs: yargsParser.Options = {
     number: ['messages'],
     alias: {
       messages: 'm',
@@ -21,13 +21,12 @@ export class CommandLorem implements Command {
     usage: 'lorem [-m, --messages <int>]',
     description: 'ok',
   };
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
+  async execute(context: Context): Promise<void | Message> {
     const {
       msg,
       args,
-      em,
       config: { allowSpam },
-    } = cmdArgs;
+    } = context;
 
     if (!allowSpam) return msg.channel.send(Embed.error('spam commands are off'));
 

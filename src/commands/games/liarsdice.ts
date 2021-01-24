@@ -4,13 +4,12 @@ import yaml from 'js-yaml';
 import _ from 'lodash';
 import sharp from 'sharp';
 import yargsParser from 'yargs-parser';
-
 import { Command } from '..';
 import { LiarsDice, LiarsDicePlayer } from '../../entities/LiarsDice';
 import { Die } from '../../gamemanagers/common';
 import { LiarsDiceManager } from '../../gamemanagers/liarsdicemanager';
 import { client } from '../../providers';
-import { CmdArgs, GameReactionCollector } from '../../types';
+import { Context, GameReactionCollector } from '../../types';
 import { codeBlock, Embed, resolvePath } from '../../util';
 
 type Bid = [quantity: number, value: number];
@@ -44,11 +43,13 @@ export class CommandLiarsDice implements Command {
       description: 'Hey Helper, how play game?',
     },
   ];
+  yargs: yargsParser.Options = {
+    // TODO fill
+  };
+  async execute(Context: Context): Promise<void | Message> {
+    const { msg, args } = Context;
 
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, args, em } = cmdArgs;
-
-    const manager = new LiarsDiceManager(em);
+    const manager = new LiarsDiceManager(client.em);
 
     if (args.cancel) {
       const game = await manager.get(msg.author?.id as string);
@@ -79,10 +80,11 @@ export class CommandLiarsDice implements Command {
     // create game
     if (!args.create) {
       // return msg.channel.send(`usage: \`${this.docs.map(d => d.usage).join('`, `')}\``);
-      return msg.channel.send(Embed.warning(
-        'incorrect usage',
-        'usage: \n' + codeBlock(this.docs.map(d => d.usage).join('\n'))
-      )
+      return msg.channel.send(
+        Embed.warning(
+          'incorrect usage',
+          'usage: \n' + codeBlock(this.docs.map(d => d.usage).join('\n'))
+        )
       );
     }
 
@@ -98,7 +100,9 @@ export class CommandLiarsDice implements Command {
 
       const embed = new Embed().setTitle(how2play.title).setDescription(how2play.description);
 
-      how2play.fields.map(({ name, value }) => embed.addField(name, value));
+      how2play.fields.map(({ name, value }: { name: string; value: string }) =>
+        embed.addField(name, value)
+      );
 
       return msg.channel.send(embed);
     }
@@ -134,7 +138,7 @@ export class CommandLiarsDice implements Command {
     // game.gameCode = gameCode;
     // game.playerOrder = [];
 
-    const game = em.create(LiarsDice, {
+    const game = client.em.create(LiarsDice, {
       diceAmount,
       diceSides,
       gameCode,
@@ -143,16 +147,16 @@ export class CommandLiarsDice implements Command {
       guildId: msg.guild?.id as string,
     });
 
-    em.persist(game);
+    client.em.persist(game);
 
-    const creator = em.create(LiarsDicePlayer, {
+    const creator = client.em.create(LiarsDicePlayer, {
       game,
       hand: Die.array(diceAmount, diceSides).map(d => d.value),
       playerId: msg.author?.id,
     });
 
-    em.populate(creator, 'game');
-    em.persist(creator);
+    client.em.populate(creator, 'game');
+    client.em.persist(creator);
 
     const updateEmbed = (time = timeLeft) =>
       embedMessage.edit(
@@ -182,20 +186,20 @@ export class CommandLiarsDice implements Command {
     collector
       .on('collect', async (_, user: User) => {
         if (!game) return msg.channel.send('error in collect: game is nul');
-        const player = em.create(LiarsDicePlayer, {
+        const player = client.em.create(LiarsDicePlayer, {
           game,
           hand: Die.array(diceAmount, diceSides).map(d => d.value),
           playerId: user.id,
         });
 
-        em.populate(player, 'game');
-        em.persistAndFlush(player);
+        client.em.populate(player, 'game');
+        client.em.persistAndFlush(player);
 
         playerTags.push(user.tag);
         updateEmbed();
       })
       .on('remove', async (_, user: User) => {
-        em.nativeDelete(LiarsDicePlayer, { playerId: user.id });
+        client.em.nativeDelete(LiarsDicePlayer, { playerId: user.id });
         playerTags.splice(playerTags.indexOf(user.tag), 1);
         updateEmbed();
       })
@@ -205,13 +209,11 @@ export class CommandLiarsDice implements Command {
 
         if (reason === 'cancel') {
           console.log('cancelling game');
-          em.nativeDelete(LiarsDicePlayer, { game: game.id });
-          return em.removeAndFlush(game);
+          return client.em.removeAndFlush(game);
         }
 
         if (game.players.length < 2) {
-          em.nativeDelete(LiarsDicePlayer, { game: game.id });
-          em.removeAndFlush(game);
+          client.em.removeAndFlush(game);
           console.log('not enough players');
           return msg.channel.send('not enough players to start, aborting');
         }
@@ -232,10 +234,10 @@ export class CommandLiarsDice implements Command {
           game.playerOrder = _.shuffle(playerIds);
 
           console.log('flushing db');
-          em.flush();
+          client.em.flush();
 
           console.log('starting first round');
-          this.startRound(game, msg.channel as TextChannel, cmdArgs);
+          this.startRound(game, msg.channel as TextChannel, Context);
         }, 0);
 
         return;
@@ -256,7 +258,9 @@ export class CommandLiarsDice implements Command {
       .addField('time to join', `${opts.timeLeft} seconds`, true)
       .addField(
         'dice',
-        `${opts.diceAmount} ${opts.diceAmount === 1 ? 'die' : 'dice'} with ${opts.diceSides} sides `,
+        `${opts.diceAmount} ${opts.diceAmount === 1 ? 'die' : 'dice'} with ${
+          opts.diceSides
+        } sides `,
         true
       )
       .addField('how 2 play?', 'type <prefix>dice --how2play', false)
@@ -289,16 +293,15 @@ export class CommandLiarsDice implements Command {
 
   async giveHand({
     playerId,
-    cmdArgs,
+    Context,
     game,
   }: {
     playerId: string;
-    cmdArgs: CmdArgs;
+    Context: Context;
     game: LiarsDice;
   }): Promise<void> {
     return new Promise<void>(resolve => {
-      const { em } = cmdArgs;
-      em.findOneOrFail(LiarsDicePlayer, { playerId }).then(player => {
+      client.em.findOneOrFail(LiarsDicePlayer, { playerId }).then(player => {
         this.makeDiceImage(player.hand).then(bufer => {
           const embed = new Embed()
             .setTitle(`Round ${game.roundNumber}: Your hand (${game.gameCode}) `)
@@ -339,12 +342,12 @@ export class CommandLiarsDice implements Command {
   getBid({
     channel,
     game,
-    cmdArgs,
+    Context,
     highestBid,
   }: {
     channel: TextChannel;
     game: LiarsDice;
-    cmdArgs: CmdArgs;
+    Context: Context;
     highestBid: Bid;
   }): Promise<'call' | Bid> {
     return new Promise<'call' | Bid>((resolve, reject) => {
@@ -378,19 +381,20 @@ export class CommandLiarsDice implements Command {
             if (bidAmount[0] > game.diceAmount || bidAmount[1] > game.diceSides)
               return channel.send('bid too high');
 
-            if ( // if lower quantity and same face value, or if same quantity and lower face value
+            if (
+              // if lower quantity and same face value, or if same quantity and lower face value
               bidAmount[0] < highestBid[0] ||
-              bidAmount[0] == highestBid[0] &&
-              bidAmount[1] < highestBid[1] ||
+              (bidAmount[0] == highestBid[0] && bidAmount[1] < highestBid[1]) ||
               bidAmount[0] == 0 ||
               bidAmount[1] == 0
             ) {
-              input = "";
-              return channel.send('bid too low (either higher quantity or greater face value), try again');
+              input = '';
+              return channel.send(
+                'bid too low (either higher quantity or greater face value), try again'
+              );
             }
 
             collector.stop();
-
           });
           collector.on('end', () => {
             clearInterval(interval);
@@ -413,13 +417,12 @@ export class CommandLiarsDice implements Command {
     });
   }
 
-  async startRound(game: LiarsDice, channel: TextChannel, cmdArgs: CmdArgs): Promise<void> {
-    const { em } = cmdArgs;
+  async startRound(game: LiarsDice, channel: TextChannel, Context: Context): Promise<void> {
     console.log(`starting round ${game.roundNumber}`);
     console.log(`player order: ${game.playerOrder.join(', ')}`);
 
     (await game.players.loadItems()).forEach(async p => {
-      await this.giveHand({ playerId: p.playerId, game, cmdArgs });
+      await this.giveHand({ playerId: p.playerId, game, Context });
     });
 
     let highestBid: Bid = [0, 0];
@@ -432,7 +435,7 @@ export class CommandLiarsDice implements Command {
       console.log(`asking ${playerId} for their bid`);
 
       try {
-        const output = await this.getBid({ channel, game, cmdArgs, highestBid });
+        const output = await this.getBid({ channel, game, Context, highestBid });
         if (Array.isArray(output)) {
           highestBid = output;
 
@@ -442,21 +445,19 @@ export class CommandLiarsDice implements Command {
         }
 
         channel.send(
-          `<@${game.currentBidder}> called <@${game.playerOrder[playerIndex - 1]}> (${(highestBid[0], highestBid[1])
+          `<@${game.currentBidder}> called <@${game.playerOrder[playerIndex - 1]}> (${
+            (highestBid[0], highestBid[1])
           })`
         );
 
-        // (await em.find(LiarsDicePlayer, { game })).map();
+        // (await client.em.find(LiarsDicePlayer, { game })).map();
 
         break;
       } catch (err) {
         if (err === 'timeout') {
           const foo: Bid = [highestBid[0] == 0 ? 1 : highestBid[0], 0];
 
-          const newBid: Bid =
-            foo[1] < game.diceSides
-              ? [foo[0], foo[1] + 1]
-              : [foo[0] + 1, 1];
+          const newBid: Bid = foo[1] < game.diceSides ? [foo[0], foo[1] + 1] : [foo[0] + 1, 1];
 
           channel.send(`no bid was made in time, your bid is now ${newBid[0]} ${newBid[1]}`);
           highestBid = newBid;

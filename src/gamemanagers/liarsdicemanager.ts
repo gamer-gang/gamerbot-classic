@@ -1,10 +1,10 @@
 import * as randomstring from 'randomstring';
-
 import { LiarsDice, LiarsDicePlayer } from '../entities/LiarsDice';
-import { MikroOrmEm } from '../types';
 
 export class LiarsDiceManager {
-  constructor(private em: MikroOrmEm) {}
+  // TODO fix
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+  constructor(private em: any) {}
 
   async games(): Promise<LiarsDice[]> {
     return await this.em.find(LiarsDice, {});

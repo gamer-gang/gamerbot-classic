@@ -3,7 +3,7 @@ import fse from 'fs-extra';
 import yaml from 'js-yaml';
 
 import { Command } from '..';
-import { CmdArgs } from '../../types';
+import { Context } from '../../types';
 import { resolvePath, sanitize } from '../../util';
 
 const replacements = yaml.load(fse.readFileSync(resolvePath('assets/ez.yaml')).toString())
@@ -15,8 +15,8 @@ export class CommandEz implements Command {
     usage: 'ez',
     description: 'ez',
   };
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg } = cmdArgs;
+  async execute(context: Context): Promise<void | Message> {
+    const { msg } = context;
 
     const replacement = replacements[Math.floor(Math.random() * replacements.length)];
     const guildMember = msg.guild?.members.cache.get(msg.author?.id as string);

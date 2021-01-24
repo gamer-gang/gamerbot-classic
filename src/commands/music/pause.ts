@@ -1,7 +1,8 @@
 import { Message } from 'discord.js';
 
 import { Command, CommandDocs } from '..';
-import { CmdArgs } from '../../types';
+import { client } from '../../providers';
+import { Context } from '../../types';
 import { codeBlock, Embed, updatePlayingEmbed } from '../../util';
 
 export class CommandPause implements Command {
@@ -10,9 +11,9 @@ export class CommandPause implements Command {
     usage: 'pause',
     description: 'pauses playback',
   };
-  async executor(cmdArgs: CmdArgs): Promise<void | Message> {
-    const { msg, queueStore } = cmdArgs;
-    const queue = queueStore.get(msg.guild.id);
+  async execute(context: Context): Promise<void | Message> {
+    const { msg } = context;
+    const queue = client.queues.get(msg.guild.id);
 
     if (!queue.playing) return msg.channel.send(Embed.error('not playing'));
 
@@ -22,6 +23,7 @@ export class CommandPause implements Command {
 
     try {
       queue.voiceConnection?.dispatcher?.pause(true);
+      queue.paused = true;
       updatePlayingEmbed({ guildId: msg.guild.id, playing: false });
     } catch (err) {
       return msg.channel.send(Embed.error(codeBlock(err)));
