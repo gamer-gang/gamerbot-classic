@@ -12,7 +12,7 @@ import * as eggs from './listeners/eggs';
 import * as reactions from './listeners/reactions';
 import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
-import { client, logger } from './providers';
+import { client, getLogger, logger } from './providers';
 import { codeBlock, dbFindOneError, Embed, emptyQueue, resolvePath } from './util';
 
 dotenv.config({ path: resolvePath('.env') });
@@ -139,10 +139,14 @@ client
   .on('error', logger.error)
   .on('disconnect', () => logger.warn('client disconnected!'))
   .on('guildCreate', async guild => {
+    getLogger(`GUILD ${guild.id}`).info(
+      `joined guild: ${guild.name} (${guild.memberCount} members)`
+    );
     const fresh = client.em.create(Config, { guildId: guild.id });
     await client.em.persistAndFlush(fresh);
   })
   .on('guildDelete', async guild => {
+    getLogger(`GUILD ${guild.id}`).info(`left guild: ${guild.name} (${guild.memberCount} members)`);
     const config = await client.em.findOne(Config, { guildId: guild.id });
     config && (await client.em.removeAndFlush(config));
   })
