@@ -49,7 +49,7 @@ export class CommandStats implements Command {
     default: { debug: process.env.NODE_ENV === 'development' },
   };
 
-  readonly gamemodes: Record<Gamemode, (data: Player, quality: boolean) => StatsReturn> = {
+  readonly gamemodes: Record<Gamemode, (data: Player, quality: boolean) => Promise<StatsReturn>> = {
     bedwars: (data, quality) => makeBedwarsStats({ data, quality }),
   };
 
@@ -189,7 +189,7 @@ export class CommandStats implements Command {
         );
 
       const canvasStart = process.hrtime();
-      const [image, info] = this.gamemodes[exec ? (exec[1] as Gamemode) : 'bedwars'](
+      const [image, info] = await this.gamemodes[exec ? (exec[1] as Gamemode) : 'bedwars'](
         player,
         !args.fast
       );

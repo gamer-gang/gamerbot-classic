@@ -140,10 +140,10 @@ export const drawPrestige = (c: CanvasRenderingContext2D, player: Player): numbe
     .reverse()
     .reduce((offset, segment) => {
       c.fillStyle = segment.color('hex');
-      c.fillText(segment.text, offset - charWidth * 0.2, padding + headerHeight);
+      c.fillText(segment.text, offset, padding + headerHeight);
 
       return offset - (segment.text === star ? c.measureText(star).width * 1.1 : charWidth);
-    }, c.canvas.width - margin * 2);
+    }, c.canvas.width - padding - margin * 2);
 
   c.restore();
 

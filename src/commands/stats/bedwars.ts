@@ -53,13 +53,13 @@ const rows = {
   Overall: '',
 };
 
-export const makeBedwarsStats = ({
+export const makeBedwarsStats = async ({
   data,
   quality,
 }: {
   data?: Player;
   quality: boolean;
-}): StatsReturn => {
+}): Promise<StatsReturn> => {
   if (!data?.stats?.Bedwars) throw new Error('no data');
 
   const stats: Record<keyof typeof rows, Record<keyof typeof columns, string>> = {} as any;
