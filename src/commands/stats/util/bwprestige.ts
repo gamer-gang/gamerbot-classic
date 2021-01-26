@@ -4,7 +4,7 @@ import { Player } from 'hypixel-types';
 import _ from 'lodash';
 import { Color } from '../../../util/color';
 import { rankPrefixes, getRank } from './rank';
-import { colors, headerHeight, letterWidth, padding, parseFormattedText } from './style';
+import { colors, headerHeight, getCharWidth, margin, padding, parseFormattedText } from './style';
 
 export const EASY_LEVELS = 4;
 export const EASY_LEVELS_XP = 7000;
@@ -54,20 +54,6 @@ export const getExpForLevel = (level: number): number => {
 export const getLevelRespectingPrestige = (level: number): number => {
   return level > 3000 ? level - 3000 : level % LEVELS_PER_PRESTIGE;
 };
-
-// enum Prestige {
-//   NONE = 0,
-//   IRON = 1,
-//   GOLD = 2,
-//   DIAMOND = 3,
-//   EMERALD = 4,
-//   SAPPHIRE = 5,
-//   RUBY = 6,
-//   CRYSTAL = 7,
-//   OPAL = 8,
-//   AMETHYST = 9,
-//   RAINBOW = 10,
-// }
 
 const {
   aqua,
@@ -135,7 +121,7 @@ export const getPrestigePalette = (level: number): Color[] => {
 export const drawPrestige = (c: CanvasRenderingContext2D, player: Player): number => {
   c.save();
 
-  const charWidth = letterWidth(+c.font.split('px')[0]);
+  const charWidth = getCharWidth(+c.font.split('px')[0]);
 
   const level = Math.floor(getLevelForExp(player.stats.Bedwars.Experience!));
   const palette = getPrestigePalette(level);
@@ -157,17 +143,20 @@ export const drawPrestige = (c: CanvasRenderingContext2D, player: Player): numbe
       c.fillText(segment.text, offset - charWidth * 0.2, padding + headerHeight);
 
       return offset - (segment.text === star ? c.measureText(star).width * 1.1 : charWidth);
-    }, c.canvas.width);
+    }, c.canvas.width - margin * 2);
 
   c.restore();
 
   return width;
 };
 
-export const drawRank = (c: CanvasRenderingContext2D, player: Player): [number, Color] => {
+export const drawRank = (
+  c: CanvasRenderingContext2D,
+  player: Player
+): [width: number, nameColor: Color] => {
   c.save();
 
-  const charWidth = letterWidth(+c.font.split('px')[0]);
+  const charWidth = getCharWidth(+c.font.split('px')[0]);
 
   const split = parseFormattedText(rankPrefixes[getRank(player)]).map(segment => {
     if (/^\*+$/.test(segment.text) && player.rankPlusColor) {
@@ -187,5 +176,5 @@ export const drawRank = (c: CanvasRenderingContext2D, player: Player): [number, 
 
   c.restore();
 
-  return [prefixWidth === 8 ? prefixWidth : prefixWidth + charWidth / 2, split[0].color];
+  return [prefixWidth === padding ? prefixWidth : prefixWidth + charWidth / 2, split[0].color];
 };
