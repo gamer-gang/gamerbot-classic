@@ -2,9 +2,12 @@ import { Canvas } from 'canvas';
 import _ from 'lodash';
 import { Color, color } from '../../../util/color';
 
-export const headerHeight = 46;
+export const headerHeight = 44;
 export const mainHeight = 40;
 export const padding = 16;
+export const margin = 0;
+export const fg = '#dfe0e4';
+export const bg = '#1e2024';
 export const colors = {
   black: color(0x000000),
   dark_blue: color(0x0000aa),
@@ -31,7 +34,7 @@ type Text = {
   text: string;
 };
 
-export const parseFormattedText = (text: string, defaultStyle = 0xdddddd): Text[] => {
+export const parseFormattedText = (text: string, defaultStyle = 0xdfe0e4): Text[] => {
   return text
     .split('§')
     .filter(t => !!t)
@@ -47,17 +50,16 @@ export const parseFormattedText = (text: string, defaultStyle = 0xdddddd): Text[
 
 export const font = (px: number): string => px + 'px Roboto Mono';
 export const round = (num: number): number => Math.round((num + Number.EPSILON) * 100) / 100;
-export const letterWidth = (measure: number | CanvasRenderingContext2D): number => {
+export const getCharWidth = (measure: number | CanvasRenderingContext2D): number => {
   if (typeof measure === 'number') {
     const tester = new Canvas(measure, measure);
     const c = tester.getContext('2d');
-    c.fillStyle = '#dddddd';
-    c.strokeStyle = '#dddddd';
-    c.textDrawingMode = 'glyph';
+    c.fillStyle = fg;
+    c.strokeStyle = fg;
     c.textAlign = 'left';
     c.font = font(measure);
     return c.measureText('A').width;
-  } else return letterWidth(+measure.font.split('px')[0]);
+  } else return getCharWidth(+measure.font.split('px')[0]);
 };
 
 export const drawColoredText = (
@@ -72,7 +74,7 @@ export const drawColoredText = (
   if (typeof text === 'string')
     text = parseFormattedText(text, parseInt(initialStyle.toString().replace(/#/g, ''), 16));
 
-  const charWidth = letterWidth(+c.font.split('px')[0]);
+  const charWidth = getCharWidth(+c.font.split('px')[0]);
 
   c.save();
 
