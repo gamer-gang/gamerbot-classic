@@ -5,12 +5,15 @@ import { byteSize } from '../../util';
 import { StatsReturn } from './stats';
 import { drawPrestige, drawRank, getExpForLevel, getLevelForExp } from './util/bwprestige';
 import {
+  bg,
   colorCode,
   drawColoredText,
+  fg,
   font,
   headerHeight,
-  letterWidth,
+  getCharWidth,
   mainHeight,
+  margin,
   padding,
   round,
 } from './util/style';
@@ -28,7 +31,7 @@ const columns = {
   Beds: 'beds_broken',
 };
 
-const gamemodes = {
+const rows = {
   Solos: 'eight_one_',
   Doubles: 'eight_two_',
   '3v3v3v3': 'four_three_',
@@ -49,7 +52,6 @@ const gamemodes = {
   // 'Castle 40v40': 'castle_',
   Overall: '',
 };
-const gamemodeNames = Object.keys(gamemodes);
 
 export const makeBedwarsStats = ({
   data,
@@ -60,13 +62,13 @@ export const makeBedwarsStats = ({
 }): StatsReturn => {
   if (!data?.stats?.Bedwars) throw new Error('no data');
 
-  const stats: Record<keyof typeof gamemodes, Record<keyof typeof columns, string>> = {} as any;
+  const stats: Record<keyof typeof rows, Record<keyof typeof columns, string>> = {} as any;
 
-  Object.keys(gamemodes).forEach(game => {
+  Object.keys(rows).forEach(game => {
     const raw: Record<keyof typeof columns, number> = {} as any;
 
     Object.keys(columns).forEach(col => {
-      const key = `${gamemodes[game]}${columns[col]}_bedwars`;
+      const key = `${rows[game]}${columns[col]}_bedwars`;
       raw[col] = parseInt(data.stats.Bedwars[key]?.toString() ?? '0');
     });
 
@@ -88,17 +90,41 @@ export const makeBedwarsStats = ({
   });
 
   const canvas = new Canvas(
-    letterWidth(mainHeight) * 85,
-    (gamemodeNames.length + 3) * (mainHeight + 2 * padding) + headerHeight + padding
+    getCharWidth(mainHeight) * 85 + margin * 2,
+    (Object.keys(rows).length + 3) * (mainHeight + 2 * padding) +
+      headerHeight +
+      padding +
+      margin * 2
   );
+
   const c = canvas.getContext('2d');
 
-  c.fillStyle = '#36393f';
+  c.textAlign = 'left';
+  c.font = font(headerHeight);
+  const categoryWidth = Math.max(...Object.keys(rows).map(row => c.measureText(row).width));
+
+  c.font = font(mainHeight);
+  const columnWidths = Object.keys(columns).map(
+    col =>
+      Math.max(
+        c.measureText(col).width,
+        ...Object.keys(rows).map(mode => c.measureText(stats[mode][col].toString()).width)
+      ) + padding
+  );
+
+  canvas.width =
+    categoryWidth + padding * 6 + columnWidths.map(c => c + padding * 2).reduce((a, b) => a + b, 0);
+
+  c.fillStyle = bg;
   c.fillRect(0, 0, canvas.width, canvas.height);
 
-  c.fillStyle = '#dddddd';
+  c.save();
+
+  c.translate(margin, margin);
+
+  c.fillStyle = fg;
   c.textAlign = 'left';
-  c.strokeStyle = '#dddddd';
+  c.strokeStyle = fg;
   c.lineWidth = 0.5;
 
   if (quality) {
@@ -106,11 +132,15 @@ export const makeBedwarsStats = ({
     c.patternQuality = 'bilinear';
     c.imageSmoothingQuality = 'high';
     c.antialias = 'subpixel';
-  } else {
-    c.textDrawingMode = 'glyph';
   }
+  // else {
+  // c.textDrawingMode = 'glyph';
+  // }
 
   c.font = font(headerHeight);
+
+  const width = canvas.width - margin * 2;
+  const height = canvas.height - margin * 2;
 
   c.save();
   const [offset, color] = drawRank(c, data);
@@ -145,8 +175,8 @@ export const makeBedwarsStats = ({
   c.textAlign = 'right';
   drawColoredText(
     c,
-    `§b${Math.floor(((level % 1) * levelExp) / 100) * 100}§r/§a${levelExp}§r to next level`,
-    canvas.width - padding,
+    `§b${Math.floor(((level % 1) * levelExp) / 10) * 10}§r/§a${levelExp}§r to next level`,
+    width - padding,
     headerHeight + 32 + 2 * padding,
     'right'
   );
@@ -158,7 +188,7 @@ export const makeBedwarsStats = ({
         (data.stats.Bedwars.beds_broken_bedwars ?? 0) / (data.stats.Bedwars.beds_lost_bedwars ?? 0)
       )}`,
     ].join('  '),
-    canvas.width - padding,
+    width - padding,
     headerHeight + 64 + (3 * padding) / 1.1
   );
   c.restore();
@@ -166,14 +196,14 @@ export const makeBedwarsStats = ({
   c.font = font(mainHeight);
 
   c.save();
-  c.transform(1, 0, 0, 1, 0, headerHeight + mainHeight + mainHeight + 5 * padding);
+  c.translate(0, headerHeight + mainHeight + mainHeight + 5 * padding);
 
-  gamemodeNames.forEach((mode, i) => {
+  Object.keys(rows).forEach((mode, i) => {
     const lineY = i * (mainHeight + padding * 2) + mainHeight + 2 * padding;
 
     c.beginPath();
     c.moveTo(0, lineY);
-    c.lineTo(canvas.width, lineY);
+    c.lineTo(width, lineY);
     c.stroke();
 
     c.fillText(mode, padding, i * (mainHeight + padding * 2) + 2.5 * padding + 2 * mainHeight);
@@ -181,15 +211,7 @@ export const makeBedwarsStats = ({
 
   c.textAlign = 'right';
 
-  const widths = Object.keys(columns).map(col =>
-    Math.max(
-      c.measureText(col).width,
-      ...gamemodeNames.map(mode => c.measureText(stats[mode][col].toString()).width),
-      letterWidth(c) * 5
-    )
-  );
-
-  c.transform(1, 0, 0, 1, canvas.width, 0);
+  c.translate(width, 0);
 
   Object.keys(columns)
     .reverse()
@@ -198,14 +220,14 @@ export const makeBedwarsStats = ({
 
       c.fillText(col, -padding, mainHeight + padding);
 
-      const lineX = -(widths[i] + padding * 2);
+      const lineX = -(columnWidths[i] + padding * 2);
 
       c.beginPath();
       c.moveTo(lineX, padding);
-      c.lineTo(lineX, canvas.height);
+      c.lineTo(lineX, height - c.currentTransform.f);
       c.stroke();
 
-      gamemodeNames.forEach((mode, j) => {
+      Object.keys(rows).forEach((mode, j) => {
         const value = stats[mode][col];
         c.fillText(
           value.toString(),
@@ -214,14 +236,14 @@ export const makeBedwarsStats = ({
         );
       });
 
-      c.transform(1, 0, 0, 1, -(padding * 2 + widths[i]), 0);
+      c.transform(1, 0, 0, 1, -(padding * 2 + columnWidths[i]), 0);
     });
 
-  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.restore();
 
   const image = quality
     ? canvas.toBuffer('image/png')
     : canvas.toBuffer('image/jpeg', { quality: 1 });
 
-  return [image, [`${canvas.width}x${canvas.height}`, byteSize(image.byteLength), quality && 'hq']];
+  return [image, [`${width}x${height}`, byteSize(image.byteLength), quality ? 'png' : 'jpeg']];
 };
