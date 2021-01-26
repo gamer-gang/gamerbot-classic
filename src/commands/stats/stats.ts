@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Message } from 'discord.js';
+import { Message, MessageAttachment } from 'discord.js';
 import { Player, PlayerResponse } from 'hypixel-types';
 import yaml from 'js-yaml';
 import _ from 'lodash';
@@ -43,9 +43,10 @@ export class CommandStats implements Command {
   ];
 
   yargs: yargsParser.Options = {
-    alias: { debug: ['d'], 'set-username': ['s'], 'get-username': ['g'], quality: ['q'] },
-    boolean: ['debug', 'clear-username', 'quality'],
+    alias: { debug: ['d'], 'set-username': ['s'], 'get-username': ['g'], fast: ['f'] },
+    boolean: ['debug', 'clear-username', 'fast'],
     string: ['set-username', 'get-username'],
+    default: { debug: process.env.NODE_ENV === 'development' },
   };
 
   readonly gamemodes: Record<Gamemode, (data: Player, quality: boolean) => StatsReturn> = {
@@ -190,30 +191,24 @@ export class CommandStats implements Command {
       const canvasStart = process.hrtime();
       const [image, info] = this.gamemodes[exec ? (exec[1] as Gamemode) : 'bedwars'](
         player,
-        !!args.quality
+        !args.fast
       );
       const canvasEnd = process.hrtime(canvasStart);
       const canvasDuration = Math.round((canvasEnd![0] * 1e9 + canvasEnd![1]) / 1e6);
 
       if (!image) throw new Error('invalid state: attatchment is null after regexp exec');
 
-      const filename = `stats.${args.quality ? 'png' : 'jpeg'}`;
+      const file = new MessageAttachment(image);
 
-      const embed = new Embed()
-        .setDefaultAuthor()
-        .attachFiles([{ attachment: image, name: filename }])
-        .setImage(`attachment://${filename}`);
+      const debugInfo = [
+        `${fetchDuration < 10 ? 'cached' : `fetch ${fetchDuration}ms`}`,
+        `img ${canvasDuration}ms`,
+        ...(info?.filter(v => !!v) ?? []),
+      ].join('  ');
 
-      debug &&
-        embed.setFooter(
-          [
-            `${fetchDuration < 10 ? 'cached' : `fetch ${fetchDuration}ms`}`,
-            `img ${canvasDuration}ms `,
-            ...(info?.filter(v => !!v) ?? []),
-          ].join('  ')
-        );
-
-      await context.msg.channel.send(embed);
+      await (debug
+        ? msg.channel.send({ content: `\`${debugInfo}\``, files: [file] })
+        : msg.channel.send(file));
     } catch (err) {
       if ((err.toString() as string).includes('no data'))
         await msg.channel.send(Embed.warning(`${player.playername} has no data for that game`));
