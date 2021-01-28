@@ -34,7 +34,7 @@ export class CommandRandom implements Command {
     const amount = args.messages;
 
     const errors: string[] = [];
-    if (isNaN(amount)) errors.push('invalid message amount');
+    if (isNaN(amount) || amount < 1) errors.push('invalid message amount');
     if (amount > 10) errors.push('too many messages, max 10');
     if (errors.length) return msg.channel.send(Embed.error('errors', errors.join('\n')));
 

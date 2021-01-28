@@ -42,8 +42,8 @@ export class CommandSpam implements Command {
     const { tts, repetitions, messages } = args;
 
     const errors: string[] = [];
-    if (isNaN(repetitions) || !repetitions) errors.push('invalid repetition count');
-    if (isNaN(messages) || !messages) errors.push('invalid message count');
+    if (isNaN(repetitions) || repetitions < 1) errors.push('invalid repetition count');
+    if (isNaN(messages) || messages < 1) errors.push('invalid message count');
     if (messages > 10) errors.push('too many messages, max 10');
     if (!args._[0]) errors.push(`no text to send`);
     if (errors.length) return msg.channel.send(Embed.error('errors', errors.join('\n')));
