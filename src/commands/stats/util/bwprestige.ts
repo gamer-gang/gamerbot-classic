@@ -3,8 +3,8 @@
 import { Player } from 'hypixel-types';
 import _ from 'lodash';
 import { Color } from '../../../util/color';
-import { rankPrefixes, getRank } from './rank';
-import { colors, headerHeight, getCharWidth, margin, padding, parseFormattedText } from './style';
+import { getRank, rankPrefixes } from './rank';
+import { colors, getCharWidth, headerHeight, margin, padding, parseFormattedText } from './style';
 
 export const EASY_LEVELS = 4;
 export const EASY_LEVELS_XP = 7000;
@@ -159,8 +159,8 @@ export const drawRank = (
   const charWidth = getCharWidth(+c.font.split('px')[0]);
 
   const split = parseFormattedText(rankPrefixes[getRank(player)]).map(segment => {
-    if (/^\*+$/.test(segment.text) && player.rankPlusColor) {
-      segment.color = colors[player.rankPlusColor.toLowerCase() as keyof typeof colors];
+    if (/^\*+$/.test(segment.text)) {
+      segment.color = colors[(player.rankPlusColor ?? 'red').toLowerCase() as keyof typeof colors];
       segment.text = segment.text.replace(/\*/g, '+');
     }
 
