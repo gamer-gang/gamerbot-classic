@@ -2,7 +2,6 @@ import { MikroORM } from '@mikro-orm/core';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import log4js from 'log4js';
-
 import { Gamerbot } from './gamerbot';
 import mikroOrmConfig from './mikro-orm.config';
 import { resolvePath } from './util';
@@ -18,7 +17,7 @@ log4js.configure({
   },
   categories: {
     default: {
-      appenders: process.env.NODE_ENV === 'production' ? ['file'] : ['console'],
+      appenders: process.env.NODE_ENV === 'production' ? ['file', 'console'] : ['console'],
       level: 'debug',
       enableCallStack: true,
     },

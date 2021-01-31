@@ -1,7 +1,6 @@
 import { EntityManager } from '@mikro-orm/postgresql';
 import { Message } from 'discord.js';
 import yargsParser from 'yargs-parser';
-
 import { Command } from '..';
 import { EggLeaderboard } from '../../entities/EggLeaderboard';
 import { client } from '../../providers';

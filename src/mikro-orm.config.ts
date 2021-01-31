@@ -2,8 +2,7 @@ import { MigrationObject, MikroORM } from '@mikro-orm/core';
 import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
 import dotenv from 'dotenv';
 import fs from 'fs';
-import path, { basename } from 'path';
-
+import { basename } from 'path';
 import { dbLogger } from './providers';
 import { resolvePath } from './util';
 

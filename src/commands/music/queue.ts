@@ -2,7 +2,6 @@ import { Message, MessageReaction, User } from 'discord.js';
 import he from 'he';
 import _ from 'lodash';
 import yargsParser from 'yargs-parser';
-
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context, GuildQueue } from '../../types';

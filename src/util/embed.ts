@@ -1,10 +1,15 @@
 import { MessageEmbed, MessageEmbedOptions } from 'discord.js';
-import _ from 'lodash';
-import { capitalize } from 'lodash';
-
-import { resolvePath } from './path';
+import { color } from './color';
+import { getProfilePicture } from './message';
 
 type EmbedIntent = 'info' | 'success' | 'warning' | 'error';
+
+export class Colors {
+  static readonly green = color(0x8eef43);
+  static readonly blue = color(0x209fd5);
+  static readonly red = color(0xfb4b4e);
+  static readonly orange = color(0xefa443);
+}
 
 export interface EmbedOptions {
   noColor?: boolean;
@@ -51,24 +56,24 @@ export class Embed extends MessageEmbed {
     if (!this.color && !options?.noColor) {
       switch (options?.intent) {
         case 'error':
-          this.setColor(0xff1e20);
+          this.setColor(Colors.red());
           break;
         case 'warning':
-          this.setColor(0xff8d1e);
+          this.setColor(Colors.orange());
           break;
         case 'success':
-          this.setColor(0x58ff1e);
+          this.setColor(Colors.green());
           break;
         case 'info':
         default:
-          this.setColor(0x1e90ff);
+          this.setColor(Colors.blue());
       }
     }
   }
 
   setDefaultAuthor(): this {
     this.setAuthor('gamerbot80', 'attachment://hexagon.png');
-    this.attachFiles([resolvePath('assets/hexagon.png')]);
+    this.attachFiles([getProfilePicture()]);
     return this;
   }
 

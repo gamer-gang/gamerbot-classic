@@ -1,6 +1,5 @@
 import { Message } from 'discord.js';
 import yargsParser from 'yargs-parser';
-
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context, LoopMode } from '../../types';

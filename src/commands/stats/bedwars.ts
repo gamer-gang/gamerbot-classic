@@ -1,215 +1,243 @@
 import { Canvas } from 'canvas';
+import { Player } from 'hypixel-types';
+import { client } from '../../providers';
+import { byteSize } from '../../util';
+import { StatsData } from './stats';
+import { drawPrestige, drawRank, getExpForLevel, getLevelForExp } from './util/bwprestige';
+import {
+  bg,
+  colorCode,
+  drawColoredText,
+  fg,
+  font,
+  getCharWidth,
+  headerHeight,
+  mainHeight,
+  margin,
+  padding,
+  round,
+} from './util/style';
 
-export const makeBedwarsStats = ({
-  data,
-  playername,
-  clientTag,
-}: {
-  data: HypixelAPI.BedwarsStats;
-  playername: string;
-  clientTag: string;
-}): Buffer => {
-  if (!data) throw new Error('no data');
+const columns = {
+  K: 'kills',
+  D: 'deaths',
+  KDR: '',
+  FK: 'final_kills',
+  FD: 'final_deaths',
+  FKDR: '',
+  W: 'wins',
+  L: 'losses',
+  'W/L': '',
+  Beds: 'beds_broken',
+};
 
-  const stats: Record<string, Record<keyof typeof columns, string | number>> = {};
+const rows = {
+  Solos: 'eight_one_',
+  Doubles: 'eight_two_',
+  '3v3v3v3': 'four_three_',
+  '4v4v4v4': 'four_four_',
+  '4v4': 'two_four_',
+  // 'Rush Solo': 'eight_one_rush_',
+  // 'Rush Doubles': 'eight_two_rush_',
+  // 'Rush 4v4v4v4': 'four_four_rush_',
+  // 'Ultimate Solo': 'eight_one_ultimate_',
+  // 'Ultimate Doubles': 'eight_two_ultimate_',
+  // 'Ultimate 4v4v4v4': 'eight_two_ultimate_',
+  // 'Armed Doubles': 'eight_two_armed_',
+  // 'Armed 4v4v4v4': 'four_four_armed_',
+  // 'Voidless Doubles': 'eight_two_voidless_',
+  // 'Voidless 4v4v4v4': 'four_four_voidless_',
+  // 'Lucky Doubles': 'eight_two_lucky_',
+  // 'Lucky 4v4v4v4': 'four_four_lucky_',
+  // 'Castle 40v40': 'castle_',
+  Overall: '',
+};
 
-  const columns = {
-    K: 'kills',
-    D: 'deaths',
-    KDR: '',
-    FK: 'final_kills',
-    FD: 'final_deaths',
-    FKDR: '',
-    W: 'wins',
-    L: 'losses',
-    'W/L': '',
-    Beds: 'beds_broken',
-  };
-  const columnNames = Object.keys(columns);
+export const makeBedwarsStats = (data?: Player, quality = true): StatsData => {
+  if (!data?.stats?.Bedwars) throw new Error('no data');
 
-  const gamemodes = {
-    Solos: 'eight_one_',
-    Doubles: 'eight_two_',
-    '3v3v3v3': 'four_three_',
-    '4v4v4v4': 'four_four_',
-    '4v4': 'two_four_',
-    'Rush Solo': 'eight_one_rush_',
-    'Rush Doubles': 'eight_two_rush_',
-    'Rush 4v4v4v4': 'four_four_rush_',
-    'Ultimate Solo': 'eight_one_ultimate_',
-    'Ultimate Doubles': 'eight_two_ultimate_',
-    'Ultimate 4v4v4v4': 'eight_two_ultimate_',
-    'Armed Doubles': 'eight_two_armed_',
-    'Armed 4v4v4v4': 'four_four_armed_',
-    'Voidless Doubles': 'eight_two_voidless_',
-    'Voidless 4v4v4v4': 'four_four_voidless_',
-    'Lucky Doubles': 'eight_two_lucky_',
-    'Lucky 4v4v4v4': 'four_four_lucky_',
-    'Castle 40v40': 'castle_',
-    Overall: '',
-  };
-  const gamemodeNames = Object.keys(gamemodes);
+  const stats: Record<keyof typeof rows, Record<keyof typeof columns, string>> = {} as any;
 
-  for (const name of Object.keys(gamemodes)) {
-    const apiName = gamemodes[name];
-    stats[name] = {} as any;
-    for (let i = 0; i < Object.keys(columns).length; i++) {
-      const key = `${apiName}${columns[columnNames[i]]}_bedwars` as keyof HypixelAPI.BedwarsStats;
-      stats[name][columnNames[i]] = parseInt((data[key] as keyof HypixelAPI.BedwarsStats) ?? '0');
-    }
-    stats[name].KDR =
-      parseFloat(((stats[name].K as number) / (stats[name].D as number)).toFixed(2)) || '-';
-    stats[name].FKDR =
-      parseFloat(((stats[name].FK as number) / (stats[name].FD as number)).toFixed(2)) || '-';
-    stats[name]['W/L'] =
-      parseFloat(((stats[name].W as number) / (stats[name].L as number)).toFixed(2)) || '-';
+  Object.keys(rows).forEach(game => {
+    const raw: Record<keyof typeof columns, number> = {} as any;
 
-    stats[name].KDR === Infinity && (stats[name].KDR = '-');
-    stats[name].FKDR === Infinity && (stats[name].FKDR = '-');
-    stats[name]['W/L'] === Infinity && (stats[name]['W/L'] = '-');
-
-    Object.keys(stats[name]).forEach(stat => {
-      stats[name][stat] = stats[name][stat].toLocaleString();
+    Object.keys(columns).forEach(col => {
+      const key = `${rows[game]}${columns[col]}_bedwars`;
+      raw[col] = parseInt(data.stats.Bedwars[key]?.toString() ?? '0');
     });
-  }
 
-  const canvas = new Canvas(1760, 1232);
+    const obj = {
+      ...raw,
+      KDR: round(raw.K / raw.D),
+      FKDR: round(raw.FK / raw.FD),
+      'W/L': round(raw.W / raw.L),
+    };
+
+    stats[game] = {} as any;
+    (Object.entries(obj) as [keyof typeof columns, number][]).map(([stat, value]) => {
+      let stringVal = '';
+      if (['KDR', 'FKDR', 'W/L'].includes(stat)) {
+        if (value === 0) stringVal = ':(';
+      }
+      stats[game][stat] = stringVal || (isFinite(value) ? value.toLocaleString() : '-');
+    });
+  });
+
+  const canvas = new Canvas(
+    getCharWidth(mainHeight) * 85 + margin * 2,
+    (Object.keys(rows).length + 3) * (mainHeight + 2 * padding) +
+      headerHeight +
+      padding +
+      margin * 2
+  );
+
   const c = canvas.getContext('2d');
 
-  const padding = 16;
+  c.textAlign = 'left';
+  c.font = font(headerHeight);
+  const categoryWidth = Math.max(...Object.keys(rows).map(row => c.measureText(row).width));
 
-  c.fillStyle = '#36393f';
+  c.font = font(mainHeight);
+  const columnWidths = Object.keys(columns).map(
+    col =>
+      Math.max(
+        c.measureText(col).width,
+        ...Object.keys(rows).map(mode => c.measureText(stats[mode][col].toString()).width)
+      ) + padding
+  );
+
+  canvas.width =
+    categoryWidth + padding * 6 + columnWidths.map(c => c + padding * 2).reduce((a, b) => a + b, 0);
+
+  c.fillStyle = bg;
   c.fillRect(0, 0, canvas.width, canvas.height);
 
-  c.fillStyle = '#dddddd';
-  c.textDrawingMode = 'path';
-  c.textAlign = 'left';
-  c.strokeStyle = '#dddddd';
-  c.lineWidth = 1;
+  c.save();
 
-  c.font = '48px Fira Sans, DejaVu Sans';
-  c.fillText('bedwars stats: ' + playername, padding, padding + 48);
+  c.translate(margin, margin);
+
+  c.fillStyle = fg;
+  c.textAlign = 'left';
+  c.strokeStyle = fg;
+  c.lineWidth = 0.5;
+
+  if (quality) {
+    c.quality = 'bilinear';
+    c.patternQuality = 'bilinear';
+    c.imageSmoothingQuality = 'high';
+    c.antialias = 'subpixel';
+  }
+  // else {
+  // c.textDrawingMode = 'glyph';
+  // }
+
+  c.font = font(headerHeight);
+
+  const width = canvas.width - margin * 2;
+  const height = canvas.height - margin * 2;
+
+  c.save();
+  const [offset, color] = drawRank(c, data);
+  c.fillStyle = color('hex');
+  c.fillText(data.displayname, offset, padding + headerHeight);
+  c.restore();
 
   c.textAlign = 'right';
   c.fillText(
-    data.coins.toLocaleString() + ' coins   ' + getLevelForExp(data.Experience).toFixed(2) + '★',
-    canvas.width - padding,
-    padding + 48
+    [
+      `${data.stats.Bedwars.winstreak!.toLocaleString()} ws`,
+      `${data.stats.Bedwars.coins!.toLocaleString()} coins  `,
+    ].join('  '),
+    drawPrestige(c, data),
+    padding + headerHeight
   );
 
-  c.font = '40px Fira Sans';
   c.textAlign = 'left';
-  c.fillText(clientTag as string, padding, padding + 48 + padding + 40);
 
   c.save();
-  c.transform(1, 0, 0, 1, 0, 48 + 40 + padding * 2);
+  c.font = font(32);
+  c.fillStyle = colorCode(0x7)('hex');
+  c.fillText(`bedwars stats by ${client.user.tag}`, padding, headerHeight + 32 + 2 * padding);
+  c.fillText(
+    `generated ${new Date().toISOString()}`,
+    padding,
+    headerHeight + 64 + (3 * padding) / 1.1
+  );
 
-  gamemodeNames.forEach((mode, i) => {
-    c.fillText(mode, padding, i * (40 + padding) + 88);
+  const level = getLevelForExp(data.stats.Bedwars.Experience!);
+  const levelExp = getExpForLevel(level);
+  c.textAlign = 'right';
+  drawColoredText(
+    c,
+    `§b${Math.floor(((level % 1) * levelExp) / 10) * 10}§r/§a${levelExp}§r to next level`,
+    width - padding,
+    headerHeight + 32 + 2 * padding,
+    'right'
+  );
+
+  c.fillText(
+    [
+      `Games Played: ${data.stats.Bedwars.games_played_bedwars}`,
+      `BBLR: ${round(
+        (data.stats.Bedwars.beds_broken_bedwars ?? 0) / (data.stats.Bedwars.beds_lost_bedwars ?? 0)
+      )}`,
+    ].join('  '),
+    width - padding,
+    headerHeight + 64 + (3 * padding) / 1.1
+  );
+  c.restore();
+
+  c.font = font(mainHeight);
+
+  c.save();
+  c.translate(0, headerHeight + mainHeight + mainHeight + 5 * padding);
+
+  Object.keys(rows).forEach((mode, i) => {
+    const lineY = i * (mainHeight + padding * 2) + mainHeight + 2 * padding;
 
     c.beginPath();
-    c.moveTo(0, (i - 1) * (40 + padding) + 86 + padding);
-    c.lineTo(canvas.width, (i - 1) * (40 + padding) + 86 + padding);
+    c.moveTo(0, lineY);
+    c.lineTo(width, lineY);
     c.stroke();
+
+    c.fillText(mode, padding, i * (mainHeight + padding * 2) + 2.5 * padding + 2 * mainHeight);
   });
 
   c.textAlign = 'right';
 
-  const widths = columnNames.map(col =>
-    Math.max(
-      c.measureText(col).width,
-      ...gamemodeNames.map(mode => c.measureText(stats[mode][col].toString()).width)
-    )
-  );
+  c.translate(width, 0);
 
-  c.transform(1, 0, 0, 1, canvas.width, 0);
+  Object.keys(columns)
+    .reverse()
+    .map((col, i) => {
+      i = Object.keys(columns).length - 1 - i;
 
-  columnNames.reverse().map((col, i) => {
-    i = columnNames.length - 1 - i;
+      c.fillText(col, -padding, mainHeight + padding);
 
-    c.fillText(col, -padding, 32);
+      const lineX = -(columnWidths[i] + padding * 2);
 
-    c.beginPath();
-    c.moveTo(-(widths[i] + padding * 2), 0);
-    c.lineTo(-(widths[i] + padding * 2), canvas.height);
-    c.stroke();
+      c.beginPath();
+      c.moveTo(lineX, padding);
+      c.lineTo(lineX, height - c.currentTransform.f);
+      c.stroke();
 
-    gamemodeNames.forEach((mode, j) => {
-      const value = stats[mode][col];
-      c.fillText(value.toString(), -padding, 88 + j * (40 + padding));
+      Object.keys(rows).forEach((mode, j) => {
+        const value = stats[mode][col];
+        c.fillText(
+          value.toString(),
+          -padding,
+          j * (mainHeight + padding * 2) + 2.5 * padding + 2 * mainHeight
+        );
+      });
+
+      c.transform(1, 0, 0, 1, -(padding * 2 + columnWidths[i]), 0);
     });
 
-    c.transform(1, 0, 0, 1, -(padding * 2 + widths[i]), 0);
-  });
+  c.restore();
 
-  c.setTransform(1, 0, 0, 1, 0, 0);
+  const image = quality
+    ? canvas.toBuffer('image/png')
+    : canvas.toBuffer('image/jpeg', { quality: 1 });
 
-  return canvas.toBuffer();
+  return [image, [`${width}x${height}`, byteSize(image.byteLength), quality ? 'png' : 'jpeg']];
 };
-
-// stolen from https://github.com/Plancke/hypixel-php/tree/master/src/util/games/bedwars
-
-const EASY_LEVELS = 4;
-const EASY_LEVELS_XP = 7000;
-const XP_PER_PRESTIGE = 96 * 5000 + EASY_LEVELS_XP;
-const LEVELS_PER_PRESTIGE = 100;
-
-const getLevelForExp = (exp: number) => {
-  const prestiges = Math.floor(exp / XP_PER_PRESTIGE);
-
-  let level = prestiges * LEVELS_PER_PRESTIGE;
-
-  let expWithoutPrestiges = exp - prestiges * XP_PER_PRESTIGE;
-
-  for (let i = 1; i <= EASY_LEVELS; ++i) {
-    const expForEasyLevel = getExpForLevel(i);
-    if (expWithoutPrestiges < expForEasyLevel) break;
-    level++;
-    expWithoutPrestiges -= expForEasyLevel;
-  }
-
-  level += expWithoutPrestiges / 5000;
-
-  return level;
-};
-
-const getExpForLevel = (level: number) => {
-  if (level == 0) return 0;
-
-  const respectedLevel = getLevelRespectingPrestige(level);
-  if (respectedLevel > EASY_LEVELS) {
-    return 5000;
-  }
-
-  switch (respectedLevel) {
-    case 1:
-      return 500;
-    case 2:
-      return 1000;
-    case 3:
-      return 2000;
-    case 4:
-      return 3500;
-  }
-  return 5000;
-};
-
-const getLevelRespectingPrestige = (level: number) => {
-  return level > Prestige.RAINBOW * LEVELS_PER_PRESTIGE
-    ? level - Prestige.RAINBOW * LEVELS_PER_PRESTIGE
-    : level % LEVELS_PER_PRESTIGE;
-};
-
-enum Prestige {
-  NONE = 0,
-  IRON = 1,
-  GOLD = 2,
-  DIAMOND = 3,
-  EMERALD = 4,
-  SAPPHIRE = 5,
-  RUBY = 6,
-  CRYSTAL = 7,
-  OPAL = 8,
-  AMETHYST = 9,
-  RAINBOW = 10,
-}

@@ -3,7 +3,6 @@ import * as fse from 'fs-extra';
 import * as http from 'http';
 import * as https from 'https';
 import yargsParser from 'yargs-parser';
-
 import { Command } from '..';
 import { Context } from '../../types';
 import { codeBlock, Embed, regExps, resolvePath } from '../../util';

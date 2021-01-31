@@ -2,9 +2,8 @@ dist
 data
 logs
 
-.env.example
-.prettierrc.json
-.vsls.json
+.env
+.env.*
 
 node_modules
 yarn-error.log
@@ -12,8 +11,5 @@ yarn-error.log
 !.yarn/cache
 !.yarn/releases
 !.yarn/plugins
-!.yarn/sdks
+# !.yarn/sdks
 !.yarn/versions
-
-README.md
-LICENSE

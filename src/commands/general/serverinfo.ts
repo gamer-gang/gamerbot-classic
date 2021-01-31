@@ -1,5 +1,4 @@
 import { Message } from 'discord.js';
-
 import { Command, CommandDocs } from '..';
 import { Context } from '../../types';
 import { Embed, getDateFromSnowflake } from '../../util';

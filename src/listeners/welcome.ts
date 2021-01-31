@@ -1,5 +1,4 @@
 import { GuildMember, PartialGuildMember, TextChannel } from 'discord.js';
-
 import { Config } from '../entities/Config';
 import { Gamerbot } from '../gamerbot';
 import { dbFindOneError, parseDiscohookJSON } from '../util';

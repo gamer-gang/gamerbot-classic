@@ -3,8 +3,8 @@ import { ClientEvents, Guild, GuildMember, Message } from 'discord.js';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import _ from 'lodash/fp';
+import 'source-map-support/register';
 import yargsParser from 'yargs-parser';
-
 import { Command } from './commands';
 import { CommandHelp } from './commands/general/help';
 import { Config } from './entities/Config';
@@ -13,7 +13,7 @@ import { LogEventHandler, logEvents, logHandlers } from './listeners/log';
 import * as reactions from './listeners/reactions';
 import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
-import { client, logger } from './providers';
+import { client, getLogger, logger } from './providers';
 import { codeBlock, dbFindOneError, Embed, emptyQueue, resolvePath } from './util';
 
 dotenv.config({ path: resolvePath('.env') });
@@ -33,10 +33,7 @@ export const setPresence = async (): Promise<void> => {
 
 // register fonts for canvas
 const fonts: Record<string, { family: string; weight?: string; style?: string }> = {
-  'FiraSans-Regular.ttf': { family: 'Fira Sans' },
-  'FiraSans-Italic.ttf': { family: 'Fira Sans', style: 'italic' },
-  'FiraSans-Bold.ttf': { family: 'Fira Sans', weight: 'bold' },
-  'FiraSans-BoldItalic.ttf': { family: 'Fira Sans', weight: 'bold', style: 'italic' },
+  'RobotoMono-Regular-NF.ttf': { family: 'Roboto Mono' },
 };
 
 Object.keys(fonts).forEach(filename =>
@@ -127,9 +124,19 @@ client.on('message', async msg => {
     command = new CommandHelp();
   }
 
-  await command.execute(context);
-
-  client.em.flush();
+  command
+    .execute({
+      msg: msg as Message & { guild: Guild },
+      cmd,
+      args: args.argv,
+      config,
+      startTime: start,
+    })
+    .then(() => client.em.flush())
+    .catch(err => {
+      logger.error(err);
+      msg.channel.send(Embed.error(codeBlock(err)));
+    });
 });
 
 client.on('ready', () => {
@@ -147,16 +154,25 @@ client.on('ready', () => {
     });
 });
 
+client.on('debug', content => {
+  if (content.includes('Remaining: '))
+    logger.info(`remaining gateway sessions: ${content.split(' ').reverse()[0]}`);
+});
+
 client
   .on('warn', logger.warn)
   .on('error', logger.error)
   .on('debug', msg => logger.debug(msg))
   .on('disconnect', () => logger.warn('client disconnected!'))
   .on('guildCreate', async guild => {
+    getLogger(`GUILD ${guild.id}`).info(
+      `joined guild: ${guild.name} (${guild.memberCount} members)`
+    );
     const fresh = client.em.create(Config, { guildId: guild.id });
     await client.em.persistAndFlush(fresh);
   })
   .on('guildDelete', async guild => {
+    getLogger(`GUILD ${guild.id}`).info(`left guild: ${guild.name} (${guild.memberCount} members)`);
     const config = await client.em.findOne(Config, { guildId: guild.id });
     config && (await client.em.removeAndFlush(config));
   })

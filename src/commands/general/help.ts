@@ -1,6 +1,5 @@
 import { Message } from 'discord.js';
 import _ from 'lodash';
-
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context } from '../../types';

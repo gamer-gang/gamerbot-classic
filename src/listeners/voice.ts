@@ -1,5 +1,4 @@
 import { Guild, VoiceState } from 'discord.js';
-
 import { client, getLogger } from '../providers';
 import { updatePlayingEmbed } from '../util';
 

@@ -1,6 +1,5 @@
-import { Collection, GuildMember, Message } from 'discord.js';
+import { Message } from 'discord.js';
 import _ from 'lodash';
-
 import { Command } from '..';
 import { client } from '../../providers';
 import { Context } from '../../types';

@@ -1,13 +1,22 @@
 import { EntityManager } from '@mikro-orm/postgresql';
-import { Message, PartialMessage, User } from 'discord.js';
-
+import { Message, MessageReaction, PartialMessage, User } from 'discord.js';
+import fse from 'fs-extra';
+import yaml from 'js-yaml';
+import _ from 'lodash';
 import { setPresence } from '..';
 import { Config } from '../entities/Config';
 import { EggLeaderboard } from '../entities/EggLeaderboard';
 import { Gamerbot } from '../gamerbot';
+import { resolvePath } from '../util';
+
+const eggfile = yaml.load(fse.readFileSync(resolvePath('assets/egg.yaml')).toString('utf-8'));
+if (typeof eggfile !== 'object') throw new Error('egg.yaml must be object');
+
+const eggs = _.uniq((eggfile as { eggs?: string[] }).eggs?.map(egg => egg.toLowerCase()));
+if (!eggs?.length) throw new Error('no eggs specified in assets/egg.yaml');
 
 const eggy = (msg: Message | PartialMessage, prefix: string) =>
-  ['🥚', 'egg'].some(egg => msg.content?.toLowerCase().includes(egg)) &&
+  eggs.some(egg => msg.content?.toLowerCase().includes(egg)) &&
   !msg.content?.toLowerCase().startsWith(prefix);
 
 const cooldown = 30000;
@@ -65,7 +74,7 @@ export const onMessage = (
   msg: Message | PartialMessage,
   config: Config,
   em: Gamerbot['em']
-) => async (): Promise<void | Message> => {
+) => async (): Promise<void | Message | MessageReaction> => {
   if (!config || msg.author?.bot || !config.egg) return;
 
   if (eggy(msg, config.prefix)) {
@@ -73,7 +82,7 @@ export const onMessage = (
       const cooldown = cooldowns[msg.author?.id as string];
       if (!cooldown.expired() && !cooldown.warned) {
         cooldown.warned = true;
-        return msg.channel.send(`<@${msg.author?.id}> enter the chill zone`);
+        return msg.react('❄️');
       }
 
       if (!cooldown.expired()) return;

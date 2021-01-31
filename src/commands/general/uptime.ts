@@ -1,6 +1,5 @@
 import { Message } from 'discord.js';
 import moment from 'moment';
-
 import { Command } from '..';
 import { Context } from '../../types';
 import { Embed } from '../../util';

@@ -1,6 +1,5 @@
 import { Message } from 'discord.js';
 import yargsParser from 'yargs-parser';
-
 import { Context } from '../types';
 
 export interface Command {

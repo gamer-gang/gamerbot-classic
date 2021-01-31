@@ -1,5 +1,4 @@
 import { Message, MessageReaction, User } from 'discord.js';
-
 import { Config } from '../../../entities/Config';
 import { Context } from '../../../types';
 import { codeBlock, Embed, parseDiscohookJSON } from '../../../util';
