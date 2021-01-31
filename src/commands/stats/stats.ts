@@ -18,7 +18,7 @@ const statsCache: Record<string, Player> = {};
 const uuidCache: Record<string, string> = {};
 
 type Gamemode = 'bedwars';
-export type StatsReturn = [image: Buffer, metadata?: (string | boolean)[]];
+export type StatsData = [image: Buffer, metadata?: (string | boolean)[]];
 
 export class CommandStats implements Command {
   cmd = ['stats', 's'];
@@ -49,8 +49,8 @@ export class CommandStats implements Command {
     default: { debug: process.env.NODE_ENV === 'development' },
   };
 
-  readonly gamemodes: Record<Gamemode, (data: Player, quality: boolean) => Promise<StatsReturn>> = {
-    bedwars: (data, quality) => makeBedwarsStats({ data, quality }),
+  readonly gamemodes: Record<Gamemode, (data: Player, quality: boolean) => StatsData> = {
+    bedwars: (data, quality) => makeBedwarsStats(data, quality),
   };
 
   async execute(context: Context): Promise<void | Message> {

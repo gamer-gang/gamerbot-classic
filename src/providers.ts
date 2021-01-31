@@ -2,7 +2,6 @@ import { MikroORM } from '@mikro-orm/core';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import log4js from 'log4js';
-
 import { Gamerbot } from './gamerbot';
 import mikroOrmConfig from './mikro-orm.config';
 import { resolvePath } from './util';

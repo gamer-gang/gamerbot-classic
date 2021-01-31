@@ -1,7 +1,6 @@
 import { Message } from 'discord.js';
 import fse from 'fs-extra';
 import yaml from 'js-yaml';
-
 import { Command } from '..';
 import { Context } from '../../types';
 import { resolvePath, sanitize } from '../../util';

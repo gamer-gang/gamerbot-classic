@@ -1,9 +1,8 @@
-import { Guild, Message } from 'discord.js';
+import { Message } from 'discord.js';
 import { Video } from 'simple-youtube-api';
-
 import { client } from '../providers';
-import { GuildQueue, Track, TrackType } from '../types';
-import { formatDuration, getQueueLength } from './duration';
+import { GuildQueue, Track } from '../types';
+import { formatDuration } from './duration';
 import { Embed } from './embed';
 import { Store } from './store';
 

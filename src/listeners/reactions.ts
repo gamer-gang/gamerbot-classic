@@ -1,5 +1,4 @@
 import { Message, MessageReaction, PartialMessage, PartialUser, User } from 'discord.js';
-
 import { ReactionRole, RoleEmoji } from '../entities/ReactionRole';
 import { Gamerbot } from '../gamerbot';
 import { client, getLogger } from '../providers';

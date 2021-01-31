@@ -1,8 +1,6 @@
-import _ from 'lodash';
 import moment from 'moment';
 import { Duration } from 'simple-youtube-api';
-
-import { GuildQueue, TrackType } from '../types';
+import { GuildQueue } from '../types';
 
 const isDuration = (value: Duration | number): value is Duration => {
   return (

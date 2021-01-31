@@ -1,7 +1,6 @@
 import { Message } from 'discord.js';
 import { LoremIpsum } from 'lorem-ipsum';
 import yargsParser from 'yargs-parser';
-
 import { Command, CommandDocs } from '..';
 import { Context } from '../../types';
 import { Embed } from '../../util';
@@ -10,12 +9,8 @@ export class CommandLorem implements Command {
   cmd = 'lorem';
   yargs: yargsParser.Options = {
     number: ['messages'],
-    alias: {
-      messages: 'm',
-    },
-    default: {
-      messages: 1,
-    },
+    alias: { messages: 'm' },
+    default: { messages: 1 },
   };
   docs: CommandDocs = {
     usage: 'lorem [-m, --messages <int>]',

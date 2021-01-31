@@ -2,7 +2,7 @@ import { Canvas } from 'canvas';
 import { Player } from 'hypixel-types';
 import { client } from '../../providers';
 import { byteSize } from '../../util';
-import { StatsReturn } from './stats';
+import { StatsData } from './stats';
 import { drawPrestige, drawRank, getExpForLevel, getLevelForExp } from './util/bwprestige';
 import {
   bg,
@@ -10,8 +10,8 @@ import {
   drawColoredText,
   fg,
   font,
-  headerHeight,
   getCharWidth,
+  headerHeight,
   mainHeight,
   margin,
   padding,
@@ -53,13 +53,7 @@ const rows = {
   Overall: '',
 };
 
-export const makeBedwarsStats = async ({
-  data,
-  quality,
-}: {
-  data?: Player;
-  quality: boolean;
-}): Promise<StatsReturn> => {
+export const makeBedwarsStats = (data?: Player, quality = true): StatsData => {
   if (!data?.stats?.Bedwars) throw new Error('no data');
 
   const stats: Record<keyof typeof rows, Record<keyof typeof columns, string>> = {} as any;

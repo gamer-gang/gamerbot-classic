@@ -3,7 +3,6 @@ import cheerio from 'cheerio';
 import { Message } from 'discord.js';
 import he from 'he';
 import yargsParser from 'yargs-parser';
-
 import { Command } from '..';
 import { Context } from '../../types';
 import { Embed } from '../../util';

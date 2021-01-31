@@ -2,7 +2,6 @@ import { say } from '@wiisportsresorts/cowsay';
 import * as cows from '@wiisportsresorts/cowsay/lib/cows';
 import { Message } from 'discord.js';
 import yargsParser from 'yargs-parser';
-
 import { Command } from '..';
 import { Context } from '../../types';
 import { codeBlock, Embed } from '../../util';

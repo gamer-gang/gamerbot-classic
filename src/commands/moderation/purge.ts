@@ -1,5 +1,4 @@
 import { Message, TextChannel } from 'discord.js';
-
 import { Command, CommandDocs } from '..';
 import { Context } from '../../types';
 import { Embed } from '../../util';

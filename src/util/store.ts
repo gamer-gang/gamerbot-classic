@@ -2,7 +2,6 @@ import { EventEmitter } from 'events';
 import fse from 'fs-extra';
 import yaml from 'js-yaml';
 import _ from 'lodash/fp';
-
 import { mapToObject, objectToMap } from './map';
 
 export interface StoreOptions {

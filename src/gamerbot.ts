@@ -3,7 +3,6 @@ import { Client, ClientOptions, ClientUser } from 'discord.js';
 import fse from 'fs-extra';
 import YouTube from 'simple-youtube-api';
 import Spotify from 'spotify-web-api-node';
-
 import { Command } from './commands';
 import { logger } from './providers';
 import { GuildQueue } from './types';

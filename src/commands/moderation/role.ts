@@ -1,7 +1,6 @@
 import { GuildEmoji, Message, User } from 'discord.js';
 import emojiRegex from 'emoji-regex';
 import yargsParser from 'yargs-parser';
-
 import { Command, CommandDocs } from '..';
 import { ReactionRole, RoleEmoji } from '../../entities/ReactionRole';
 import { client } from '../../providers';

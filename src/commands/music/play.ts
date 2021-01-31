@@ -5,7 +5,6 @@ import miniget from 'miniget';
 import * as mm from 'music-metadata';
 import yts from 'yt-search';
 import ytdl from 'ytdl-core';
-
 import { Command, CommandDocs } from '..';
 import { client, getLogger, logger } from '../../providers';
 import { Context, Track } from '../../types';
