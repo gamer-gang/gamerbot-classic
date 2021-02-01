@@ -124,7 +124,12 @@ export const channelHandlers: LogHandlers = {
       );
     });
 
-    embed.addField('Updated by', auditEvent.executor);
+    if (
+      auditEvent.action === 'CHANNEL_UPDATE' &&
+      (auditEvent.target as GuildChannel).id === next.id &&
+      Math.abs(auditEvent.createdTimestamp - Date.now()) < 1500 // within 1500ms
+    )
+      embed.addField('Updated by', auditEvent.executor);
 
     logChannel.send(embed);
   },
