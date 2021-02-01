@@ -28,7 +28,11 @@ export class CommandConfig implements Command {
     if (!msg.guild?.member(msg.author?.id as string)?.hasPermission('ADMINISTRATOR'))
       return msg.channel.send(Embed.error('you must be an administrator to use this command'));
 
-    if (!args._[0] || !Object.keys(configHandlers).includes(args._[0]))
+    const handlerName = Object.keys(configHandlers).find(
+      n => n.toLowerCase() === args._[0].toLowerCase()
+    );
+
+    if (!args._[0] || !handlerName)
       return msg.channel.send(
         Embed.error(
           'invalid config option',
@@ -36,6 +40,6 @@ export class CommandConfig implements Command {
         )
       );
 
-    configHandlers[args._[0]](config, context, args._.slice(1).join(' '));
+    configHandlers[handlerName](config, context, args._.slice(1).join(' '));
   }
 }
