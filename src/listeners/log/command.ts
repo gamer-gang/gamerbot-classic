@@ -1,5 +1,4 @@
 import { TextChannel } from 'discord.js';
-
 import { intToLogEvents, LogEventHandler, LogEventType, LogHandlers } from '.';
 import { client } from '../../providers';
 import { Context } from '../../types';
@@ -23,7 +22,7 @@ const onCommand = (event: LogEventType) => async (context: Readonly<Context>) =>
     color: logColorFor(event),
     title: 'User issued gamerbot command',
   })
-    .addField('Command', `\`${msg.content}\``)
+    .addField('Command', `\`${msg.cleanContent}\``)
     .addField('User ID', msg.author.id)
     .setTimestamp();
 

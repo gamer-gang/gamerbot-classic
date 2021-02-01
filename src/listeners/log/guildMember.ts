@@ -1,11 +1,11 @@
-import { GuildMember, TextChannel, User } from 'discord.js';
+import { GuildMember, Invite, TextChannel, User } from 'discord.js';
 import fse from 'fs-extra';
 import _ from 'lodash';
-
+import moment from 'moment';
 import { intToLogEvents, LogHandlers } from '.';
-import { client } from '../../providers';
+import { CachedInvite, client, getLogger, inviteCache } from '../../providers';
 import { Embed, getDateFromSnowflake, resolvePath } from '../../util';
-import { getConfig, getLatestAuditEvent, logColorFor } from './utils';
+import { formatValue, getConfig, getLatestAuditEvent, logColorFor } from './utils';
 
 fse.ensureFileSync(resolvePath('data/kicks.txt'));
 
@@ -27,9 +27,36 @@ const saveKick = (id: string) => {
   );
 };
 
+const changeTable: Partial<Record<keyof GuildMember, string>> = {
+  nickname: 'Nickname',
+  toString: '',
+  valueOf: '',
+};
+
 export const guildMemberHandlers: LogHandlers = {
   onGuildMemberAdd: async (member: GuildMember) => {
     const guild = member.guild;
+
+    // figure out which invite was just used
+    const newInvites = (await guild.fetchInvites()).array();
+
+    let usedCached: CachedInvite | undefined;
+    let usedNew: Invite | undefined;
+
+    for (const invite of newInvites) {
+      const cached = inviteCache.get(invite.code);
+      if (!cached) {
+        getLogger(`GUILD ${guild.id}`).warn(`invite ${invite.code} has no cached counterpart`);
+        continue;
+      }
+      if ((invite.uses ?? 0) > cached.uses) {
+        cached.uses++;
+        usedCached = cached;
+        usedNew = invite;
+        break;
+      }
+    }
+
     const config = await getConfig(guild);
     if (!config.logChannelId) return;
     const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
@@ -48,6 +75,22 @@ export const guildMemberHandlers: LogHandlers = {
       .addField('Accout creation', getDateFromSnowflake(member.id).join(', '))
       .setThumbnail(member.user.displayAvatarURL({ format: 'png' }))
       .setTimestamp();
+
+    if (usedCached)
+      embed.addField(
+        'Invite used',
+        `${usedCached?.code} (created by ${
+          client.users.resolve(usedCached?.creatorId ?? '') ?? usedCached?.creatorTag
+        } ${moment(usedNew?.createdTimestamp).fromNow()}, expires ${moment(
+          usedNew?.expiresTimestamp
+        ).fromNow()})`
+      );
+    else
+      embed.setDescription(
+        'No invite candidate could be found. This happens with single-use invites, ' +
+          'which are deleted on use. If you enabled the `inviteCreate` and/or `inviteDelete` ' +
+          'log events, you can check the surrounding log events to find which invite was used.'
+      );
 
     logChannel.send(embed);
   },
@@ -99,8 +142,25 @@ export const guildMemberHandlers: LogHandlers = {
 
     const changes = _.omitBy(next, (v, k) => _.isEqual(v, prev[k as keyof GuildMember]));
 
-    console.log(changes);
+    const embed = new Embed({
+      title: 'Member updated',
+      author: {
+        iconURL: next.user.displayAvatarURL({ format: 'png' }) ?? undefined,
+        name: next.user.tag,
+      },
+      color: logColorFor('guildMemberAdd'),
+    })
+      .setThumbnail(next.user.displayAvatarURL({ format: 'png' }))
+      .setTimestamp();
 
-    logChannel.send('guildMemberUpdate');
+    const add = (name: string, before: unknown, after: unknown) =>
+      embed.addField(
+        changeTable[name as keyof typeof changeTable] ?? name,
+        `\`${formatValue(before)} => ${formatValue(after)}\``
+      );
+
+    if (changes.nickname) add('nickname', prev.nickname, next.nickname);
+
+    embed.fields.length && logChannel.send(embed);
   },
 };

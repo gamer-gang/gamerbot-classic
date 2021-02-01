@@ -1,9 +1,8 @@
 import { Guild, Invite, TextChannel } from 'discord.js';
+import _ from 'lodash';
 import moment from 'moment';
-
 import { intToLogEvents, LogHandlers } from '.';
-import { GuildInvite } from '../../entities/GuildInvite';
-import { client } from '../../providers';
+import { client, getLogger, inviteCache } from '../../providers';
 import { Embed } from '../../util';
 import { getConfig, getLatestAuditEvent, logColorFor } from './utils';
 
@@ -17,31 +16,18 @@ client.on('ready', () => {
           const trackedInvites: string[] = [];
 
           for (const invite of invites) {
-            const existing = await client.em.findOne(GuildInvite, { code: invite.code });
-            if (existing) existing.uses = invite.uses ?? 0;
-            else {
-              const guildinvite = client.em.create(GuildInvite, {
-                code: invite.code,
-                creatorId: invite.inviter?.id,
-                creatorTag: invite.inviter?.tag,
-                guildId: guild.id,
-                uses: invite.uses,
-              });
-
-              client.em.persist(guildinvite);
-            }
+            inviteCache.set(invite.code, {
+              code: invite.code,
+              creatorId: invite.inviter?.id,
+              creatorTag: invite.inviter?.tag,
+              guildId: guild.id,
+              uses: invite.uses ?? 0,
+            });
 
             trackedInvites.push(invite.code);
           }
 
-          const guildInvites = await client.em.find(GuildInvite, { guildId: guild.id });
-
-          guildInvites
-            .filter(cached => !trackedInvites.includes(cached.code))
-            .forEach(old => client.em.remove(old));
-
-          console.log(trackedInvites);
-          console.log('successfully cached invites for ' + guild.name);
+          getLogger(`GUILD ${guild.id}`).info('successfully cached invites');
 
           resolve();
         }, index * 2500)
@@ -55,21 +41,21 @@ export const inviteHandlers: LogHandlers = {
   onInviteCreate: async (invite: Invite) => {
     const guild = invite.guild as Guild;
 
-    const guildinvite = client.em.create(GuildInvite, {
+    inviteCache.set(invite.code, {
       code: invite.code,
       creatorId: invite.inviter?.id,
       creatorTag: invite.inviter?.tag,
       guildId: guild.id,
-      uses: invite.uses,
+      uses: invite.uses ?? 0,
     });
-
-    client.em.persist(guildinvite);
 
     const config = await getConfig(guild);
     if (!config.logChannelId) return;
     const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
     if (!logChannel) console.warn('could not get log channel for ' + guild.name);
     if (!intToLogEvents(config.logSubscribedEvents).includes('inviteCreate')) return;
+
+    const expiry = invite.expiresAt && moment(invite.expiresAt);
 
     const embed = new Embed({
       author: {
@@ -82,10 +68,8 @@ export const inviteHandlers: LogHandlers = {
       .addField('Code', invite.code)
       .addField('Max uses', invite.maxUses ? invite.maxUses : 'infinite')
       .addField(
-        'Expires at',
-        invite.expiresAt
-          ? moment(invite.expiresAt).format('dddd, MMMM Do YYYY, h:mm:ss A')
-          : 'never'
+        'Expiration',
+        expiry ? `${expiry.format('dddd, MMMM Do YYYY, h:mm:ss A')}, ${expiry.fromNow()}` : 'never'
       )
       .addField('Created by', invite.inviter)
       .setTimestamp();
@@ -93,30 +77,15 @@ export const inviteHandlers: LogHandlers = {
     logChannel.send(embed);
   },
   onInviteDelete: async (invite: Invite) => {
+    const cached = _.clone(inviteCache.get(invite.code));
+    inviteCache.delete(invite.code);
+
     const guild = invite.guild as Guild;
-
-    const cached = await client.em.findOne(GuildInvite, { code: invite.code, guildId: guild.id });
-
-    console.log(cached);
-
     const config = await getConfig(guild);
-    if (!config.logChannelId) {
-      cached && client.em.remove(cached);
-      return;
-    }
+    if (!config.logChannelId) return;
     const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-    if (!logChannel) {
-      cached && client.em.remove(cached);
-      return console.warn('could not get log channel for ' + guild.name);
-    }
-    if (!intToLogEvents(config.logSubscribedEvents).includes('inviteDelete')) {
-      cached && client.em.remove(cached);
-      return;
-    }
-
+    if (!logChannel) return console.warn('could not get log channel for ' + guild.name);
     const auditEvent = await getLatestAuditEvent(guild);
-
-    console.log(cached);
 
     const embed = new Embed({
       author: {
@@ -127,13 +96,18 @@ export const inviteHandlers: LogHandlers = {
       title: 'Invite deleted',
     })
       .addField('Code', invite.code)
-      .addField('Uses', cached?.uses)
-      .addField('Created by', cached?.creatorTag)
+      .addField(
+        'Uses*',
+        `${(invite.uses || cached?.uses) ?? 0}${
+          invite.maxUses ? '/' + invite.maxUses : ''
+        }\n*approximate.`
+      )
+      .addField('Created by', client.users.resolve(cached?.creatorId ?? '') ?? cached?.creatorTag)
       .addField('Deleted by', auditEvent.executor)
       .setTimestamp();
 
     logChannel.send(embed);
 
-    cached && client.em.remove(cached);
+    inviteCache.delete(invite.code);
   },
 };

@@ -113,9 +113,6 @@ client.on('message', async msg => {
       )[0]
     : logHandlers[`onGamerbotCommand${_.capitalize(command.cmd.toLowerCase())}` as LogEventHandler];
 
-  console.log(logHandler);
-  console.log(logHandlers);
-
   if (logHandler) logHandler(context);
 
   if (args.error) msg.channel.send(Embed.warning(codeBlock(args.error)));
@@ -146,7 +143,7 @@ client.on('ready', () => {
   fetchMemberCache();
 });
 
-(logEvents.filter(e => e.includes('gamerbotCommand')) as (keyof ClientEvents)[]).forEach(event => {
+(logEvents.filter(e => !e.includes('gamerbotCommand')) as (keyof ClientEvents)[]).forEach(event => {
   const handlerName = `on${event[0].toUpperCase()}${event.slice(1)}` as LogEventHandler;
   if (logHandlers[handlerName])
     client.on(event, async (...args: any[]) => {
@@ -162,7 +159,6 @@ client.on('debug', content => {
 client
   .on('warn', logger.warn)
   .on('error', logger.error)
-  .on('debug', msg => logger.debug(msg))
   .on('disconnect', () => logger.warn('client disconnected!'))
   .on('guildCreate', async guild => {
     getLogger(`GUILD ${guild.id}`).info(

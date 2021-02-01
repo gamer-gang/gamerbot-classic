@@ -29,7 +29,7 @@ export const egg = async (
       return msg.channel.send(Embed.error('value must be one of `yes|y|true|on|no|n|false|off`'));
   }
 
-  await msg.channel.send(
+  return msg.channel.send(
     new Embed({ intent: 'success', title: `egg ${config.egg ? 'activated' : 'off (but why???)'}` })
   );
 };

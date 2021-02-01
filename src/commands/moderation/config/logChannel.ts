@@ -1,5 +1,4 @@
 import { Message } from 'discord.js';
-
 import { Config } from '../../../entities/Config';
 import { Context } from '../../../types';
 import { Embed } from '../../../util';
@@ -33,5 +32,14 @@ export const logChannel = async (
   if (channel.type !== 'text') return msg.channel.send(Embed.error('only text channels allowed'));
 
   config.logChannelId = channel.id;
-  return msg.channel.send(Embed.success(`log channel set to ${channel}`));
+
+  if (BigInt(config.logSubscribedEvents) + 1n - 1n !== 0n)
+    return msg.channel.send(Embed.success(`log channel set to ${channel}`));
+  else
+    return msg.channel.send(
+      Embed.success(
+        `log channel set to **${channel}**`,
+        "don't forget to subscribe to some events (`$config logEvents <int/event list>`)!"
+      )
+    );
 };

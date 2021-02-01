@@ -6,7 +6,6 @@ import {
   Message,
   PartialMessage,
 } from 'discord.js';
-
 import { logColors, logEvents, LogEventType } from '.';
 import { Config } from '../../entities/Config';
 import { client } from '../../providers';
@@ -33,7 +32,8 @@ export const getLatestAuditEvent = async (guild: Guild): Promise<GuildAuditLogsE
   return auditLogs.entries.array()[0];
 };
 
-export const logColorFor = (event: LogEventType): number => logColors[logEvents.indexOf(event)];
+export const logColorFor = (event: LogEventType): number =>
+  logColors[Math.round((logEvents.indexOf(event) / logEvents.length) * logColors.length)];
 
 export const formatValue = (content: unknown): string =>
   content == null

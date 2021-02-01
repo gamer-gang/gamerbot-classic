@@ -1,8 +1,6 @@
 import { Message } from 'discord.js';
-import _ from 'lodash';
 import { Command } from '../..';
 import { Config } from '../../../entities/Config';
-import { client } from '../../../providers';
 import { Context } from '../../../types';
 import { codeBlock, Embed } from '../../../util';
 import { allowSpam } from './allowspam';
@@ -38,6 +36,6 @@ export class CommandConfig implements Command {
         )
       );
 
-    configHandlers[args._[0]](config, context, _.tail(args._).join(' '));
+    configHandlers[args._[0]](config, context, args._.slice(1).join(' '));
   }
 }

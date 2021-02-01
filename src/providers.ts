@@ -24,6 +24,16 @@ log4js.configure({
   },
 });
 
+export interface CachedInvite {
+  guildId: string;
+  code: string;
+  creatorId?: string;
+  creatorTag?: string;
+  uses: number;
+}
+
+export const inviteCache = new Map<string, CachedInvite>();
+
 export const logger = log4js.getLogger('MAIN');
 export const getLogger = (category: string): log4js.Logger => log4js.getLogger(category);
 export const dbLogger = log4js.getLogger('DB');
@@ -33,4 +43,4 @@ const orm = await MikroORM.init(mikroOrmConfig);
 await orm.getMigrator().up();
 
 // client
-export const client = new Gamerbot({ em: orm.em });
+export const client: Gamerbot = new Gamerbot({ em: orm.em });
