@@ -33,6 +33,8 @@ export class CommandCowsay implements Command {
     if (args._.length == 0 || /^\s+$/.test(args._.join(' ')))
       return msg.channel.send(Embed.error('nothing to say'));
 
+    msg.channel.startTyping();
+
     args.delete && msg.deletable && msg.delete();
 
     const cow = Object.keys(cows).includes(args.cow)
@@ -51,5 +53,7 @@ export class CommandCowsay implements Command {
       ?.map(message => codeBlock(message)) as string[];
 
     for (const text of messages) await msg.channel.send(text);
+
+    msg.channel.stopTyping();
   }
 }

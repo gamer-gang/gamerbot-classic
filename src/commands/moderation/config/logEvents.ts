@@ -46,9 +46,9 @@ export const logEvents = async (
     ? parseInt(value.slice(2), 16)
     : /^\d+$/.test(value)
     ? parseInt(value, 10)
-    : /^\w+([ ,]\w+)*$/.test(value)
+    : /^\w+((\s+|\s*,\s*)\w+)*$/.test(value)
     ? value
-        .split(value.includes(', ') ? ', ' : value.includes(' ') ? ' ' : ',')
+        .split(value.includes(',') ? /\s*,\s*/g : /\s+/g)
         .map(v => {
           const index = logEventNames.indexOf(v as LogEventType);
           if (index === -1) return NaN;
@@ -58,7 +58,9 @@ export const logEvents = async (
     : NaN;
 
   if (isNaN(int) || !isFinite(int) || int < 1 || int > maxLogInteger)
-    return msg.channel.send(Embed.error('invalid permissions', 'see <website> for more info'));
+    return msg.channel.send(
+      Embed.error('invalid permissions', `valid permissions${codeBlock(logEventNames.join('\n'))}`)
+    );
 
   config.logSubscribedEvents = BigInt(int);
 

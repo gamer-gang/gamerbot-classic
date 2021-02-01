@@ -39,12 +39,18 @@ export class CommandSpam implements Command {
 
     const { tts, repetitions, messages } = args;
 
+    msg.channel.startTyping(messages);
+
     const errors: string[] = [];
     if (isNaN(repetitions) || repetitions < 1) errors.push('invalid repetition count');
     if (isNaN(messages) || messages < 1) errors.push('invalid message count');
     if (messages > 10) errors.push('too many messages, max 10');
     if (!args._[0]) errors.push(`no text to send`);
-    if (errors.length) return msg.channel.send(Embed.error('errors', errors.join('\n')));
+    if (errors.length) {
+      msg.channel.send(Embed.error('errors', errors.join('\n')));
+      msg.channel.stopTyping(true);
+      return;
+    }
 
     const spamText = args._.join(' ').trim();
     let output = '';
@@ -55,16 +61,19 @@ export class CommandSpam implements Command {
         output += ' ' + spamText;
       }
     } else {
-      if ((spamText.length + 1) * repetitions > 2000)
+      if ((spamText.length + 1) * repetitions > 2000) {
+        msg.channel.stopTyping(true);
         return msg.channel.send(
           Embed.error(
             'too many repetitions (msg is over 2000 chars), use "--fill" to fill the entire message'
           )
         );
+      }
 
       for (let i = 0; i < repetitions; i++) output += ' ' + spamText;
     }
 
-    for (let i = 0; i < messages; i++) msg.channel.send(output, { tts });
+    for (let i = 0; i < messages; i++) await msg.channel.send(output, { tts });
+    msg.channel.stopTyping(true);
   }
 }

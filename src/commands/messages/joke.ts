@@ -50,12 +50,15 @@ export class CommandJoke implements Command {
       if (args.codepen)
         return msg.channel.send(Embed.error('codepen jokes were removed because captchas :('));
 
+      msg.channel.startTyping();
+
       args.programming && (joke ??= await this.getProgrammingJoke());
       joke ??= await this.getGenericJoke();
 
-      return msg.channel.send(joke);
+      msg.channel.send(joke);
     } catch (err) {
-      return msg.channel.send(Embed.error('error fetching joke', `\`\`\`\n${err}\n\`\`\``));
+      msg.channel.send(Embed.error('error fetching joke', `\`\`\`\n${err}\n\`\`\``));
     }
+    msg.channel.stopTyping();
   }
 }

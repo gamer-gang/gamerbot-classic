@@ -25,15 +25,21 @@ export class CommandLorem implements Command {
 
     if (!allowSpam) return msg.channel.send(Embed.error('spam commands are off'));
 
-    const lorem = new LoremIpsum({ seed: Date.now().toString() });
-
     const messages: string[] = [];
     const amount = args.messages;
+
+    msg.channel.startTyping(amount);
 
     const errors: string[] = [];
     if (isNaN(amount) || amount < 1) errors.push('invalid message amount');
     if (amount > 10) errors.push('too many messages, max 10');
-    if (errors.length) return msg.channel.send(Embed.error('errors', errors.join('\n')));
+    if (errors.length) {
+      msg.channel.send(Embed.error('errors', errors.join('\n')));
+      msg.channel.stopTyping(true);
+      return;
+    }
+
+    const lorem = new LoremIpsum({ seed: Date.now().toString() });
 
     for (let i = 0; i < amount; i++) {
       let text = '';
@@ -45,6 +51,7 @@ export class CommandLorem implements Command {
       messages.push(text);
     }
 
-    for (const message of messages) msg.channel.send(message);
+    for (const message of messages) await msg.channel.send(message);
+    msg.channel.stopTyping(true);
   }
 }

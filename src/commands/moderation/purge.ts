@@ -29,6 +29,8 @@ export class CommandPurge implements Command {
     )
       return msg.channel.send(Embed.error('I am missing the `MANAGE_MESSAGES` permission'));
 
+    msg.channel.startTyping();
+
     for (let i = 0; i < Math.ceil(n / 100); i++) {
       const deletable = i === Math.floor(n / 100) ? n % 100 : 100;
       const deleted = await (msg.channel as TextChannel).bulkDelete(deletable, true);
@@ -40,5 +42,7 @@ export class CommandPurge implements Command {
       }
       await new Promise(resolve => setTimeout(resolve, 4000));
     }
+
+    msg.channel.stopTyping();
   }
 }

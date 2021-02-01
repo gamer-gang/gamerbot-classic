@@ -82,13 +82,15 @@ export class CommandPlay implements Command {
       return msg.channel.send(Embed.error('expected at least one arg'));
     }
 
-    if (regExps.youtube.playlist.test(args._[0])) return this.getYoutubePlaylist(context);
-    else if (regExps.youtube.video.test(args._[0])) return this.getYoutubeVideo(context);
-    else if (regExps.spotify.playlist.test(args._[0])) return this.getSpotifyPlaylist(context);
-    else if (regExps.spotify.album.test(args._[0])) return this.getSpotifyAlbum(context);
-    else if (regExps.spotify.track.test(args._[0])) return this.getSpotifyTrack(context);
-    else if (regExps.url.test(args._[0])) return msg.channel.send(Embed.error('invalid url'));
-    else return this.searchYoutube(context);
+    msg.channel.startTyping();
+    if (regExps.youtube.playlist.test(args._[0])) await this.getYoutubePlaylist(context);
+    else if (regExps.youtube.video.test(args._[0])) await this.getYoutubeVideo(context);
+    else if (regExps.spotify.playlist.test(args._[0])) await this.getSpotifyPlaylist(context);
+    else if (regExps.spotify.album.test(args._[0])) await this.getSpotifyAlbum(context);
+    else if (regExps.spotify.track.test(args._[0])) await this.getSpotifyTrack(context);
+    else if (regExps.url.test(args._[0])) msg.channel.send(Embed.error('invalid url'));
+    else await this.searchYoutube(context);
+    msg.channel.stopTyping();
   }
 
   async getYoutubePlaylist(context: Context): Promise<void | Message> {
