@@ -129,6 +129,7 @@ client.on('message', async msg => {
       config,
       startTime: start,
     })
+    .then(() => msg.channel.stopTyping())
     .then(() => client.em.flush())
     .catch(err => {
       logger.error(err);

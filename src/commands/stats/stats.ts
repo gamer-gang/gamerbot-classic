@@ -136,16 +136,14 @@ export class CommandStats implements Command {
       args._[0] = entity.hypixelUsername;
     }
 
+    msg.channel.startTyping();
+
     const isUuid = uuidRegex.test(args._[0]);
     let uuid = isUuid ? args._[0].replace('-', '') : uuidCache[args._[0].toLowerCase()];
-
-    let loadingMessage: Promise<Message> | undefined = undefined;
 
     const fetchStart = process.hrtime();
 
     if (!statsCache[uuid]) {
-      loadingMessage = msg.channel.send('fetching data...');
-
       const response = await axios.get('https://api.hypixel.net/player', {
         params: {
           key: process.env.HYPIXEL_API_KEY,
@@ -189,7 +187,7 @@ export class CommandStats implements Command {
         );
 
       const canvasStart = process.hrtime();
-      const [image, info] = await this.gamemodes[exec ? (exec[1] as Gamemode) : 'bedwars'](
+      const [image, info] = this.gamemodes[exec ? (exec[1] as Gamemode) : 'bedwars'](
         player,
         !args.fast
       );
@@ -215,6 +213,6 @@ export class CommandStats implements Command {
       else await msg.channel.send(Embed.error(codeBlock(err)));
     }
 
-    if (loadingMessage) (await loadingMessage).delete();
+    msg.channel.stopTyping();
   }
 }
