@@ -107,13 +107,13 @@ client.on('message', async msg => {
     startTime: start,
   };
 
-  // const logHandler = Array.isArray(command.cmd)
-  //   ? command.cmd.map(
-  //       cmd => logHandlers[`onGamerbotCommand${_.capitalize(cmd.toLowerCase())}` as LogEventHandler]
-  //     )[0]
-  //   : logHandlers[`onGamerbotCommand${_.capitalize(command.cmd.toLowerCase())}` as LogEventHandler];
+  const logHandler = Array.isArray(command.cmd)
+    ? command.cmd.map(
+        cmd => logHandlers[`onGamerbotCommand${_.capitalize(cmd.toLowerCase())}` as LogEventHandler]
+      )[0]
+    : logHandlers[`onGamerbotCommand${_.capitalize(command.cmd.toLowerCase())}` as LogEventHandler];
 
-  // if (logHandler) logHandler(context);
+  if (logHandler) logHandler(context);
 
   if (args.error) msg.channel.send(Embed.warning(codeBlock(args.error)));
   if (context.args.help) {
