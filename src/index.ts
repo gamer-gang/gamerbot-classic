@@ -59,7 +59,7 @@ const fetchMemberCache = async (): Promise<void> => {
 client.on('message', async msg => {
   const start = process.hrtime();
 
-  if (msg.author.bot) return;
+  if (msg.author.bot && !msg.author?.tag.endsWith('#0000')) return;
   if (msg.author.id == client.user?.id) return;
   if (!msg.guild) return; // don't respond to DMs
 
@@ -78,7 +78,7 @@ client.on('message', async msg => {
     );
   })(msg);
 
-  eggs.onMessage(msg, config, client.em)();
+  !msg.author.bot && eggs.onMessage(msg, config, client.em)();
 
   if (!msg.content.startsWith(config.prefix)) return;
 
