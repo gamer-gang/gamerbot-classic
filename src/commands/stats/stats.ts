@@ -153,7 +153,7 @@ export class CommandStats implements Command {
     const isUuid = uuidRegex.test(args._[0]);
     let uuid = (isUuid ? args._[0] : uuidCache.get(args._[0].toLowerCase()))?.replace(/-/g, '');
 
-    const fetchStart = process.hrtime();
+    const dataStart = process.hrtime();
 
     if (!statsCache.has(uuid ?? '')) {
       const response = await axios.get('https://api.hypixel.net/player', {
@@ -185,13 +185,14 @@ export class CommandStats implements Command {
       setTimeout(() => uuidCache.delete(data.player!.playername), 1000 * 60 * 15);
     }
 
-    const fetchEnd = process.hrtime(fetchStart);
-    const fetchDuration = Math.round((fetchEnd![0] * 1e9 + fetchEnd![1]) / 1e6);
+    const dataEnd = process.hrtime(dataStart);
+    const dataDuration = Math.round((dataEnd![0] * 1e9 + dataEnd![1]) / 1e6);
 
     const player = _.cloneDeep(statsCache.get(uuid!));
     if (!player) throw new Error("Player is undefined after checking that it isn't");
 
     if (args.info) {
+      const avatarStart = process.hrtime();
       if (!avatarCache.has(uuid!)) {
         const avatar = await axios.get(`https://crafatar.com/avatars/${player.uuid}`, {
           responseType: 'arraybuffer',
@@ -203,6 +204,9 @@ export class CommandStats implements Command {
       const avatar = avatarCache.get(uuid!);
       if (!avatar) throw new Error("Avatar is undefined after checking that it isn't");
 
+      const avatarEnd = process.hrtime(avatarStart);
+      const avatarDuration = Math.round((avatarEnd![0] * 1e9 + avatarEnd![1]) / 1e6);
+
       const formatString = 'dddd, MMMM Do YYYY, h:mm:ss A [UTC]Z';
 
       const embed = new Embed({ title: player.displayname })
@@ -211,6 +215,14 @@ export class CommandStats implements Command {
         .addField('Last login', moment(player.lastLogin).format(formatString))
         .attachFiles([{ attachment: avatar, name: 'avatar.png' }])
         .setThumbnail('attachment://avatar.png');
+
+      debug &&
+        embed.setFooter(
+          [
+            `${dataDuration < 10 ? 'data cached' : `data ${dataDuration}ms`}`,
+            `${avatarDuration < 10 ? 'avatar cached' : `avatar ${avatarDuration}ms`}`,
+          ].join('   ')
+        );
 
       msg.channel.send(embed);
       msg.channel.stopTyping();
@@ -241,10 +253,10 @@ export class CommandStats implements Command {
       const file = new MessageAttachment(image);
 
       const debugInfo = [
-        `${fetchDuration < 10 ? 'cached' : `fetch ${fetchDuration}ms`}`,
+        `${dataDuration < 10 ? 'data cached' : `data ${dataDuration}ms`}`,
         `img ${canvasDuration}ms`,
         ...(info?.filter(v => !!v) ?? []),
-      ].join('  ');
+      ].join('   ');
 
       await (debug
         ? msg.channel.send({ content: `\`${debugInfo}\``, files: [file] })
