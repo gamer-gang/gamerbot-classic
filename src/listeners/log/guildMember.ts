@@ -87,9 +87,10 @@ export const guildMemberHandlers: LogHandlers = {
       );
     else
       embed.setDescription(
-        'No invite candidate could be found. This happens with single-use invites, ' +
-          'which are deleted on use. If you enabled the `inviteCreate` and/or `inviteDelete` ' +
-          'log events, you can check the surrounding log events to find which invite was used.'
+        'No invite candidate could be found. This happens with bots, single-use invites, ' +
+          'which are deleted on use, or if you did not grant gamerbot permission to receive ' +
+          'invites. If you enabled the `inviteCreate` and/or `inviteDelete` log events, you ' +
+          'can check the surrounding log events to find which invite was used.'
       );
 
     logChannel.send(embed);
