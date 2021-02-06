@@ -1,3 +1,4 @@
+import { RequestContext } from '@mikro-orm/core';
 import { registerFont } from 'canvas';
 import { ClientEvents, Guild, GuildMember, Message } from 'discord.js';
 import dotenv from 'dotenv';
@@ -121,20 +122,22 @@ client.on('message', async msg => {
     command = new CommandHelp();
   }
 
-  command
-    .execute({
-      msg: msg as Message & { guild: Guild },
-      cmd,
-      args: args.argv,
-      config,
-      startTime: start,
-    })
-    .then(() => msg.channel.stopTyping())
-    .then(() => client.em.flush())
-    .catch(err => {
-      logger.error(err);
-      msg.channel.send(Embed.error(codeBlock(err)));
-    });
+  RequestContext.create(client.em, () => {
+    command
+      ?.execute({
+        msg: msg as Message & { guild: Guild },
+        cmd,
+        args: args.argv,
+        config,
+        startTime: start,
+      })
+      .then(() => msg.channel.stopTyping())
+      .then(() => (RequestContext.getEntityManager() ?? client.em).flush())
+      .catch(err => {
+        logger.error(err);
+        msg.channel.send(Embed.error(codeBlock(err)));
+      });
+  });
 });
 
 client.on('ready', () => {
@@ -173,21 +176,23 @@ client
   .on('error', logger.error)
   .on('disconnect', () => logger.warn('client disconnected!'))
   .on('guildCreate', async guild => {
+    const em = client.em.fork();
     getLogger(`GUILD ${guild.id}`).info(
       `joined guild: ${guild.name} (${guild.memberCount} members)`
     );
-    const fresh = client.em.create(Config, { guildId: guild.id });
-    await client.em.persistAndFlush(fresh);
+    const fresh = em.create(Config, { guildId: guild.id });
+    await em.persistAndFlush(fresh);
   })
   .on('guildDelete', async guild => {
+    const em = client.em.fork();
     getLogger(`GUILD ${guild.id}`).info(`left guild: ${guild.name} (${guild.memberCount} members)`);
-    const config = await client.em.findOne(Config, { guildId: guild.id });
-    config && (await client.em.removeAndFlush(config));
+    const config = await em.findOne(Config, { guildId: guild.id });
+    config && (await em.removeAndFlush(config));
   })
-  .on('guildMemberAdd', welcome.onGuildMemberAdd(client.em))
+  .on('guildMemberAdd', welcome.onGuildMemberAdd(client.em.fork()))
   // .on('messageDelete', eggs.onMessageDelete(client.em))
   // .on('messageUpdate', eggs.onMessageUpdate(client.em))
   .on('voiceStateUpdate', voice.onVoiceStateUpdate())
-  .on('messageReactionAdd', reactions.onMessageReactionAdd(client.em))
-  .on('messageReactionRemove', reactions.onMessageReactionRemove(client.em))
+  .on('messageReactionAdd', reactions.onMessageReactionAdd(client.em.fork()))
+  .on('messageReactionRemove', reactions.onMessageReactionRemove(client.em.fork()))
   .login(process.env.DISCORD_TOKEN);

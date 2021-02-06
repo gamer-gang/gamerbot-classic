@@ -1,3 +1,4 @@
+import { RequestContext } from '@mikro-orm/core';
 import axios from 'axios';
 import { Message, MessageAttachment } from 'discord.js';
 import { Player, PlayerResponse } from 'hypixel-types';
@@ -66,14 +67,16 @@ export class CommandStats implements Command {
   };
 
   async execute(context: Context): Promise<void | Message> {
+    const em = RequestContext.getEntityManager() ?? client.em;
+
     const { msg, args } = context;
     const debug = !!args.debug;
 
     if (args.clearUser) {
-      const entity = await client.em.findOne(HypixelPlayer, { userId: msg.author.id });
+      const entity = await em.findOne(HypixelPlayer, { userId: msg.author.id });
       if (!entity) return msg.channel.send(Embed.error(`no username/uuid set`));
 
-      client.em.removeAndFlush(entity);
+      em.removeAndFlush(entity);
 
       return msg.channel.send(Embed.success(`cleared username/uuid **${entity.hypixelUsername}**`));
     }
@@ -83,10 +86,10 @@ export class CommandStats implements Command {
       if (!userRegex.test(args.setUser))
         return msg.channel.send(Embed.error('invalid username/uuid'));
 
-      const entity = await client.em.findOne(HypixelPlayer, { userId: msg.author.id });
+      const entity = await em.findOne(HypixelPlayer, { userId: msg.author.id });
       if (!entity) {
-        client.em.persistAndFlush(
-          client.em.create(HypixelPlayer, {
+        em.persistAndFlush(
+          em.create(HypixelPlayer, {
             userId: msg.author.id,
             hypixelUsername: args.setUser,
           })
@@ -97,7 +100,7 @@ export class CommandStats implements Command {
       } else {
         const existingUsername = entity.hypixelUsername;
         entity.hypixelUsername = args.setUser;
-        client.em.flush();
+        em.flush();
         return msg.channel.send(
           Embed.success(
             `set your minecraft username/uuid to **${args.setUser}**`,
@@ -115,7 +118,7 @@ export class CommandStats implements Command {
 
       const displayName = client.users.resolve(userId)?.tag ?? userId;
 
-      const entity = await client.em.findOne(HypixelPlayer, { userId });
+      const entity = await em.findOne(HypixelPlayer, { userId });
       if (!entity)
         return msg.channel.send(
           Embed.warning(
@@ -130,13 +133,13 @@ export class CommandStats implements Command {
     }
 
     if (args._.length !== 1 && args._.length !== 2) {
-      const entity = await client.em.findOne(HypixelPlayer, { userId: msg.author.id });
+      const entity = await em.findOne(HypixelPlayer, { userId: msg.author.id });
       if (!entity) return msg.channel.send(Embed.error('expected 1 or 2 args'));
       args._[0] = entity.hypixelUsername;
     }
 
     if (args._[0] === '-') {
-      const entity = await client.em.findOne(HypixelPlayer, { userId: msg.author.id });
+      const entity = await em.findOne(HypixelPlayer, { userId: msg.author.id });
       if (!entity)
         return msg.channel.send(
           Embed.error(

@@ -1,3 +1,4 @@
+import { RequestContext } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { Message, MessageReaction, PartialMessage, User } from 'discord.js';
 import fse from 'fs-extra';
@@ -57,7 +58,7 @@ const getLeaderboardEntry = async (user: User, em: Gamerbot['em']) => {
 };
 
 export const get = async (client: Gamerbot): Promise<number> => {
-  return (eggCount ??= await getEggsFromDB(client.em));
+  return (eggCount ??= await getEggsFromDB(RequestContext.getEntityManager() ?? client.em));
 };
 
 const grantEgg = async (msg: Message | PartialMessage, em: Gamerbot['em']) => {

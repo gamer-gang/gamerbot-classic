@@ -1,3 +1,4 @@
+import { RequestContext } from '@mikro-orm/core';
 import { GuildEmoji, Message, User } from 'discord.js';
 import emojiRegex from 'emoji-regex';
 import yargsParser from 'yargs-parser';
@@ -31,6 +32,8 @@ export class CommandRole implements Command {
     },
   ];
   async execute(context: Context): Promise<void | Message> {
+    const em = RequestContext.getEntityManager() ?? client.em;
+
     const { msg, args } = context;
 
     if (!msg.guild?.members.resolve(msg.author as User)?.hasPermission('MANAGE_ROLES'))
@@ -105,7 +108,7 @@ export class CommandRole implements Command {
 
       description += `${emoji}: ${role}\n`;
       roles.push(
-        client.em.create(RoleEmoji, {
+        em.create(RoleEmoji, {
           emoji: emoji instanceof GuildEmoji ? emoji.id : emoji,
           roleId: role.id,
         })
@@ -119,19 +122,19 @@ export class CommandRole implements Command {
     const embedMessage = await msg.channel.send(embed);
 
     // save message to db
-    const collector = client.em.create(ReactionRole, {
+    const collector = em.create(ReactionRole, {
       messageId: embedMessage.id,
       guildId: msg.guild?.id,
       roles: [],
     });
-    client.em.populate(collector, 'roles');
-    client.em.persist(collector);
+    em.populate(collector, 'roles');
+    em.persist(collector);
 
     roles.forEach(role => {
       role.message = collector;
       embedMessage.react(role.emoji);
-      client.em.populate(role, 'message');
-      client.em.persist(role);
+      em.populate(role, 'message');
+      em.persist(role);
     });
   }
 }

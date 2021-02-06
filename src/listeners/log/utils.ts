@@ -1,3 +1,4 @@
+import { RequestContext } from '@mikro-orm/core';
 import {
   Guild,
   GuildAuditLogsEntry,
@@ -22,7 +23,9 @@ export const getConfig = async (
     guild = (source as Exclude<GuildSource, Guild>).guild as Guild;
   }
 
-  const config = await client.em.findOne(Config, { guildId: guild.id });
+  const config = await (RequestContext.getEntityManager() ?? client.em).findOne(Config, {
+    guildId: guild.id,
+  });
   if (!config) throw new Error('Could not get config for ' + guild.name);
   return config;
 };

@@ -1,3 +1,4 @@
+import { RequestContext } from '@mikro-orm/core';
 import { Guild, Invite, TextChannel } from 'discord.js';
 import _ from 'lodash';
 import moment from 'moment';
@@ -34,7 +35,7 @@ client.on('ready', () => {
       )
   );
 
-  Promise.all(inviteFetchers).then(() => client.em.flush());
+  Promise.all(inviteFetchers).then(() => (RequestContext.getEntityManager() ?? client.em).flush());
 });
 
 export const inviteHandlers: LogHandlers = {
