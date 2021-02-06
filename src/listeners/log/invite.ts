@@ -12,25 +12,29 @@ client.on('ready', () => {
     (guild, index) =>
       new Promise<void>(resolve =>
         setTimeout(async () => {
-          const invites = (await guild.fetchInvites()).array();
+          try {
+            const invites = (await guild.fetchInvites()).array();
 
-          const trackedInvites: string[] = [];
+            const trackedInvites: string[] = [];
 
-          for (const invite of invites) {
-            inviteCache.set(invite.code, {
-              code: invite.code,
-              creatorId: invite.inviter?.id,
-              creatorTag: invite.inviter?.tag,
-              guildId: guild.id,
-              uses: invite.uses ?? 0,
-            });
+            for (const invite of invites) {
+              inviteCache.set(invite.code, {
+                code: invite.code,
+                creatorId: invite.inviter?.id,
+                creatorTag: invite.inviter?.tag,
+                guildId: guild.id,
+                uses: invite.uses ?? 0,
+              });
 
-            trackedInvites.push(invite.code);
+              trackedInvites.push(invite.code);
+            }
+
+            getLogger(`GUILD ${guild.id}`).info('successfully cached invites');
+
+            resolve();
+          } catch (err) {
+            getLogger(`GUILD ${guild.id}`).error(`error caching invites\n${err.stack}`);
           }
-
-          getLogger(`GUILD ${guild.id}`).info('successfully cached invites');
-
-          resolve();
         }, index * 2500)
       )
   );
