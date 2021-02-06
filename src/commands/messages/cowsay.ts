@@ -27,11 +27,15 @@ export class CommandCowsay implements Command {
   async execute(context: Context): Promise<void | Message> {
     const { msg, args } = context;
 
-    if (args.list)
+    if (args.list) {
+      msg.channel.stopTyping(true);
       return msg.channel.send(Embed.info('Cows', codeBlock(Object.keys(cows).join(', '))));
+    }
 
-    if (args._.length == 0 || /^\s+$/.test(args._.join(' ')))
+    if (args._.length == 0 || /^\s+$/.test(args._.join(' '))) {
+      msg.channel.stopTyping(true);
       return msg.channel.send(Embed.error('nothing to say'));
+    }
 
     msg.channel.startTyping();
 
@@ -54,6 +58,6 @@ export class CommandCowsay implements Command {
 
     for (const text of messages) await msg.channel.send(text);
 
-    msg.channel.stopTyping();
+    msg.channel.stopTyping(true);
   }
 }
