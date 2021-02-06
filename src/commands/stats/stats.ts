@@ -15,7 +15,7 @@ import { makeBedwarsStats } from './bedwars';
 const uuidRegex = /^\b[0-9a-f]{8}\b-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?\b[0-9a-f]{12}\b$/i;
 const userRegex = /^([A-Za-z0-9_]{3,16}|[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})$/;
 
-const insertUUIDDashes = (uuid: string) =>
+const insertUuidDashes = (uuid: string) =>
   `${uuid.slice(0, 8)}-${uuid.slice(8, 12)}-${uuid.slice(12, 16)}-${uuid.slice(
     16,
     20
@@ -206,7 +206,7 @@ export class CommandStats implements Command {
       const formatString = 'dddd, MMMM Do YYYY, h:mm:ss A [UTC]Z';
 
       const embed = new Embed({ title: player.displayname })
-        .addField('UUID', insertUUIDDashes(player.uuid))
+        .addField('UUID', insertUuidDashes(player.uuid))
         .addField('First login', moment(player.firstLogin).format(formatString))
         .addField('Last login', moment(player.lastLogin).format(formatString))
         .attachFiles([{ attachment: avatar, name: 'avatar.png' }])
