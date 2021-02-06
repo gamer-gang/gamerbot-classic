@@ -22,9 +22,9 @@ export const onGuildMemberAdd = (em: Gamerbot['em']) => async (
 
   const replace = (json: string) =>
     json
-      .replace('%USER%', `<@!${member.id}>`)
-      .replace('%USERTAG%', `${member.user?.tag}`)
-      .replace('%GUILD%', `${member.guild.name}`);
+      .replace(/%USER%/g, `<@!${member.id}>`)
+      .replace(/%USERTAG%/g, `${member.user?.tag}`)
+      .replace(/%GUILD%/g, `${member.guild.name}`);
 
   config.welcomeChannelId
     ? (member.guild.channels.cache.get(config.welcomeChannelId) as TextChannel)?.send(

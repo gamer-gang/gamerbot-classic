@@ -5,9 +5,9 @@ import { codeBlock, Embed, parseDiscohookJSON } from '../../../util';
 
 const replacer = (msg: Context['msg']) => (json: string) =>
   json
-    .replace('%USER%', `<@!${msg.author.id}>`)
-    .replace('%USERTAG%', `${msg.author.tag}`)
-    .replace('%GUILD%', `${msg.guild.name}`);
+    .replace(/%USER%/g, `<@!${msg.author.id}>`)
+    .replace(/%USERTAG%/g, `${msg.author.tag}`)
+    .replace(/%GUILD%/g, `${msg.guild.name}`);
 
 export const welcomeMessage = async (
   config: Config,
