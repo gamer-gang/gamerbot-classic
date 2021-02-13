@@ -1,8 +1,8 @@
-import { Message } from 'discord.js';
+import { Message, TextChannel } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context } from '../../types';
-import { Embed, updatePlayingEmbed } from '../../util';
+import { Embed } from '../../util';
 
 export class CommandPlaying implements Command {
   cmd = ['playing', 'np'];
@@ -19,10 +19,10 @@ export class CommandPlaying implements Command {
 
     if (!queue.playing) return msg.channel.send(Embed.error('not playing'));
 
-    await updatePlayingEmbed({ guildId: msg.guild.id, playing: false });
+    queue.embed?.delete();
 
-    queue.current.embed = await msg.channel.send(Embed.info('loading...'));
-
-    updatePlayingEmbed({ guildId: msg.guild.id, playing: true });
+    queue.textChannel = msg.channel as TextChannel;
+    queue.embed = await msg.channel.send(Embed.info('Loading...'));
+    queue.updateNowPlaying();
   }
 }

@@ -23,7 +23,7 @@ export class CommandStop implements Command {
     }
     try {
       if (queue.voiceChannel?.members.size === 1) queue.tracks = [];
-      queue.voiceConnection?.dispatcher?.end('disconnect command');
+      queue.voiceConnection?.dispatcher?.end();
       msg.guild.me?.voice.kick();
       return msg.channel.send(Embed.success('stopped'));
     } catch (err) {

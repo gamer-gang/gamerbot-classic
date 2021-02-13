@@ -22,8 +22,8 @@ export class CommandNext implements Command {
 
     try {
       // break out of looping if looping one
-      if (queue.loop === 'one') queue.current.index++;
-      queue.voiceConnection?.dispatcher?.end('next command');
+      if (queue.loop === 'one') queue.index++;
+      queue.voiceConnection?.dispatcher?.end();
       msg.react('⏭️');
     } catch (err) {
       return msg.channel.send(Embed.error(codeBlock(err)));

@@ -2,6 +2,7 @@ import { Message, StreamOptions, TextChannel, VoiceChannel } from 'discord.js';
 import he from 'he';
 import _ from 'lodash';
 import miniget from 'miniget';
+import moment from 'moment';
 import * as mm from 'music-metadata';
 import yts from 'yt-search';
 import ytdl from 'ytdl-core';
@@ -16,7 +17,6 @@ import {
   isLivestream,
   regExps,
   toDuration,
-  updatePlayingEmbed,
 } from '../../util';
 
 export class CommandPlay implements Command {
@@ -42,8 +42,7 @@ export class CommandPlay implements Command {
     const permissions = voice.channel.permissionsFor(client.user?.id as string);
     if (!permissions?.has('CONNECT'))
       return msg.channel.send(Embed.error("can't connect to channel"));
-    if (!permissions?.has('SPEAK'))
-      return msg.channel.send(Embed.error("can't speak in that channel"));
+    if (!permissions?.has('SPEAK')) return msg.channel.send(Embed.error("can't speak in channel"));
 
     if (!args._[0]) {
       // check for uploaded files
@@ -70,12 +69,12 @@ export class CommandPlay implements Command {
       if (queue?.voiceConnection?.dispatcher?.paused) {
         queue.voiceConnection?.dispatcher.resume();
         queue.paused = false;
-        updatePlayingEmbed({ guildId: msg.guild.id, playing: true });
+        queue.updateNowPlaying();
         return msg.channel.send(Embed.success('Resumed'));
       }
 
       if (!queue.playing && queue.tracks.length) {
-        queue.current.index = 0;
+        queue.index = 0;
         return this.playNext(context);
       }
 
@@ -126,9 +125,9 @@ export class CommandPlay implements Command {
       );
 
       const queue = client.queues.get(msg.guild.id);
-      if (queue?.current.embed) updatePlayingEmbed({ guildId: msg.guild.id });
 
-      this.playNext(context);
+      queue.updateNowPlaying();
+      if (!queue.playing) this.playNext(context);
     } catch (err) {
       getLogger(`MESSAGE ${msg.id}`).error(err);
       if (err.toString() === 'Error: resource youtube#playlistListResponse not found')
@@ -173,6 +172,17 @@ export class CommandPlay implements Command {
     const albumId = regExps.spotify.album.exec(args._[0]);
     if (!albumId) return msg.channel.send(Embed.error('invalid album'));
 
+    if (!client.spotify.getAccessToken()) {
+      return msg.channel.send(
+        Embed.error(
+          'cannot connect to spotify',
+          `please try again in ${moment
+            .duration(client.spotifyTimeoutSeconds, 'seconds')
+            .humanize(true)}`
+        )
+      );
+    }
+
     const album = await client.spotify.getAlbum(albumId[1]);
     if (!album) return msg.channel.send(Embed.error('invalid album'));
 
@@ -194,7 +204,7 @@ export class CommandPlay implements Command {
     }
 
     const queue = client.queues.get(msg.guild.id);
-    if (queue?.current.embed) updatePlayingEmbed({ guildId: msg.guild.id });
+    queue.updateNowPlaying();
 
     msg.channel.send(
       Embed.success(
@@ -204,13 +214,24 @@ export class CommandPlay implements Command {
       )
     );
 
-    this.playNext(context);
+    if (!queue.playing) this.playNext(context);
   }
 
   async getSpotifyPlaylist(context: Context): Promise<void | Message> {
     const { msg, args } = context;
     const playlistId = regExps.spotify.playlist.exec(args._[0]);
     if (!playlistId) return msg.channel.send(Embed.error('invalid playlist'));
+
+    if (!client.spotify.getAccessToken()) {
+      return msg.channel.send(
+        Embed.error(
+          'cannot connect to spotify',
+          `please try again in ${moment
+            .duration(client.spotifyTimeoutSeconds, 'seconds')
+            .humanize(true)}`
+        )
+      );
+    }
 
     const playlist = await client.spotify.getPlaylist(playlistId[1]);
     if (!playlist) return msg.channel.send(Embed.error('invalid playlist'));
@@ -235,7 +256,7 @@ export class CommandPlay implements Command {
     }
 
     const queue = client.queues.get(msg.guild.id);
-    queue.current.embed && updatePlayingEmbed({ guildId: msg.guild.id });
+    queue.updateNowPlaying();
 
     msg.channel.send(
       Embed.success(
@@ -245,13 +266,24 @@ export class CommandPlay implements Command {
       )
     );
 
-    !queue.playing && this.playNext(context);
+    if (!queue.playing) this.playNext(context);
   }
 
   async getSpotifyTrack(context: Context): Promise<void | Message> {
     const { msg, args } = context;
     const trackId = regExps.spotify.track.exec(args._[0]);
     if (!trackId) return msg.channel.send('invalid track');
+
+    if (!client.spotify.getAccessToken()) {
+      return msg.channel.send(
+        Embed.error(
+          'cannot connect to spotify',
+          `please try again ${moment
+            .duration(client.spotifyTimeoutSeconds, 'seconds')
+            .humanize(true)}`
+        )
+      );
+    }
 
     const track = await client.spotify.getTrack(trackId[1]);
     if (!track) return msg.channel.send('invalid track');
@@ -363,7 +395,7 @@ export class CommandPlay implements Command {
     queue.textChannel = msg.channel as TextChannel;
 
     if (!queue.playing && (options?.beginPlaying ?? true)) {
-      queue.current.index = queue.tracks.length - 1;
+      queue.index = queue.tracks.length - 1;
       this.playNext(options.context);
     } else if (!(options?.silent ?? false)) {
       msg.channel.send(
@@ -374,7 +406,7 @@ export class CommandPlay implements Command {
           queue.paused ? 'music is paused btw' : undefined
         )
       );
-      updatePlayingEmbed({ guildId: msg.guild.id });
+      queue.updateNowPlaying();
     }
   }
 
@@ -383,7 +415,7 @@ export class CommandPlay implements Command {
 
     const queue = client.queues.get(msg.guild.id);
 
-    const track = queue.tracks[queue.current.index];
+    const track = queue.tracks[queue.index];
 
     if (!queue.playing) {
       queue.voiceChannel = msg.member?.voice?.channel as VoiceChannel;
@@ -393,16 +425,16 @@ export class CommandPlay implements Command {
     queue.voiceChannel && (queue.voiceConnection = await queue.voiceChannel.join());
     await queue.voiceConnection?.voice?.setSelfDeaf(true);
 
-    queue.current.embed = await msg.channel.send(Embed.info('Loading...'));
-    updatePlayingEmbed({ track, guildId: msg.guild.id, playing: true });
+    queue.embed = await msg.channel.send(Embed.info('Loading...'));
+    queue.updateNowPlaying();
 
-    const callback = (info: unknown) => {
+    const callback = async (info: unknown) => {
       const queue = client.queues.get(msg.guild.id);
 
       getLogger(`MESSAGE ${msg.id}`).debug(`track "${track.data.title}" ended with info "${info}"`);
 
-      updatePlayingEmbed({ guildId: msg.guild.id, playing: false });
-      delete queue.current.embed;
+      await queue.updateNowPlaying({ end: false });
+      delete queue.embed;
 
       if (!queue.playing) {
         queue.voiceConnection?.disconnect();
@@ -411,10 +443,10 @@ export class CommandPlay implements Command {
 
       if (queue.loop === 'one') return this.playNext(context);
 
-      const nextTrack = queue.tracks[queue.current.index + 1];
+      const nextTrack = queue.tracks[queue.index + 1];
       if (!nextTrack) {
         if (queue.loop === 'all') {
-          queue.current.index = 0;
+          queue.index = 0;
           this.playNext(context);
         } else {
           // no more in queue and not looping
@@ -425,13 +457,13 @@ export class CommandPlay implements Command {
           return;
         }
       } else {
-        queue.current.index++;
+        queue.index++;
         return this.playNext(context);
       }
     };
 
     const options: StreamOptions = {
-      highWaterMark: 40,
+      highWaterMark: 20,
       volume: false,
     };
 
@@ -450,7 +482,7 @@ export class CommandPlay implements Command {
         break;
       case 'spotify': {
         const error = () => {
-          queue.current.embed?.edit(
+          queue.embed?.edit(
             Embed.error(
               `could not play **[${track.data.title}](${getTrackUrl(track)})**\n` +
                 `couldn't find an equivalent video on youtube`

@@ -39,7 +39,7 @@ export class Store<T> extends EventEmitter {
     dataLanguage: 'yaml',
   };
 
-  constructor(options: StoreOptions) {
+  constructor(options?: StoreOptions) {
     super();
 
     options = _.merge(this.defaultOptions, options);

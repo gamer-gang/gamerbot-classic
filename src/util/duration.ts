@@ -1,6 +1,5 @@
 import moment from 'moment';
 import { Duration } from 'simple-youtube-api';
-import { GuildQueue } from '../types';
 
 const isDuration = (value: Duration | number): value is Duration => {
   return (
@@ -47,25 +46,4 @@ export const toDuration = (
 export const toDurationSeconds = (duration: Duration): number => {
   const { hours, minutes, seconds } = duration;
   return (hours ?? 0) * 60 * 60 + (minutes ?? 0) * 60 + (seconds ?? 0);
-};
-
-export const getRemainingTime = (queue: GuildQueue): number => {
-  if (!queue.playing || !queue.voiceConnection?.dispatcher) return 0;
-  return (
-    toDurationSeconds(queue.tracks[queue.current.index].data.duration) -
-    Math.floor(
-      queue.voiceConnection.dispatcher.totalStreamTime - queue.voiceConnection.dispatcher.pausedTime
-    ) /
-      1000
-  );
-};
-
-export const getQueueLength = (queue: GuildQueue): string => {
-  if (queue.tracks.find(v => v.type === 'youtube' && v.data.livestream)) return '?';
-
-  const totalDurationSeconds = queue.tracks
-    .map(t => toDurationSeconds(t.data.duration as Duration))
-    .reduce((a, b) => a + Math.round(b), 0);
-
-  return formatDuration(isNaN(totalDurationSeconds) ? 0 : totalDurationSeconds);
 };

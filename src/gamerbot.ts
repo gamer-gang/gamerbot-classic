@@ -5,7 +5,7 @@ import YouTube from 'simple-youtube-api';
 import Spotify from 'spotify-web-api-node';
 import { Command } from './commands';
 import { logger } from './providers';
-import { GuildQueue } from './types';
+import { Queue } from './types';
 import { PresenceManager, resolvePath, Store } from './util';
 
 export interface GamerbotOptions extends Omit<ClientOptions, 'partials'> {
@@ -23,12 +23,7 @@ export class Gamerbot extends Client {
   });
 
   readonly em: GamerbotOptions['em'];
-  readonly queues = new Store<GuildQueue>({
-    path: 'data/queue.yaml',
-    writeOnSet: false,
-    readImmediately: false,
-    dataLanguage: 'yaml',
-  });
+  readonly queues = new Store<Queue>();
 
   constructor(opts: GamerbotOptions) {
     super({
@@ -44,25 +39,30 @@ export class Gamerbot extends Client {
     this.initSpotify();
   }
 
-  #spotifyTimeouts = [5, 10, 30, 60, 60 * 2, 60 * 5, 60 * 10];
-  #spotifyErrors = -1;
+  spotifyTimeouts = [5, 10, 30, 60, 60 * 2, 60 * 5, 60 * 10];
+  private spotifyErrors = -1;
+
+  get spotifyTimeoutSeconds(): number {
+    return this.spotifyTimeouts[Math.min(this.spotifyErrors, this.spotifyTimeouts.length - 1)];
+  }
 
   private async initSpotify() {
     try {
       const grant = await this.spotify.clientCredentialsGrant();
-      logger.info(`new spotify access token granted, expires in ${grant.body.expires_in} seconds`);
+      logger.debug(`new spotify access token granted, expires in ${grant.body.expires_in} seconds`);
       this.spotify.setAccessToken(grant.body.access_token);
-      this.#spotifyErrors = -1;
+      this.spotifyErrors = -1;
       setTimeout(this.initSpotify.bind(this), grant.body.expires_in * 1000);
     } catch (err) {
-      this.#spotifyErrors++;
+      this.spotifyErrors++;
+
       logger.error(err);
       logger.warn(
-        `trying to fetch spotify access token again in ${
-          this.#spotifyTimeouts[this.#spotifyErrors]
+        `spotify error #${this.spotifyErrors + 1}; trying again in ${
+          this.spotifyTimeoutSeconds
         } seconds`
       );
-      setTimeout(this.initSpotify.bind(this), this.#spotifyTimeouts[this.#spotifyErrors] * 1000);
+      setTimeout(this.initSpotify.bind(this), this.spotifyTimeoutSeconds * 1000);
     }
   }
 

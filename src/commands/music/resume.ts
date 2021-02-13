@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context } from '../../types';
-import { codeBlock, Embed, updatePlayingEmbed } from '../../util';
+import { codeBlock, Embed } from '../../util';
 
 export class CommandResume implements Command {
   cmd = 'resume';
@@ -23,7 +23,7 @@ export class CommandResume implements Command {
     try {
       queue.voiceConnection?.dispatcher.resume();
       queue.paused = false;
-      updatePlayingEmbed({ guildId: msg.guild.id, playing: true });
+      queue.updateNowPlaying();
       return msg.channel.send(Embed.success('resumed'));
     } catch (err) {
       return msg.channel.send(Embed.error(codeBlock(err)));

@@ -15,12 +15,22 @@ import * as reactions from './listeners/reactions';
 import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
 import { client, getLogger, logger } from './providers';
-import { codeBlock, dbFindOneError, Embed, emptyQueue, resolvePath } from './util';
+import { Queue } from './types';
+import { codeBlock, dbFindOneError, Embed, resolvePath } from './util';
 
 dotenv.config({ path: resolvePath('.env') });
 
 fse.mkdirp(resolvePath('data'));
 fse.mkdirp(resolvePath('data/gifs'));
+
+// register fonts for canvas
+const fonts: Record<string, { family: string; weight?: string; style?: string }> = {
+  'RobotoMono-Regular-NF.ttf': { family: 'Roboto Mono' },
+};
+
+Object.keys(fonts).forEach(filename =>
+  registerFont(resolvePath('assets/fonts/' + filename), fonts[filename])
+);
 
 export const setPresence = async (): Promise<void> => {
   const num = await eggs.get(client);
@@ -31,15 +41,6 @@ export const setPresence = async (): Promise<void> => {
     },
   };
 };
-
-// register fonts for canvas
-const fonts: Record<string, { family: string; weight?: string; style?: string }> = {
-  'RobotoMono-Regular-NF.ttf': { family: 'Roboto Mono' },
-};
-
-Object.keys(fonts).forEach(filename =>
-  registerFont(resolvePath('assets/fonts/' + filename), fonts[filename])
-);
 
 // keep member caches up-to-date
 const fetchMemberCache = async (): Promise<void> => {
@@ -64,7 +65,7 @@ client.on('message', async msg => {
   if (msg.author.id == client.user?.id) return;
   if (!msg.guild) return; // don't respond to DMs
 
-  client.queues.setIfUnset(msg.guild.id, emptyQueue());
+  client.queues.setIfUnset(msg.guild.id, new Queue(msg.guild.id));
 
   const config = await (async (msg: Message) => {
     const existing = await client.em.findOne(Config, { guildId: msg.guild?.id });
@@ -131,9 +132,10 @@ client.on('message', async msg => {
         config,
         startTime: start,
       })
-      .then(() => msg.channel.stopTyping())
+      .then(() => msg.channel.stopTyping(true))
       .then(() => (RequestContext.getEntityManager() ?? client.em).flush())
       .catch(err => {
+        msg.channel.stopTyping(true);
         logger.error(err);
         msg.channel.send(Embed.error(codeBlock(err)));
       });
@@ -190,8 +192,6 @@ client
     config && (await em.removeAndFlush(config));
   })
   .on('guildMemberAdd', welcome.onGuildMemberAdd(client.em.fork()))
-  // .on('messageDelete', eggs.onMessageDelete(client.em))
-  // .on('messageUpdate', eggs.onMessageUpdate(client.em))
   .on('voiceStateUpdate', voice.onVoiceStateUpdate())
   .on('messageReactionAdd', reactions.onMessageReactionAdd(client.em.fork()))
   .on('messageReactionRemove', reactions.onMessageReactionRemove(client.em.fork()))

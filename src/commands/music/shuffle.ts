@@ -25,11 +25,11 @@ export class CommandShuffle implements Command {
     try {
       const shuffled = _.shuffle(
         // omit currently playing track (which is going to moved to the top)
-        _.clone(queue.tracks).filter((__, index) => index !== queue.current.index)
+        _.clone(queue.tracks).slice(queue.index, 1)
       );
 
-      queue.tracks = [queue.tracks[queue.current.index], ...shuffled];
-      queue.current.index = 0;
+      queue.tracks = [queue.tracks[queue.index], ...shuffled];
+      queue.index = 0;
 
       return msg.channel.send(Embed.success('queue shuffled'));
     } catch (err) {

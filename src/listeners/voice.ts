@@ -1,13 +1,12 @@
 import { Guild, VoiceState } from 'discord.js';
 import { client, getLogger } from '../providers';
-import { updatePlayingEmbed } from '../util';
 
 const cleanQueue = (guild: Guild) => {
   const queue = client.queues.get(guild.id);
   if (!queue) return;
-  updatePlayingEmbed({ guildId: guild.id, playing: false });
   queue.playing = false;
-  queue.voiceConnection?.dispatcher?.end('disconnected');
+  queue.updateNowPlaying();
+  queue.voiceConnection?.dispatcher?.end();
 };
 
 export const onVoiceStateUpdate = () => (oldState: VoiceState, newState: VoiceState): void => {

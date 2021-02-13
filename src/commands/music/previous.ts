@@ -22,9 +22,9 @@ export class CommandPrevious implements Command {
 
     try {
       // break out of looping if looping one
-      if (queue.loop === 'one') queue.current.index--;
-      queue.voiceConnection?.dispatcher?.end('previous command');
-      queue.current.index -= 2;
+      if (queue.loop === 'one') queue.index--;
+      queue.voiceConnection?.dispatcher?.end();
+      queue.index -= 2;
       msg.react('⏮️');
     } catch (err) {
       return msg.channel.send(Embed.error(codeBlock(err)));

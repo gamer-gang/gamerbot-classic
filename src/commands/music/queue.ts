@@ -4,16 +4,8 @@ import _ from 'lodash';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
-import { Context, GuildQueue } from '../../types';
-import {
-  Embed,
-  formatDuration,
-  getQueueLength,
-  getRemainingTime,
-  getTrackLength,
-  getTrackUrl,
-  listify,
-} from '../../util';
+import { Context, Queue } from '../../types';
+import { Embed, formatDuration, getTrackLength, getTrackUrl, listify } from '../../util';
 
 export class CommandQueue implements Command {
   cmd = ['queue', 'q'];
@@ -47,7 +39,7 @@ export class CommandQueue implements Command {
     if (args.clear) {
       if (!queue.tracks.length) return msg.channel.send(Embed.error('Nothing playing'));
 
-      queue.tracks = queue.playing ? [queue.tracks[queue.current.index]] : [];
+      queue.tracks = queue.playing ? [queue.tracks[queue.index]] : [];
 
       return msg.channel.send(Embed.success('Queue cleared'));
     }
@@ -94,8 +86,8 @@ export class CommandQueue implements Command {
         `${i + 1}. **[${he.decode(track.data.title)}](${getTrackUrl(track)})** (${getTrackLength(
           track
         )})${
-          queue.playing && queue.current.index === i
-            ? ` **(now playing, ${formatDuration(getRemainingTime(queue))} remaining)**`
+          queue.playing && queue.index === i
+            ? ` **(now playing, ${formatDuration(queue.remainingTime)} remaining)**`
             : ''
         }`
     );
@@ -132,6 +124,8 @@ export class CommandQueue implements Command {
     }
   }
 
+  // TODO move into queue class
+
   makeEmbed({
     pageNumber,
     queueSegments,
@@ -139,13 +133,11 @@ export class CommandQueue implements Command {
   }: {
     pageNumber: number;
     queueSegments: string[][];
-    queue: GuildQueue;
+    queue: Queue;
   }): Embed {
     const embed = new Embed({
       title: 'queue',
-      description: `**queue length:** ${getQueueLength(queue)}\n${queueSegments[pageNumber].join(
-        '\n'
-      )}`,
+      description: `**queue length:** ${queue.length}\n${queueSegments[pageNumber].join('\n')}`,
     });
 
     if (queueSegments.length > 1) embed.setFooter(`page ${pageNumber + 1}/${queueSegments.length}`);

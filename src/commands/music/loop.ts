@@ -3,7 +3,7 @@ import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context, LoopMode } from '../../types';
-import { codeBlock, Embed, updatePlayingEmbed } from '../../util';
+import { codeBlock, Embed } from '../../util';
 
 export class CommandSkip implements Command {
   cmd = 'loop';
@@ -61,8 +61,7 @@ export class CommandSkip implements Command {
       }
 
       queue.loop = nextLoopMode;
-
-      updatePlayingEmbed({ guildId: msg.guild.id });
+      queue.updateNowPlaying();
 
       return msg.channel.send(Embed.success(`Now looping **${nextLoopMode}**`));
     } catch (err) {
