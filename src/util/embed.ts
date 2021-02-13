@@ -17,12 +17,6 @@ export interface EmbedOptions {
   intent?: EmbedIntent;
 }
 
-const intentEmojis = {
-  error: '❌',
-  warning: '⚠️',
-  success: '✅',
-};
-
 const intentText = (message: string, desc?: string) =>
   message.match(/\*\*|```/)
     ? `${message}${desc ? `\n${desc}` : ''}`
@@ -30,15 +24,24 @@ const intentText = (message: string, desc?: string) =>
 
 export class Embed extends MessageEmbed {
   static error(message: string, description?: string): Embed {
-    return new Embed({ intent: 'error', description: intentText(message, description) });
+    return new Embed({
+      intent: 'error',
+      description: '❌  \u1cbc' + intentText(message, description),
+    });
   }
 
   static warning(message: string, description?: string): Embed {
-    return new Embed({ intent: 'warning', description: intentText(message, description) });
+    return new Embed({
+      intent: 'warning',
+      description: '⚠️  \u1cbc' + intentText(message, description),
+    });
   }
 
   static success(message: string, description?: string): Embed {
-    return new Embed({ intent: 'success', description: intentText(message, description) });
+    return new Embed({
+      intent: 'success',
+      description: '✅  \u1cbc' + intentText(message, description),
+    });
   }
 
   static info(message: string, description?: string): Embed {
@@ -47,11 +50,6 @@ export class Embed extends MessageEmbed {
 
   constructor(options?: (MessageEmbed | MessageEmbedOptions) & EmbedOptions) {
     super(options);
-
-    if (!this.author && !options?.noAuthor) {
-      if (options?.intent !== 'info' && options?.intent != null)
-        this.setAuthor(`${intentEmojis[options?.intent]} ${options?.intent}`);
-    }
 
     if (!this.color && !options?.noColor) {
       switch (options?.intent) {
