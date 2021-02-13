@@ -35,14 +35,14 @@ export class CommandPlay implements Command {
     const { msg, args } = context;
 
     const voice = msg.member?.voice;
-    if (!voice?.channel) return msg.channel.send(Embed.error('you are not in a voice channel'));
+    if (!voice?.channel) return msg.channel.send(Embed.error('You are not in a voice channel'));
 
     const queue = client.queues.get(msg.guild.id);
 
     const permissions = voice.channel.permissionsFor(client.user?.id as string);
     if (!permissions?.has('CONNECT'))
-      return msg.channel.send(Embed.error("can't connect to channel"));
-    if (!permissions?.has('SPEAK')) return msg.channel.send(Embed.error("can't speak in channel"));
+      return msg.channel.send(Embed.error("Can't connect to channel"));
+    if (!permissions?.has('SPEAK')) return msg.channel.send(Embed.error("Can't speak in channel"));
 
     if (!args._[0]) {
       // check for uploaded files
@@ -78,7 +78,7 @@ export class CommandPlay implements Command {
         return this.playNext(context);
       }
 
-      return msg.channel.send(Embed.error('expected at least one arg'));
+      return msg.channel.send(Embed.error('Expected at least one arg'));
     }
 
     msg.channel.startTyping();
@@ -98,7 +98,7 @@ export class CommandPlay implements Command {
       const playlist = await client.youtube.getPlaylist(args._[0]);
       if (!playlist)
         return msg.channel.send(
-          Embed.error("playlist not found (either it doesn't exist or it's private)")
+          Embed.error("Playlist not found (either it doesn't exist or it's private)")
         );
 
       const videos = await playlist.getVideos();
@@ -119,7 +119,7 @@ export class CommandPlay implements Command {
         new Embed({
           intent: 'success',
           description:
-            `queued ${videos.length.toString()} videos from ` +
+            `Queued ${videos.length.toString()} videos from ` +
             `**[${playlist.title}](https://youtube.com/playlist?list=${playlist.id})**`,
         })
       );
@@ -132,7 +132,7 @@ export class CommandPlay implements Command {
       getLogger(`MESSAGE ${msg.id}`).error(err);
       if (err.toString() === 'Error: resource youtube#playlistListResponse not found')
         return msg.channel.send(
-          Embed.error("playlist not found (either it doesn't exist or it's private)")
+          Embed.error("Playlist not found (either it doesn't exist or it's private)")
         );
 
       return msg.channel.send(Embed.error(codeBlock(err)));
@@ -146,7 +146,7 @@ export class CommandPlay implements Command {
       const video = await client.youtube.getVideo(args._[0]);
       if (!video)
         return msg.channel.send(
-          Embed.error("video not found (either it doesn't exist or it's private)")
+          Embed.error("Video not found (either it doesn't exist or it's private)")
         );
       this.queueTrack(
         {
@@ -160,7 +160,7 @@ export class CommandPlay implements Command {
       getLogger(`MESSAGE ${msg.id}`).error(err);
       if (err.toString() === 'Error: resource youtube#videoListResponse not found')
         return msg.channel.send(
-          Embed.error("video not found (either it doesn't exist or it's private)")
+          Embed.error("Video not found (either it doesn't exist or it's private)")
         );
 
       return msg.channel.send(Embed.error(codeBlock(err)));
@@ -170,13 +170,13 @@ export class CommandPlay implements Command {
   async getSpotifyAlbum(context: Context): Promise<void | Message> {
     const { msg, args } = context;
     const albumId = regExps.spotify.album.exec(args._[0]);
-    if (!albumId) return msg.channel.send(Embed.error('invalid album'));
+    if (!albumId) return msg.channel.send(Embed.error('Invalid album'));
 
     if (!client.spotify.getAccessToken()) {
       return msg.channel.send(
         Embed.error(
-          'cannot connect to spotify',
-          `please try again in ${moment
+          'Cannot connect to spotify',
+          `Please try again in ${moment
             .duration(client.spotifyTimeoutSeconds, 'seconds')
             .humanize(true)}`
         )
@@ -184,7 +184,7 @@ export class CommandPlay implements Command {
     }
 
     const album = await client.spotify.getAlbum(albumId[1]);
-    if (!album) return msg.channel.send(Embed.error('invalid album'));
+    if (!album) return msg.channel.send(Embed.error('Invalid album'));
 
     for (const { name, artists, duration_ms, id } of album.body.tracks.items) {
       this.queueTrack(
@@ -208,7 +208,7 @@ export class CommandPlay implements Command {
 
     msg.channel.send(
       Embed.success(
-        `queued ${album.body.tracks.items.length} tracks from ` +
+        `Queued ${album.body.tracks.items.length} tracks from ` +
           `**[${album.body.name}](https://open.spotify.com/album/${album.body.id})**`,
         queue.paused ? 'music is paused btw' : undefined
       )
@@ -220,13 +220,13 @@ export class CommandPlay implements Command {
   async getSpotifyPlaylist(context: Context): Promise<void | Message> {
     const { msg, args } = context;
     const playlistId = regExps.spotify.playlist.exec(args._[0]);
-    if (!playlistId) return msg.channel.send(Embed.error('invalid playlist'));
+    if (!playlistId) return msg.channel.send(Embed.error('Invalid playlist'));
 
     if (!client.spotify.getAccessToken()) {
       return msg.channel.send(
         Embed.error(
-          'cannot connect to spotify',
-          `please try again in ${moment
+          'Cannot connect to spotify',
+          `Please try again in ${moment
             .duration(client.spotifyTimeoutSeconds, 'seconds')
             .humanize(true)}`
         )
@@ -234,7 +234,7 @@ export class CommandPlay implements Command {
     }
 
     const playlist = await client.spotify.getPlaylist(playlistId[1]);
-    if (!playlist) return msg.channel.send(Embed.error('invalid playlist'));
+    if (!playlist) return msg.channel.send(Embed.error('Invalid playlist'));
 
     for (const {
       track: { name, artists, duration_ms, id, album },
@@ -260,7 +260,7 @@ export class CommandPlay implements Command {
 
     msg.channel.send(
       Embed.success(
-        `queued ${playlist.body.tracks.items.length} tracks from ` +
+        `Queued ${playlist.body.tracks.items.length} tracks from ` +
           `**[${playlist.body.name}](https://open.spotify.com/playlist/${playlist.body.id})**`,
         queue.paused ? 'music is paused btw' : undefined
       )
@@ -272,13 +272,13 @@ export class CommandPlay implements Command {
   async getSpotifyTrack(context: Context): Promise<void | Message> {
     const { msg, args } = context;
     const trackId = regExps.spotify.track.exec(args._[0]);
-    if (!trackId) return msg.channel.send('invalid track');
+    if (!trackId) return msg.channel.send(Embed.error('Invalid track'));
 
     if (!client.spotify.getAccessToken()) {
       return msg.channel.send(
         Embed.error(
-          'cannot connect to spotify',
-          `please try again ${moment
+          'Cannot connect to spotify',
+          `Please try again ${moment
             .duration(client.spotifyTimeoutSeconds, 'seconds')
             .humanize(true)}`
         )
@@ -286,7 +286,7 @@ export class CommandPlay implements Command {
     }
 
     const track = await client.spotify.getTrack(trackId[1]);
-    if (!track) return msg.channel.send('invalid track');
+    if (!track) return msg.channel.send(Embed.error('Invalid track'));
 
     this.queueTrack(
       {
