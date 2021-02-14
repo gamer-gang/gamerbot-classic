@@ -85,10 +85,10 @@ export const guildMemberHandlers: LogHandlers = {
           usedNew?.expiresTimestamp
         ).fromNow()})`
       );
-    else
+    else if (!member.user.bot)
       embed.setDescription(
-        'No invite candidate could be found. This happens with bots, single-use invites, ' +
-          'which are deleted on use, or if you did not grant gamerbot permission to receive ' +
+        'No invite candidate could be found. This happens with single-use invites ' +
+          '(which are deleted on use) or if you did not grant gamerbot permission to access ' +
           'invites. If you enabled the `inviteCreate` and/or `inviteDelete` log events, you ' +
           'can check the surrounding log events to find which invite was used.'
       );
@@ -117,12 +117,12 @@ export const guildMemberHandlers: LogHandlers = {
       .setTimestamp();
 
     if (
-      !kicks.has(auditEvent.id) &&
       auditEvent.action === 'MEMBER_KICK' &&
       auditEvent.targetType === 'USER' &&
       (auditEvent.target as User).id === member.id
     ) {
       // kicked
+      if (kicks.has(auditEvent.id)) return;
       saveKick(auditEvent.id);
       embed.setTitle('User kicked').addField('Kicked by', auditEvent.executor);
       auditEvent.reason && embed.addField('Reason', `"${auditEvent.reason}"`);
