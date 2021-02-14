@@ -433,7 +433,7 @@ export class CommandPlay implements Command {
 
       getLogger(`MESSAGE ${msg.id}`).debug(`track "${track.data.title}" ended with info "${info}"`);
 
-      await queue.updateNowPlaying({ end: false });
+      queue.embed?.delete();
       delete queue.embed;
 
       if (!queue.playing) {
