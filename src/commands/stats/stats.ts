@@ -72,19 +72,25 @@ export class CommandStats implements Command {
     const { msg, args } = context;
     const debug = !!args.debug;
 
+    if (!process.env.HYPIXEL_API_KEY) {
+      return msg.channel.send(
+        Embed.error('Hypixel stats disabled', 'No API key specified in environment')
+      );
+    }
+
     if (args.clearUser) {
       const entity = await em.findOne(HypixelPlayer, { userId: msg.author.id });
-      if (!entity) return msg.channel.send(Embed.error(`no username/uuid set`));
+      if (!entity) return msg.channel.send(Embed.error(`No username/UUID set`));
 
       em.removeAndFlush(entity);
 
-      return msg.channel.send(Embed.success(`cleared username/uuid **${entity.hypixelUsername}**`));
+      return msg.channel.send(Embed.success(`Cleared username/UUID **${entity.hypixelUsername}**`));
     }
 
     if (args.setUser != null) {
-      if (args.setUser === '') return msg.channel.send(Embed.error('no username/uuid provided'));
+      if (args.setUser === '') return msg.channel.send(Embed.error('No username/UUID provided'));
       if (!userRegex.test(args.setUser))
-        return msg.channel.send(Embed.error('invalid username/uuid'));
+        return msg.channel.send(Embed.error('Invalid username/UUID'));
 
       const entity = await em.findOne(HypixelPlayer, { userId: msg.author.id });
       if (!entity) {
@@ -95,7 +101,7 @@ export class CommandStats implements Command {
           })
         );
         return msg.channel.send(
-          Embed.success(`set your minecraft username/uuid to **${args.setUser}**`)
+          Embed.success(`Set your minecraft username/UUID to **${args.setUser}**`)
         );
       } else {
         const existingUsername = entity.hypixelUsername;
@@ -103,8 +109,8 @@ export class CommandStats implements Command {
         em.flush();
         return msg.channel.send(
           Embed.success(
-            `set your minecraft username/uuid to **${args.setUser}**`,
-            `(overwrote previous username/uuid of **${existingUsername}**)`
+            `Set your minecraft username/UUID to **${args.setUser}**`,
+            `Overwrote previous username/UUID of **${existingUsername}**`
           )
         );
       }
@@ -122,13 +128,13 @@ export class CommandStats implements Command {
       if (!entity)
         return msg.channel.send(
           Embed.warning(
-            `no username/uuid set for **${displayName}**`,
-            'set with `$stats --set-user <username|uuid>`'
+            `No username/UUID set for **${displayName}**`,
+            'Set with `$stats --set-user <username|uuid>`'
           )
         );
 
       return msg.channel.send(
-        Embed.info(`username/uuid for ${displayName} is set to **${entity.hypixelUsername}**`)
+        Embed.info(`Username/UUID for ${displayName} is set to **${entity.hypixelUsername}**`)
       );
     }
 
@@ -143,7 +149,7 @@ export class CommandStats implements Command {
       if (!entity)
         return msg.channel.send(
           Embed.error(
-            "you don't have a username set!",
+            "You don't have a username set!",
             'set with `$stats --set-user <username|uuid>`'
           )
         );
@@ -240,8 +246,8 @@ export class CommandStats implements Command {
       if (!exec && args._[1] !== undefined)
         return msg.channel.send(
           Embed.error(
-            'invalid game type',
-            `supported types: ${codeBlock(Object.keys(this.gamemodes).join('\n'))}`
+            'Invalid game type',
+            `Supported types: ${codeBlock(Object.keys(this.gamemodes).join('\n'))}`
           )
         );
 
@@ -251,7 +257,7 @@ export class CommandStats implements Command {
       const canvasEnd = process.hrtime(canvasStart);
       const canvasDuration = Math.round((canvasEnd![0] * 1e9 + canvasEnd![1]) / 1e6);
 
-      if (!image) throw new Error('invalid state: attatchment is null after regexp exec');
+      if (!image) throw new Error('Invalid state: attatchment is null after regexp exec');
 
       const file = new MessageAttachment(image);
 
