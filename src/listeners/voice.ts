@@ -5,7 +5,7 @@ const cleanQueue = (guild: Guild) => {
   const queue = client.queues.get(guild.id);
   if (!queue) return;
   queue.playing = false;
-  queue.updateNowPlaying();
+  queue.paused = false;
   queue.voiceConnection?.dispatcher?.end();
 };
 
@@ -24,11 +24,11 @@ export const onVoiceStateUpdate = () => (oldState: VoiceState, newState: VoiceSt
       // do nothing i think
     }
   } else if (oldState.channelID == oldState.guild.me?.voice.channelID) {
-    if (newState.guild.me?.voice.channel?.members.size === 1) {
-      // everyone disconnected
-      const queue = client.queues.get(newState.guild.id);
-      queue.tracks = [];
-      cleanQueue(newState.guild);
-    }
+    // if (newState.guild.me?.voice.channel?.members.size === 1) {
+    //   // everyone disconnected
+    //   const queue = client.queues.get(newState.guild.id);
+    //   queue.tracks = [];
+    //   cleanQueue(newState.guild);
+    // }
   }
 };
