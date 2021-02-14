@@ -92,6 +92,30 @@ export class CommandPlay implements Command {
     msg.channel.stopTyping();
   }
 
+  private checkSpotify(msg: Message): boolean {
+    if (client.spotifyDisabled) {
+      msg.channel.send(
+        Embed.error('Spotify support disabled', 'No credentials provided in environment')
+      );
+      return false;
+    }
+
+    if (!client.spotify.getAccessToken()) {
+      msg.channel.send(
+        Embed.error(
+          'Cannot connect to spotify',
+          `Please try again in ${moment
+            .duration(client.spotifyTimeoutSeconds, 'seconds')
+            .humanize(true)}`
+        )
+      );
+
+      return false;
+    }
+
+    return true;
+  }
+
   async getYoutubePlaylist(context: Context): Promise<void | Message> {
     const { msg, args } = context;
     try {
@@ -170,16 +194,7 @@ export class CommandPlay implements Command {
     const albumId = regExps.spotify.album.exec(args._[0]);
     if (!albumId) return msg.channel.send(Embed.error('Invalid album'));
 
-    if (!client.spotify.getAccessToken()) {
-      return msg.channel.send(
-        Embed.error(
-          'Cannot connect to spotify',
-          `Please try again in ${moment
-            .duration(client.spotifyTimeoutSeconds, 'seconds')
-            .humanize(true)}`
-        )
-      );
-    }
+    if (!this.checkSpotify(msg)) return;
 
     const album = await client.spotify.getAlbum(albumId[1]);
     if (!album) return msg.channel.send(Embed.error('Invalid album'));
@@ -220,16 +235,7 @@ export class CommandPlay implements Command {
     const playlistId = regExps.spotify.playlist.exec(args._[0]);
     if (!playlistId) return msg.channel.send(Embed.error('Invalid playlist'));
 
-    if (!client.spotify.getAccessToken()) {
-      return msg.channel.send(
-        Embed.error(
-          'Cannot connect to spotify',
-          `Please try again in ${moment
-            .duration(client.spotifyTimeoutSeconds, 'seconds')
-            .humanize(true)}`
-        )
-      );
-    }
+    if (!this.checkSpotify(msg)) return;
 
     const playlist = await client.spotify.getPlaylist(playlistId[1]);
     if (!playlist) return msg.channel.send(Embed.error('Invalid playlist'));
@@ -272,16 +278,7 @@ export class CommandPlay implements Command {
     const trackId = regExps.spotify.track.exec(args._[0]);
     if (!trackId) return msg.channel.send(Embed.error('Invalid track'));
 
-    if (!client.spotify.getAccessToken()) {
-      return msg.channel.send(
-        Embed.error(
-          'Cannot connect to spotify',
-          `Please try again ${moment
-            .duration(client.spotifyTimeoutSeconds, 'seconds')
-            .humanize(true)}`
-        )
-      );
-    }
+    if (!this.checkSpotify(msg)) return;
 
     const track = await client.spotify.getTrack(trackId[1]);
     if (!track) return msg.channel.send(Embed.error('Invalid track'));

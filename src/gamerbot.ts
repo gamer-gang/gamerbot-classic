@@ -22,6 +22,10 @@ export class Gamerbot extends Client {
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
   });
 
+  private spotifyErrors = -1;
+  spotifyTimeouts = [5, 10, 30, 60, 60 * 2, 60 * 5, 60 * 10];
+  spotifyDisabled = false;
+
   readonly em: GamerbotOptions['em'];
   readonly queues = new Store<Queue>();
 
@@ -39,14 +43,17 @@ export class Gamerbot extends Client {
     this.initSpotify();
   }
 
-  spotifyTimeouts = [5, 10, 30, 60, 60 * 2, 60 * 5, 60 * 10];
-  private spotifyErrors = -1;
-
   get spotifyTimeoutSeconds(): number {
     return this.spotifyTimeouts[Math.min(this.spotifyErrors, this.spotifyTimeouts.length - 1)];
   }
 
   private async initSpotify() {
+    if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
+      this.spotifyDisabled = true;
+      logger.warn('missing spotify credentials! disabling spotify support');
+      return;
+    }
+
     try {
       const grant = await this.spotify.clientCredentialsGrant();
       logger.debug(`new spotify access token granted, expires in ${grant.body.expires_in} seconds`);
