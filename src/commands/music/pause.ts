@@ -22,7 +22,7 @@ export class CommandPause implements Command {
 
     try {
       queue.voiceConnection?.dispatcher?.pause(true);
-      queue.playing = true;
+      queue.paused = true;
       queue.updateNowPlaying();
     } catch (err) {
       return msg.channel.send(Embed.error(codeBlock(err)));
