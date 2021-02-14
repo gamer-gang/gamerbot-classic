@@ -1,5 +1,5 @@
 import { Connection, EntityManager, IDatabaseDriver } from '@mikro-orm/core';
-import { Client, ClientOptions, ClientUser } from 'discord.js';
+import { Client, ClientOptions, ClientUser, Guild, GuildEmoji } from 'discord.js';
 import fse from 'fs-extra';
 import YouTube from 'simple-youtube-api';
 import Spotify from 'spotify-web-api-node';
@@ -12,6 +12,8 @@ export interface GamerbotOptions extends Omit<ClientOptions, 'partials'> {
   em: EntityManager<IDatabaseDriver<Connection>>;
 }
 
+export type KnownEmojis = 'success' | 'error' | 'warn';
+
 export class Gamerbot extends Client {
   readonly commands: Command[] = [];
   readonly presenceManager: PresenceManager;
@@ -21,6 +23,9 @@ export class Gamerbot extends Client {
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
   });
+
+  /** only safe to access after 'ready' event */
+  mediaServer!: Guild;
 
   private spotifyErrors = -1;
   spotifyTimeouts = [5, 10, 30, 60, 60 * 2, 60 * 5, 60 * 10];
@@ -41,6 +46,31 @@ export class Gamerbot extends Client {
 
     this.initCommands();
     this.initSpotify();
+
+    if (!process.env.HYPIXEL_API_KEY) {
+      logger.warn('missing hypixel api key! disabling stats support');
+    }
+
+    this.on('ready', () => {
+      if (!process.env.MEDIA_SERVER_ID) {
+        logger.warn('no media server set! disabling custom emojis');
+        return;
+      }
+
+      this.mediaServer = this.guilds.cache.get(process.env.MEDIA_SERVER_ID)!;
+
+      const expectedEmojis = ['success', 'error', 'warn'];
+      expectedEmojis.forEach(name => {
+        if (!this.getCustomEmoji(name))
+          logger.warn(`media server missing '${name}' emoji! using fallback`);
+      });
+    });
+  }
+
+  getCustomEmoji<T extends KnownEmojis>(name: T): GuildEmoji | undefined;
+  getCustomEmoji<T extends string | symbol>(name: Exclude<T, KnownEmojis>): GuildEmoji | undefined;
+  getCustomEmoji(name: string): GuildEmoji | undefined {
+    return this.mediaServer?.emojis.cache.find(e => e.name === name);
   }
 
   get spotifyTimeoutSeconds(): number {

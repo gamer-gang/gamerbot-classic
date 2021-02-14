@@ -1,4 +1,5 @@
-import { MessageEmbed, MessageEmbedOptions } from 'discord.js';
+import { GuildEmoji, MessageEmbed, MessageEmbedOptions } from 'discord.js';
+import { client } from '../providers';
 import { color } from './color';
 import { getProfilePicture } from './message';
 
@@ -22,25 +23,32 @@ const intentText = (message: string, desc?: string) =>
     ? `${message}${desc ? `\n\n${desc}` : ''}`
     : `**${message}**${desc ? `\n\n${desc}` : ''}`;
 
+const spacer = '  \u2002';
+
+const customEmojis: { [key: string]: GuildEmoji | false } = {};
+
 export class Embed extends MessageEmbed {
   static error(message: string, description?: string): Embed {
+    customEmojis.error ??= client.getCustomEmoji('error') ?? false;
     return new Embed({
       intent: 'error',
-      description: '❌  \u1cbc' + intentText(message, description),
+      description: `${customEmojis.error || '❌'}${spacer}${intentText(message, description)}`,
     });
   }
 
   static warning(message: string, description?: string): Embed {
+    customEmojis.warning ??= client.getCustomEmoji('warn') ?? false;
     return new Embed({
       intent: 'warning',
-      description: '⚠️  \u1cbc' + intentText(message, description),
+      description: `${customEmojis.warning || '⚠️'}${spacer}${intentText(message, description)}`,
     });
   }
 
   static success(message: string, description?: string): Embed {
+    customEmojis.success ??= client.getCustomEmoji('success') ?? false;
     return new Embed({
       intent: 'success',
-      description: '✅  \u1cbc' + intentText(message, description),
+      description: `${customEmojis.success || '✅'}${spacer}${intentText(message, description)}`,
     });
   }
 
