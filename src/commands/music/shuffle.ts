@@ -9,7 +9,7 @@ export class CommandShuffle implements Command {
   cmd = ['shuffle', 'shuf'];
   docs: CommandDocs = {
     usage: 'shuffle',
-    description: 'shuffles queue',
+    description: 'shuffle queue, moving current to top',
   };
   async execute(context: Context): Promise<void | Message> {
     const { msg } = context;
