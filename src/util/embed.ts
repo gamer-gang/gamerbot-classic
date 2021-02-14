@@ -19,8 +19,8 @@ export interface EmbedOptions {
 
 const intentText = (message: string, desc?: string) =>
   message.match(/\*\*|```/)
-    ? `${message}${desc ? `\n${desc}` : ''}`
-    : `**${message}**${desc ? `\n${desc}` : ''}`;
+    ? `${message}${desc ? `\n\n${desc}` : ''}`
+    : `**${message}**${desc ? `\n\n${desc}` : ''}`;
 
 export class Embed extends MessageEmbed {
   static error(message: string, description?: string): Embed {
