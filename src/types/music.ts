@@ -110,9 +110,7 @@ export class Queue {
     const track = this.tracks[this.index];
 
     const embed = new Embed({
-      author: {
-        name: `${!this.paused && !end ? 'Now Playing' : 'Not Playing'} ${this.loopSymbol}`,
-      },
+      title: `Now Playing ${this.loopSymbol} ${this.paused ? '⏸️' : ''}`,
       description: `**[${track.data.title}](${getTrackUrl(track)})** (${
         track.type === 'spotify'
           ? 'Spotify'
