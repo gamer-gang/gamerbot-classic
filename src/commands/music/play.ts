@@ -116,12 +116,10 @@ export class CommandPlay implements Command {
       );
 
       msg.channel.send(
-        new Embed({
-          intent: 'success',
-          description:
-            `Queued ${videos.length.toString()} videos from ` +
-            `**[${playlist.title}](https://youtube.com/playlist?list=${playlist.id})**`,
-        })
+        Embed.success(
+          `Queued ${videos.length.toString()} videos from ` +
+            `**[${playlist.title}](https://youtube.com/playlist?list=${playlist.id})**`
+        )
       );
 
       const queue = client.queues.get(msg.guild.id);
