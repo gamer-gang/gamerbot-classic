@@ -74,10 +74,7 @@ export class CommandGif implements Command {
     else if (args._.length === 1) return this.show(msg, args);
     else
       return msg.channel.send(
-        Embed.warning(
-          'incorrect usage',
-          'usage: \n' + codeBlock(this.docs.map(d => d.usage).join('\n'))
-        )
+        Embed.info('**usage**\n' + codeBlock(this.docs.map(d => d.usage).join('\n')))
       );
   }
 
