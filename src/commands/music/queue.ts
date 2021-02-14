@@ -113,7 +113,8 @@ export class CommandQueue implements Command {
     );
 
     const queueSegments = _.chunk(queueLines, 10);
-    let pageNumber = 0;
+    // start on page with current track
+    let pageNumber = Math.floor(queue.index / 10);
 
     const queueMessage = await msg.channel.send(
       this.makeEmbed({ queueSegments, pageNumber, queue })
@@ -156,11 +157,14 @@ export class CommandQueue implements Command {
     queue: Queue;
   }): Embed {
     const embed = new Embed({
-      title: 'Queue',
-      description: `**Queue length:** ${queue.length}\n${queueSegments[pageNumber].join('\n')}`,
+      author: { name: 'Queue' },
+      description:
+        `**Tracks:** ${queue.tracks.length}\n` +
+        `**Total length:** ${queue.length}\n` +
+        `${queueSegments[pageNumber].join('\n')}`,
     });
 
-    if (queueSegments.length > 1) embed.setFooter(`page ${pageNumber + 1}/${queueSegments.length}`);
+    if (queueSegments.length > 1) embed.setFooter(`Page ${pageNumber + 1}/${queueSegments.length}`);
 
     return embed;
   }
