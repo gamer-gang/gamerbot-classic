@@ -3,7 +3,7 @@ import { Message } from 'discord.js';
 import yargsParser from 'yargs-parser';
 import { Command } from '..';
 import { Context } from '../../types';
-import { Embed } from '../../util';
+import { codeBlock, Embed } from '../../util';
 
 export class CommandJoke implements Command {
   cmd = 'joke';
@@ -57,8 +57,8 @@ export class CommandJoke implements Command {
 
       msg.channel.send(joke);
     } catch (err) {
-      msg.channel.send(Embed.error('error fetching joke', `\`\`\`\n${err}\n\`\`\``));
+      msg.channel.send(Embed.error('error fetching joke', codeBlock(err)));
     }
-    msg.channel.stopTyping();
+    msg.channel.stopTyping(true);
   }
 }
