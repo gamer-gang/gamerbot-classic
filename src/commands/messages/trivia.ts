@@ -260,9 +260,9 @@ export class CommandTrivia implements Command {
 
     const collector = message.channel.createMessageCollector(
       (m: Message) =>
-        (m.author.id === msg.author.id &&
-          answers.some(a => a.toLowerCase() === m.content.toLowerCase())) ||
-        answerLetters.includes(m.content.toLowerCase()),
+        m.author.id === msg.author.id &&
+        (answers.some(a => a.toLowerCase() === m.content.toLowerCase()) ||
+          answerLetters.includes(m.content.toLowerCase())),
       { dispose: true, time: 15000 }
     );
 
