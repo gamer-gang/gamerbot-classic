@@ -1,7 +1,6 @@
 import { GuildEmoji, TextChannel } from 'discord.js';
-
 import { intToLogEvents, LogHandlers } from '.';
-import { client } from '../../providers';
+import { client, logger } from '../../providers';
 import { Embed } from '../../util';
 import { formatValue, getConfig, getLatestAuditEvent, logColorFor } from './utils';
 
@@ -14,8 +13,11 @@ export const emojiHandlers: LogHandlers = {
     const guild = emoji.guild;
     const config = await getConfig(emoji);
     if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-    if (!logChannel) console.warn('could not get log channel for ' + guild.name);
+    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+    if (!logChannel)
+      return logger.error(
+        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
+      );
     if (!intToLogEvents(config.logSubscribedEvents).includes('emojiCreate')) return;
 
     const auditEvent = await getLatestAuditEvent(guild);
@@ -42,8 +44,11 @@ export const emojiHandlers: LogHandlers = {
     const config = await getConfig(emoji);
 
     if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-    if (!logChannel) console.warn('could not get log channel for ' + guild.name);
+    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+    if (!logChannel)
+      return logger.error(
+        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
+      );
     if (!intToLogEvents(config.logSubscribedEvents).includes('emojiDelete')) return;
 
     const auditEvent = await getLatestAuditEvent(guild);
@@ -70,8 +75,11 @@ export const emojiHandlers: LogHandlers = {
     const guild = next.guild;
     const config = await getConfig(next);
     if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-    if (!logChannel) console.warn('could not get log channel for ' + guild.name);
+    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+    if (!logChannel)
+      return logger.error(
+        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
+      );
     if (!intToLogEvents(config.logSubscribedEvents).includes('emojiUpdate')) return;
 
     const auditEvent = await getLatestAuditEvent(guild);

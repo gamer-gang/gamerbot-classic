@@ -151,21 +151,25 @@ client.on('ready', () => {
 
 (logEvents.filter(e => !e.includes('gamerbotCommand')) as (keyof ClientEvents)[]).forEach(event => {
   const handlerName = `on${event[0].toUpperCase()}${event.slice(1)}` as LogEventHandler;
-  if (logHandlers[handlerName])
+  if (logHandlers[handlerName]) {
     client.on(event, async (...args) => {
-      try {
-        logHandlers[handlerName]!(...args).then(() => client.em.flush());
-      } catch (err) {
-        let guild: Guild;
-        if (client.guilds.cache.get(args[0].id)) {
-          guild = args[0] as Guild;
-        } else {
-          guild = args[0].guild as Guild;
-        }
+      RequestContext.create(client.em, async () => {
+        try {
+          await logHandlers[handlerName]!(...args);
+          (RequestContext.getEntityManager() ?? client.em).flush();
+        } catch (err) {
+          let guild: Guild;
+          if (client.guilds.cache.get(args[0].id)) {
+            guild = args[0] as Guild;
+          } else {
+            guild = args[0].guild as Guild;
+          }
 
-        getLogger(`GUILD ${guild?.id ?? 'unknown'} EVENT ${event}`).error(err);
-      }
+          getLogger(`GUILD ${guild?.id ?? 'unknown'} EVENT ${event}`).error(err);
+        }
+      });
     });
+  }
 });
 
 client.on('debug', content => {

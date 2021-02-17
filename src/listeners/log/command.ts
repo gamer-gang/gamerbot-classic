@@ -1,6 +1,6 @@
 import { TextChannel } from 'discord.js';
 import { intToLogEvents, LogEventHandler, LogEventType, LogHandlers } from '.';
-import { client } from '../../providers';
+import { client, logger } from '../../providers';
 import { Context } from '../../types';
 import { Embed } from '../../util';
 import { getConfig, logColorFor } from './utils';
@@ -10,8 +10,11 @@ const onCommand = (event: LogEventType) => async (context: Readonly<Context>) =>
 
   const config = await getConfig(msg);
   if (!config.logChannelId) return;
-  const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-  if (!logChannel) console.warn('could not get log channel for ' + msg.guild.name);
+  const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+  if (!logChannel)
+    return logger.error(
+      'could not get log channel ' + config.logChannelId + ' for ' + context.msg.guild.name
+    );
   if (!intToLogEvents(config.logSubscribedEvents).includes(event)) return;
 
   const embed = new Embed({

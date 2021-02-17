@@ -1,7 +1,7 @@
 import { DMChannel, GuildChannel, TextChannel } from 'discord.js';
 import _ from 'lodash';
 import { intToLogEvents, LogHandlers } from '.';
-import { client } from '../../providers';
+import { client, logger } from '../../providers';
 import { Embed } from '../../util';
 import { formatValue, getConfig, getLatestAuditEvent, logColorFor } from './utils';
 
@@ -17,8 +17,11 @@ export const channelHandlers: LogHandlers = {
     if (channel.type === 'dm') return;
     const config = await getConfig(channel);
     if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-    if (!logChannel) console.warn('could not get log channel for ' + channel.guild.name);
+    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+    if (!logChannel)
+      return logger.error(
+        'could not get log channel ' + config.logChannelId + ' for ' + channel.guild.name
+      );
     if (!intToLogEvents(config.logSubscribedEvents).includes('channelCreate')) return;
 
     const guild = channel.guild;
@@ -47,8 +50,11 @@ export const channelHandlers: LogHandlers = {
     if (channel.type === 'dm') return;
     const config = await getConfig(channel);
     if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-    if (!logChannel) console.warn('could not get log channel for ' + channel.guild.name);
+    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+    if (!logChannel)
+      return logger.error(
+        'could not get log channel ' + config.logChannelId + ' for ' + channel.guild.name
+      );
     if (!intToLogEvents(config.logSubscribedEvents).includes('channelDelete')) return;
 
     const guild = channel.guild;
@@ -80,8 +86,11 @@ export const channelHandlers: LogHandlers = {
     const guild = next.guild;
 
     if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-    if (!logChannel) console.warn('could not get log channel for ' + guild.name);
+    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+    if (!logChannel)
+      return logger.error(
+        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
+      );
     if (!intToLogEvents(config.logSubscribedEvents).includes('channelUpdate')) return;
 
     const auditEvent = await getLatestAuditEvent(guild);

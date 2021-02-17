@@ -3,7 +3,7 @@ import fse from 'fs-extra';
 import _ from 'lodash';
 import moment from 'moment';
 import { intToLogEvents, LogHandlers } from '.';
-import { CachedInvite, client, getLogger, inviteCache } from '../../providers';
+import { CachedInvite, client, getLogger, inviteCache, logger } from '../../providers';
 import { Embed, getDateFromSnowflake, resolvePath } from '../../util';
 import { formatValue, getConfig, getLatestAuditEvent, logColorFor } from './utils';
 
@@ -59,8 +59,11 @@ export const guildMemberHandlers: LogHandlers = {
 
     const config = await getConfig(guild);
     if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-    if (!logChannel) console.warn('could not get log channel for ' + guild.name);
+    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+    if (!logChannel)
+      return logger.error(
+        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
+      );
     if (!intToLogEvents(config.logSubscribedEvents).includes('guildMemberAdd')) return;
 
     const embed = new Embed({
@@ -99,8 +102,11 @@ export const guildMemberHandlers: LogHandlers = {
     const guild = member.guild;
     const config = await getConfig(guild);
     if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-    if (!logChannel) console.warn('could not get log channel for ' + guild.name);
+    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+    if (!logChannel)
+      return logger.error(
+        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
+      );
     if (!intToLogEvents(config.logSubscribedEvents).includes('guildMemberRemove')) return;
 
     const auditEvent = await getLatestAuditEvent(guild);
@@ -137,8 +143,11 @@ export const guildMemberHandlers: LogHandlers = {
     const guild = next.guild;
     const config = await getConfig(guild);
     if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-    if (!logChannel) console.warn('could not get log channel for ' + guild.name);
+    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+    if (!logChannel)
+      return logger.error(
+        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
+      );
     if (!intToLogEvents(config.logSubscribedEvents).includes('guildMemberRemove')) return;
 
     const changes = _.omitBy(next, (v, k) => _.isEqual(v, prev[k as keyof GuildMember]));

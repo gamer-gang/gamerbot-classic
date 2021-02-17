@@ -3,7 +3,7 @@ import { Guild, Invite, TextChannel } from 'discord.js';
 import _ from 'lodash';
 import moment from 'moment';
 import { intToLogEvents, LogHandlers } from '.';
-import { client, getLogger, inviteCache } from '../../providers';
+import { client, getLogger, inviteCache, logger } from '../../providers';
 import { Embed } from '../../util';
 import { getConfig, getLatestAuditEvent, logColorFor } from './utils';
 
@@ -56,8 +56,11 @@ export const inviteHandlers: LogHandlers = {
 
     const config = await getConfig(guild);
     if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-    if (!logChannel) console.warn('could not get log channel for ' + guild.name);
+    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+    if (!logChannel)
+      return logger.error(
+        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
+      );
     if (!intToLogEvents(config.logSubscribedEvents).includes('inviteCreate')) return;
 
     const expiry = invite.expiresAt && moment(invite.expiresAt);
@@ -88,8 +91,11 @@ export const inviteHandlers: LogHandlers = {
     const guild = invite.guild as Guild;
     const config = await getConfig(guild);
     if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-    if (!logChannel) return console.warn('could not get log channel for ' + guild.name);
+    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+    if (!logChannel)
+      return logger.error(
+        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
+      );
     const auditEvent = await getLatestAuditEvent(guild);
 
     const embed = new Embed({

@@ -1,7 +1,6 @@
 import { Guild, TextChannel, User } from 'discord.js';
-
 import { intToLogEvents, LogHandlers } from '.';
-import { client } from '../../providers';
+import { client, logger } from '../../providers';
 import { Embed } from '../../util';
 import { getConfig, getLatestAuditEvent, logColorFor } from './utils';
 
@@ -9,8 +8,11 @@ export const guildBanHandlers: LogHandlers = {
   onGuildBanAdd: async (guild: Guild, user: User) => {
     const config = await getConfig(guild);
     if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-    if (!logChannel) console.warn('could not get log channel for ' + guild.name);
+    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+    if (!logChannel)
+      return logger.error(
+        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
+      );
     if (!intToLogEvents(config.logSubscribedEvents).includes('guildBanAdd')) return;
 
     const auditEvent = await getLatestAuditEvent(guild);
@@ -35,8 +37,11 @@ export const guildBanHandlers: LogHandlers = {
   onGuildBanRemove: async (guild: Guild, user: User) => {
     const config = await getConfig(guild);
     if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel;
-    if (!logChannel) console.warn('could not get log channel for ' + guild.name);
+    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+    if (!logChannel)
+      return logger.error(
+        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
+      );
     if (!intToLogEvents(config.logSubscribedEvents).includes('guildBanRemove')) return;
 
     const auditEvent = await getLatestAuditEvent(guild);
