@@ -14,7 +14,7 @@ import { LogEventHandler, logEvents, logHandlers } from './listeners/log';
 import * as reactions from './listeners/reactions';
 import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
-import { client, getLogger, logger } from './providers';
+import { client, getLogger, logger, usernameCache } from './providers';
 import { Queue } from './types';
 import { codeBlock, dbFindOneError, Embed, resolvePath } from './util';
 
@@ -46,7 +46,7 @@ export const setPresence = async (): Promise<void> => {
 const fetchMemberCache = async (): Promise<void> => {
   const guilds = client.guilds.cache.array();
 
-  await Promise.all(
+  const members = await Promise.all(
     guilds.map(
       (guild, index) =>
         new Promise<GuildMember[]>(resolve => {
@@ -54,6 +54,17 @@ const fetchMemberCache = async (): Promise<void> => {
         })
     )
   );
+
+  members.flat(1).forEach(m => {
+    if (usernameCache.has(m.id)) return;
+
+    usernameCache.set(m.id, {
+      username: m.user.username,
+      discriminator: m.user.discriminator,
+    });
+
+    getLogger(`GUILD ${m.guild.id}`).debug('cached user ' + m.id);
+  });
 
   setTimeout(fetchMemberCache, 1000 * 60 * 5);
 };
@@ -154,17 +165,19 @@ client.on('ready', () => {
   if (logHandlers[handlerName]) {
     client.on(event, async (...args) => {
       RequestContext.create(client.em, async () => {
+        let guild: Guild;
+        if (client.guilds.cache.get(args[0].id)) {
+          guild = args[0] as Guild;
+        } else {
+          guild = args[0].guild as Guild;
+        }
+
+        logger.debug(`recv guild ${guild?.id ?? 'unknown'} event ${event}`);
+
         try {
           await logHandlers[handlerName]!(...args);
           (RequestContext.getEntityManager() ?? client.em).flush();
         } catch (err) {
-          let guild: Guild;
-          if (client.guilds.cache.get(args[0].id)) {
-            guild = args[0] as Guild;
-          } else {
-            guild = args[0].guild as Guild;
-          }
-
           getLogger(`GUILD ${guild?.id ?? 'unknown'} EVENT ${event}`).error(err);
         }
       });

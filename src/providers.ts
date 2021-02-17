@@ -32,7 +32,13 @@ export interface CachedInvite {
   uses: number;
 }
 
+export interface CachedUsername {
+  username: string;
+  discriminator: string;
+}
+
 export const inviteCache = new Map<string, CachedInvite>();
+export const usernameCache = new Map<string, CachedUsername>();
 
 export const logger = log4js.getLogger('MAIN');
 export const getLogger = (category: string): log4js.Logger => log4js.getLogger(category);

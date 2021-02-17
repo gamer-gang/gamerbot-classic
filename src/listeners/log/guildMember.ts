@@ -3,7 +3,14 @@ import fse from 'fs-extra';
 import _ from 'lodash';
 import moment from 'moment';
 import { intToLogEvents, LogHandlers } from '.';
-import { CachedInvite, client, getLogger, inviteCache, logger } from '../../providers';
+import {
+  CachedInvite,
+  client,
+  getLogger,
+  inviteCache,
+  logger,
+  usernameCache,
+} from '../../providers';
 import { Embed, getDateFromSnowflake, resolvePath } from '../../util';
 import { formatValue, getConfig, getLatestAuditEvent, logColorFor } from './utils';
 
@@ -27,7 +34,7 @@ const saveKick = (id: string) => {
   );
 };
 
-const changeTable: Partial<Record<keyof GuildMember, string>> = {
+const changeTable = {
   nickname: 'Nickname',
   toString: '',
   valueOf: '',
@@ -168,6 +175,24 @@ export const guildMemberHandlers: LogHandlers = {
         changeTable[name as keyof typeof changeTable] ?? name,
         `\`${formatValue(before)} => ${formatValue(after)}\``
       );
+
+    if (!usernameCache.has(next.id))
+      usernameCache.set(next.id, {
+        username: next.user.username,
+        discriminator: next.user.discriminator,
+      });
+
+    const cached = usernameCache.get(next.id)!;
+
+    if (cached.username !== next.user.username)
+      add('Username', cached.username, next.user.username);
+    if (cached.discriminator !== next.user.discriminator)
+      add('Discriminator', cached.discriminator, next.user.discriminator);
+
+    usernameCache.set(next.id, {
+      username: next.user.username,
+      discriminator: next.user.discriminator,
+    });
 
     if (changes.nickname) add('nickname', prev.nickname, next.nickname);
 
