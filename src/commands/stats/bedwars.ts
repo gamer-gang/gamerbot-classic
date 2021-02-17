@@ -145,8 +145,8 @@ export const makeBedwarsStats = (data?: Player, quality = true): StatsData => {
   c.textAlign = 'right';
   c.fillText(
     [
-      `${data.stats.Bedwars.winstreak!.toLocaleString()} ws`,
-      `${data.stats.Bedwars.coins!.toLocaleString()} coins  `,
+      `${(data.stats.Bedwars.winstreak ?? 0).toLocaleString()} ws`,
+      `${(data.stats.Bedwars.coins ?? 0).toLocaleString()} coins  `,
     ].join('  '),
     drawPrestige(c, data),
     padding + headerHeight
