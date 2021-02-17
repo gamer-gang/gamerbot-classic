@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { Message, User } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context } from '../../types';
@@ -13,19 +13,23 @@ export class CommandUserInfo implements Command {
   async execute(context: Context): Promise<void | Message> {
     const { msg, args } = context;
 
+    let user = msg.author;
+
     if (args._[0]) {
-      const user = client.users.resolve(args._[0]);
+      console.log(args._[0]);
+      user =
+        client.users.resolve(args._.join('')) ??
+        (client.users.resolve(args._[0].replace(/<@!?(\d+)>/g, '$1')) as User);
       if (!user)
         return msg.channel.send(
           Embed.error(
-            'Could not resolve user ID',
-            "Check if it's valid and that gamerbot shares a server with the user."
+            'Could not resolve user',
+            'Check if the user is valid and that gamerbot shares a server with the user.'
           )
         );
     }
 
-    const user = client.users.resolve(args._[0]) || msg.author;
-    const icon = user.avatarURL({ format: 'png' });
+    const icon = user.avatarURL({ format: 'png', size: 512 });
 
     const inGuild = msg.guild.members.cache.get(user.id);
 

@@ -29,7 +29,7 @@ export class CommandServerInfo implements Command {
     const inGuild = guild === msg.guild;
 
     const bots = (await guild.members.fetch()).array().filter(member => member.user.bot).length;
-    const icon = guild.iconURL({ format: 'png' });
+    const icon = guild.iconURL({ format: 'png', size: 512 });
 
     const embed = new Embed({
       author: {
