@@ -24,6 +24,7 @@ export class CommandStop implements Command {
 
     try {
       if (queue.voiceChannel?.members.size === 1) queue.tracks = [];
+      queue.playing = false;
       queue.voiceConnection?.dispatcher?.end();
       msg.guild.me?.voice.kick();
       return msg.channel.send(Embed.success('Stopped'));

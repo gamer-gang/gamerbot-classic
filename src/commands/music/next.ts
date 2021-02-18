@@ -37,7 +37,7 @@ export class CommandNext implements Command {
 
         msg.channel.send(Embed.success(`Skipped **${int}** tracks`));
       } else {
-        msg.react('⏮️');
+        msg.react('⏭️');
       }
 
       // break out of looping if looping one

@@ -143,7 +143,12 @@ export class CommandPlay implements Command {
 
     queue.updateNowPlaying();
 
+    let called = false;
+
     const callback = async (info: unknown) => {
+      if (called) return;
+      called = true;
+
       const queue = client.queues.get(msg.guild.id);
 
       getLogger(`MESSAGE ${msg.id}`).debug(`track "${track.data.title}" ended with info "${info}"`);
@@ -186,6 +191,7 @@ export class CommandPlay implements Command {
       queue.voiceConnection
         ?.play(await track.getPlayable(), options)
         .on('close', callback)
+        .on('finish', callback)
         .on('error', err => logger.error(err));
     } catch (err) {
       queue.embed?.edit(Embed.error(err.message));
