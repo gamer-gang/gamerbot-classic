@@ -70,6 +70,7 @@ export class CommandPlay implements Command {
     msg.channel.startTyping();
     if (regExps.youtube.playlist.test(args._[0])) await this.getYoutubePlaylist(context);
     else if (regExps.youtube.video.test(args._[0])) await this.getYoutubeVideo(context);
+    else if (regExps.youtube.channel.test(args._[0])) await this.getYoutubeChannel(context);
     else if (regExps.spotify.playlist.test(args._[0])) await this.getSpotifyPlaylist(context);
     else if (regExps.spotify.album.test(args._[0])) await this.getSpotifyAlbum(context);
     else if (regExps.spotify.track.test(args._[0])) await this.getSpotifyTrack(context);
@@ -140,6 +141,51 @@ export class CommandPlay implements Command {
           Embed.error("Playlist not found (either it doesn't exist or it's private)")
         );
 
+      return msg.channel.send(Embed.error(codeBlock(err)));
+    }
+  }
+
+  async getYoutubeChannel(context: Context): Promise<void | Message> {
+    const { msg, args } = context;
+
+    try {
+      const channel = await client.youtube.getChannel(args._[0], {
+        part: 'snippet,contentDetails',
+      });
+      if (!channel) return msg.channel.send(Embed.error('Could not resolve channel'));
+
+      const uploadsId = (channel.raw as any)?.contentDetails?.relatedPlaylists?.uploads;
+      if (!uploadsId) return msg.channel.send(Embed.error('Channel has no uploads'));
+
+      const uploads = await client.youtube.getPlaylistByID(uploadsId);
+      if (!uploads) return msg.channel.send(Embed.error('Upload playlist not found'));
+
+      const videos = await uploads.getVideos();
+      (await Promise.all(videos.map(v => client.youtube.getVideoByID(v.id)))).map(
+        v =>
+          v &&
+          this.queueTrack(new YoutubeTrack(msg.author.id, v), {
+            context,
+            silent: true,
+            beginPlaying: false,
+          })
+      );
+
+      msg.channel.send(
+        Embed.success(
+          `Queued ${videos.length.toString()} videos from ` +
+            `**[${uploads.title}](https://youtube.com/playlist?list=${uploads.id})**`
+        )
+      );
+
+      const queue = client.queues.get(msg.guild.id);
+      if (!queue.playing) this.playNext(context);
+    } catch (err) {
+      // do not ask
+      if (err.message.includes("Cannot read property 'length' of undefined"))
+        return msg.channel.send(Embed.error('Invalid channel'));
+
+      getLogger(`MESSAGE ${msg.id}`).error(err);
       return msg.channel.send(Embed.error(codeBlock(err)));
     }
   }
@@ -425,7 +471,7 @@ export class CommandPlay implements Command {
       queue.voiceConnection
         ?.play(await track.getPlayable(), options)
         .on('close', callback)
-        .on('error', logger.error);
+        .on('error', err => logger.error(err));
     } catch (err) {
       queue.embed?.edit(Embed.error(err.message));
       return callback('error');

@@ -71,8 +71,7 @@ export class YoutubeTrack extends Track {
   }
 
   get coverUrl(): string {
-    return (this.data.thumbnails.maxres ?? this.data.thumbnails.high ?? this.data.thumbnails.medium)
-      ?.url;
+    return this.data.maxRes?.url as string;
   }
 
   get url(): string {

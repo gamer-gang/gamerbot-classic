@@ -11,6 +11,7 @@ export const regExps = {
   youtube: {
     playlist: /^https?:\/\/((www\.|music\.|)youtube.com)\/playlist(.+)$/,
     video: /^https?:\/\/(((www\.|music\.|)youtube\.com)\/watch\?v=(.+)|youtu\.be\/.+)$/,
+    channel: /^https?:\/\/((www\.|music\.|)youtube\.com)\/channel\/(.+)$/,
   },
   spotify: {
     // https://open.spotify.com/<track|playlist|album>/<id>
