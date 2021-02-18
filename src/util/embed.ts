@@ -75,6 +75,11 @@ export class Embed extends MessageEmbed {
           this.setColor(Colors.blue());
       }
     }
+
+    // super.setFooter(
+    //   'gamerbot',
+    //   'https://raw.githubusercontent.com/gamer-gang/gamerbot/master/assets/hexagon.png'
+    // );
   }
 
   setDefaultAuthor(): this {
@@ -82,6 +87,14 @@ export class Embed extends MessageEmbed {
     this.attachFiles([getProfilePicture()]);
     return this;
   }
+
+  // setFooter(text: unknown): this {
+  //   super.setFooter(
+  //     'gamerbot  •  ' + text,
+  //     'https://raw.githubusercontent.com/gamer-gang/gamerbot/master/assets/hexagon.png'
+  //   );
+  //   return this;
+  // }
 
   addBlankField(): this {
     this.addField('\u200b', '\u200b');

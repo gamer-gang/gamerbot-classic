@@ -15,12 +15,12 @@ export class CommandShuffle implements Command {
     const { msg } = context;
     const queue = client.queues.get(msg.guild.id);
 
-    if (!queue.playing) return msg.channel.send(Embed.error('not playing'));
-    if (queue.tracks.length <= 1) return msg.channel.send(Embed.error('nothing in queue'));
+    if (!queue.playing) return msg.channel.send(Embed.error('Not playing'));
+    if (queue.tracks.length <= 1) return msg.channel.send(Embed.error('Nothing in queue'));
 
     const voice = msg.member?.voice;
     if (!voice?.channel || voice.channel.id !== queue.voiceConnection?.channel.id)
-      return msg.channel.send(Embed.error('you are not in the music channel'));
+      return msg.channel.send(Embed.error('You are not in the music channel'));
 
     try {
       const shuffled = _.shuffle(
@@ -31,7 +31,7 @@ export class CommandShuffle implements Command {
       queue.tracks = [queue.tracks[queue.index], ...shuffled];
       queue.index = 0;
 
-      return msg.channel.send(Embed.success('queue shuffled'));
+      return msg.channel.send(Embed.success('Queue shuffled'));
     } catch (err) {
       return msg.channel.send(Embed.error(codeBlock(err)));
     }

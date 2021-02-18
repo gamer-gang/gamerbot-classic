@@ -18,13 +18,13 @@ export class CommandResume implements Command {
 
     const voice = msg.member?.voice;
     if (!voice?.channel || voice.channel.id !== queue.voiceConnection?.channel.id)
-      return msg.channel.send(Embed.error('you are not in the music channel'));
+      return msg.channel.send(Embed.error('You are not in the music channel'));
 
     try {
       queue.voiceConnection?.dispatcher.resume();
       queue.paused = false;
       queue.updateNowPlaying();
-      return msg.channel.send(Embed.success('resumed'));
+      return msg.channel.send(Embed.success('Resumed'));
     } catch (err) {
       return msg.channel.send(Embed.error(codeBlock(err)));
     }

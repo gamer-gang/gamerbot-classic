@@ -1,11 +1,10 @@
 import { Message, MessageReaction, User } from 'discord.js';
-import he from 'he';
 import _ from 'lodash';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context, Queue } from '../../types';
-import { Embed, formatDuration, getTrackLength, getTrackUrl, listify } from '../../util';
+import { Embed, formatDuration, listify } from '../../util';
 
 export class CommandQueue implements Command {
   cmd = ['queue', 'q'];
@@ -68,9 +67,7 @@ export class CommandQueue implements Command {
 
         const removed = queue.tracks.splice(start - 1, end - start + 1);
 
-        const trackMarkup = removed.map(
-          track => `**[${he.decode(track.data.title)}](${getTrackUrl(track)})**`
-        );
+        const trackMarkup = removed.map(track => `**[${track.title}](${track.url})**`);
 
         // update current index
         queue.index = queue.tracks.indexOf(current);
@@ -91,9 +88,7 @@ export class CommandQueue implements Command {
         queue.index = queue.tracks.indexOf(current);
 
         return msg.channel.send(
-          Embed.success(
-            `Removed **[${he.decode(removed.data.title)}](${getTrackUrl(removed)})** from the queue`
-          )
+          Embed.success(`Removed **[${removed.title}](${removed.url})** from the queue`)
         );
       }
     }
@@ -103,9 +98,7 @@ export class CommandQueue implements Command {
 
     const queueLines = tracks.map(
       (track, i) =>
-        `${i + 1}. **[${he.decode(track.data.title)}](${getTrackUrl(track)})** (${getTrackLength(
-          track
-        )})${
+        `${i + 1}. **[${track.title}](${track.url})** (${track.duration})${
           queue.playing && queue.index === i
             ? ` **(${formatDuration(queue.remainingTime)} remaining)**`
             : ''

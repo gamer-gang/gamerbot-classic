@@ -1,23 +1,13 @@
 import { Message, StreamOptions, TextChannel, VoiceChannel } from 'discord.js';
-import he from 'he';
 import _ from 'lodash';
 import miniget from 'miniget';
 import moment from 'moment';
 import * as mm from 'music-metadata';
 import yts from 'yt-search';
-import ytdl from 'ytdl-core';
 import { Command, CommandDocs } from '..';
 import { client, getLogger, logger } from '../../providers';
-import { Context, Track } from '../../types';
-import {
-  codeBlock,
-  Embed,
-  getTrackLength,
-  getTrackUrl,
-  isLivestream,
-  regExps,
-  toDuration,
-} from '../../util';
+import { Context, FileTrack, SpotifyTrack, Track, YoutubeTrack } from '../../types';
+import { codeBlock, Embed, regExps, toDuration } from '../../util';
 
 export class CommandPlay implements Command {
   cmd = ['play', 'p'];
@@ -51,15 +41,11 @@ export class CommandPlay implements Command {
         const metadata = await mm.parseStream(miniget(attachment.url));
 
         this.queueTrack(
-          {
-            requesterId: msg.author?.id as string,
-            type: 'file',
-            data: {
-              title: attachment.name || _.last(attachment.url.split('/')),
-              url: attachment.url,
-              duration: toDuration(metadata.format.duration),
-            },
-          } as Track,
+          new FileTrack(msg.author?.id as string, {
+            title: (attachment.name || _.last(attachment.url.split('/'))) ?? 'Unknown',
+            url: attachment.url,
+            duration: toDuration(metadata.format.duration),
+          }),
           { context }
         );
 
@@ -87,9 +73,9 @@ export class CommandPlay implements Command {
     else if (regExps.spotify.playlist.test(args._[0])) await this.getSpotifyPlaylist(context);
     else if (regExps.spotify.album.test(args._[0])) await this.getSpotifyAlbum(context);
     else if (regExps.spotify.track.test(args._[0])) await this.getSpotifyTrack(context);
-    else if (regExps.url.test(args._[0])) msg.channel.send(Embed.error('invalid url'));
+    else if (regExps.url.test(args._[0])) msg.channel.send(Embed.error('Invalid URL'));
     else await this.searchYoutube(context);
-    msg.channel.stopTyping();
+    msg.channel.stopTyping(true);
   }
 
   private checkSpotify(msg: Message): boolean {
@@ -129,14 +115,11 @@ export class CommandPlay implements Command {
       (await Promise.all(videos.map(v => client.youtube.getVideoByID(v.id)))).map(
         v =>
           v &&
-          this.queueTrack(
-            {
-              type: 'youtube',
-              data: { ...v, livestream: isLivestream(v) },
-              requesterId: msg.author?.id,
-            } as Track,
-            { context, silent: true, beginPlaying: false }
-          )
+          this.queueTrack(new YoutubeTrack(msg.author.id, v), {
+            context,
+            silent: true,
+            beginPlaying: false,
+          })
       );
 
       msg.channel.send(
@@ -170,14 +153,7 @@ export class CommandPlay implements Command {
         return msg.channel.send(
           Embed.error("Video not found (either it doesn't exist or it's private)")
         );
-      this.queueTrack(
-        {
-          data: { ...video, livestream: isLivestream(video) },
-          requesterId: msg.author?.id as string,
-          type: 'youtube',
-        },
-        { context }
-      );
+      this.queueTrack(new YoutubeTrack(msg.author.id, video), { context });
     } catch (err) {
       getLogger(`MESSAGE ${msg.id}`).error(err);
       if (err.toString() === 'Error: resource youtube#videoListResponse not found')
@@ -201,17 +177,13 @@ export class CommandPlay implements Command {
 
     for (const { name, artists, duration_ms, id } of album.body.tracks.items) {
       this.queueTrack(
-        {
-          type: 'spotify',
-          data: {
-            title: name,
-            cover: album.body.images[0],
-            artists,
-            duration: toDuration(duration_ms, 'ms'),
-            id,
-          },
-          requesterId: msg.author?.id as string,
-        },
+        new SpotifyTrack(msg.author.id, {
+          title: name,
+          cover: album.body.images[0],
+          artists,
+          duration: toDuration(duration_ms, 'ms'),
+          id,
+        }),
         { context, silent: true, beginPlaying: false }
       );
     }
@@ -244,17 +216,13 @@ export class CommandPlay implements Command {
       track: { name, artists, duration_ms, id, album },
     } of playlist.body.tracks.items) {
       this.queueTrack(
-        {
-          type: 'spotify',
-          data: {
-            title: name,
-            cover: album.images[0],
-            artists,
-            duration: toDuration(duration_ms, 'ms'),
-            id,
-          },
-          requesterId: msg.author?.id as string,
-        },
+        new SpotifyTrack(msg.author.id, {
+          title: name,
+          cover: album.images[0],
+          artists,
+          duration: toDuration(duration_ms, 'ms'),
+          id,
+        }),
         { context, silent: true, beginPlaying: false }
       );
     }
@@ -284,17 +252,13 @@ export class CommandPlay implements Command {
     if (!track) return msg.channel.send(Embed.error('Invalid track'));
 
     this.queueTrack(
-      {
-        type: 'spotify',
-        data: {
-          title: track.body.name,
-          cover: track.body.album.images[0],
-          artists: track.body.artists,
-          id: track.body.id,
-          duration: toDuration(track.body.duration_ms, 'ms'),
-        },
-        requesterId: msg.author?.id as string,
-      },
+      new SpotifyTrack(msg.author.id, {
+        title: track.body.name,
+        cover: track.body.album.images[0],
+        artists: track.body.artists,
+        id: track.body.id,
+        duration: toDuration(track.body.duration_ms, 'ms'),
+      }),
       { context }
     );
   }
@@ -317,7 +281,7 @@ export class CommandPlay implements Command {
             livestream: (v.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
           };
         })
-        .map(data => ({ type: 'youtube', requesterId: msg.author?.id as string, data } as Track));
+        .map(data => new YoutubeTrack(msg.author.id, data));
 
       if (!videos.length) return searchMessage.edit(Embed.error('no results found'));
 
@@ -328,9 +292,7 @@ export class CommandPlay implements Command {
             .filter(t => !!t)
             .map(
               (track, index) =>
-                `${index + 1}. ` +
-                `**[${he.decode(track.data.title)}](${getTrackUrl(track)})**` +
-                ` (${getTrackLength(track)})`
+                `${index + 1}. ` + `**[${track.title}](${track.url})**` + ` (${track.duration})`
             )
             .join('\n'),
         })
@@ -395,9 +357,7 @@ export class CommandPlay implements Command {
     } else if (!(options?.silent ?? false)) {
       msg.channel.send(
         Embed.success(
-          `**[${track.data.title}](${getTrackUrl(track)})** queued (#${
-            queue.tracks.length - 1
-          } in queue)`,
+          `**[${track.data.title}](${track.url})** queued (#${queue.tracks.length - 1} in queue)`,
           queue.paused ? 'music is paused btw' : undefined
         )
       );
@@ -420,7 +380,6 @@ export class CommandPlay implements Command {
     queue.voiceChannel && (queue.voiceConnection = await queue.voiceChannel.join());
     await queue.voiceConnection?.voice?.setSelfDeaf(true);
 
-    queue.embed = await msg.channel.send(Embed.info('Loading...'));
     queue.updateNowPlaying();
 
     const callback = async (info: unknown) => {
@@ -462,43 +421,14 @@ export class CommandPlay implements Command {
       volume: false,
     };
 
-    switch (track.type) {
-      case 'youtube':
-        queue.voiceConnection
-          ?.play(ytdl(track.data.id), options)
-          .on('close', callback)
-          .on('error', logger.error);
-        break;
-      case 'file':
-        queue.voiceConnection
-          ?.play(track.data.url, options)
-          .on('close', callback)
-          .on('error', logger.error);
-        break;
-      case 'spotify': {
-        const error = () => {
-          queue.embed?.edit(
-            Embed.error(
-              `could not play **[${track.data.title}](${getTrackUrl(track)})**\n` +
-                `couldn't find an equivalent video on youtube`
-            )
-          );
-          return callback('no track found for ' + track.data.id);
-        };
-
-        const search = await yts({
-          query: `${track.data.title} ${track.data.artists.map(a => a.name).join(' ')} topic`,
-          category: 'music',
-        });
-        if (!search.videos.length) return error();
-        const video = await client.youtube.getVideo(search.videos[0].url);
-        if (!video) return error();
-
-        queue.voiceConnection
-          ?.play(ytdl(video.id), options)
-          .on('close', callback)
-          .on('error', logger.error);
-      }
+    try {
+      queue.voiceConnection
+        ?.play(await track.getPlayable(), options)
+        .on('close', callback)
+        .on('error', logger.error);
+    } catch (err) {
+      queue.embed?.edit(Embed.error(err.message));
+      return callback('error');
     }
   }
 }

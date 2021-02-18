@@ -144,7 +144,7 @@ client.on('message', async msg => {
         startTime: start,
       })
       .then(() => msg.channel.stopTyping(true))
-      .then(() => (RequestContext.getEntityManager() ?? client.em).flush())
+      .then(() => client.em.fork().flush())
       .catch(err => {
         msg.channel.stopTyping(true);
         logger.error(err);

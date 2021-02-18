@@ -20,9 +20,9 @@ export class CommandPlaying implements Command {
     if (!queue.playing) return msg.channel.send(Embed.error('not playing'));
 
     queue.embed?.delete();
+    delete queue.embed;
 
     queue.textChannel = msg.channel as TextChannel;
-    queue.embed = await msg.channel.send(Embed.info('Loading...'));
     queue.updateNowPlaying();
   }
 }

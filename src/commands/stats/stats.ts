@@ -273,9 +273,7 @@ export class CommandStats implements Command {
     } catch (err) {
       if ((err.toString() as string).includes('no data'))
         await msg.channel.send(
-          Embed.warning(
-            `${player.displayname} has no ${args._[1]?.toLowerCase() ?? 'bedwars'} data`
-          )
+          Embed.info(`${player.displayname} has no ${args._[1]?.toLowerCase() ?? 'bedwars'} data`)
         );
       else await msg.channel.send(Embed.error(codeBlock(err)));
     }
