@@ -29,10 +29,11 @@ export class CommandDetails implements Command {
     if (track.isYoutube()) {
       embed.addField('Channel', track.authorMarkup, true);
       embed.addField('Duration', track.durationString, true);
+
+      const date = DateTime.fromISO(track.data.snippet?.publishedAt as string);
       embed.addField(
         'Published at',
-        DateTime.fromISO(track.data.snippet?.publishedAt as string).toLocaleString(),
-        // 'dddd, MMMM Do YYYY, h:mm:ss A [UTC]Z'
+        `${date.toLocaleString(DateTime.DATETIME_FULL)}, ${date.toRelative()}`,
         true
       );
 
