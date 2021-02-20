@@ -1,13 +1,20 @@
-import { Canvas } from 'canvas';
+import { Canvas, Image } from 'canvas';
 import { Player } from 'hypixel-types';
 import { client } from '../../providers';
-import { byteSize } from '../../util';
+import { byteSize, insertUuidDashes } from '../../util';
 import { StatsData } from './stats';
-import { drawPrestige, drawRank, getExpForLevel, getLevelForExp } from './util/bwprestige';
+import {
+  drawPrestige,
+  drawRank,
+  getExpForLevel,
+  getLevelForExp,
+  getPrestigePlaintext,
+} from './util/bwprestige';
+import { getRankPlaintext } from './util/rank';
 import {
   bg,
   colorCode,
-  drawColoredText,
+  drawFormattedText,
   fg,
   font,
   getCharWidth,
@@ -16,6 +23,7 @@ import {
   margin,
   padding,
   round,
+  stripFormatting,
 } from './util/style';
 
 const columns = {
@@ -53,7 +61,9 @@ const rows = {
   Overall: '',
 };
 
-export const makeBedwarsStats = (data?: Player, quality = true): StatsData => {
+const subheaderHeight = 28;
+
+export const makeBedwarsStats = (data?: Player, avatar?: Image, quality = true): StatsData => {
   if (!data?.stats?.Bedwars) throw new Error('no data');
 
   const stats: Record<keyof typeof rows, Record<keyof typeof columns, string>> = {} as any;
@@ -83,6 +93,9 @@ export const makeBedwarsStats = (data?: Player, quality = true): StatsData => {
     });
   });
 
+  const level = getLevelForExp(data.stats.Bedwars.Experience!);
+  const levelExp = getExpForLevel(level);
+
   const canvas = new Canvas(
     getCharWidth(mainHeight) * 85 + margin * 2,
     (Object.keys(rows).length + 3) * (mainHeight + 2 * padding) +
@@ -103,11 +116,54 @@ export const makeBedwarsStats = (data?: Player, quality = true): StatsData => {
       Math.max(
         c.measureText(col).width,
         ...Object.keys(rows).map(mode => c.measureText(stats[mode][col].toString()).width)
-      ) + padding
+      ) +
+      padding * 0.75
   );
 
-  canvas.width =
-    categoryWidth + padding * 6 + columnWidths.map(c => c + padding * 2).reduce((a, b) => a + b, 0);
+  const leftHeader = data.displayname;
+
+  const rightHeader = [
+    `${(data.stats.Bedwars.winstreak ?? 0).toLocaleString()} ws`,
+    `${(data.stats.Bedwars.coins ?? 0).toLocaleString()} coins  `,
+  ].join('  ');
+
+  const leftSubheaders = [
+    insertUuidDashes(data.uuid),
+    `bedwars stats by ${client.user.tag}`,
+    `generated ${new Date().toISOString()}`,
+  ];
+
+  const rightSubheaders = [
+    `§b${Math.floor(((level % 1) * levelExp) / 10) * 10}§r/§a${levelExp}§r to next level`,
+    [
+      `Games Played: ${data.stats.Bedwars.games_played_bedwars}`,
+      `BBLR: ${round(
+        (data.stats.Bedwars.beds_broken_bedwars ?? 0) / (data.stats.Bedwars.beds_lost_bedwars ?? 0)
+      )}`,
+    ].join('  '),
+  ];
+
+  // very ugly and complicated but it works
+  canvas.width = Math.max(
+    (avatar?.width ?? 0) +
+      getCharWidth(headerHeight) *
+        (getRankPlaintext(data).length +
+          leftHeader.length +
+          rightHeader.length +
+          getPrestigePlaintext(data).length +
+          8),
+    ...new Array(Math.max(leftSubheaders.length, rightSubheaders.length))
+      .fill(0)
+      .map(
+        (__, i) =>
+          (avatar?.width ?? 0) +
+          getCharWidth(subheaderHeight) *
+            (stripFormatting(leftSubheaders[i] ?? '').length +
+              stripFormatting(rightSubheaders[i] ?? '').length +
+              8)
+      ),
+    categoryWidth + padding * 3 + columnWidths.map(c => c + padding * 2).reduce((a, b) => a + b, 0)
+  );
 
   c.fillStyle = bg;
   c.fillRect(0, 0, canvas.width, canvas.height);
@@ -127,64 +183,51 @@ export const makeBedwarsStats = (data?: Player, quality = true): StatsData => {
     c.imageSmoothingQuality = 'high';
     c.antialias = 'subpixel';
   }
-  // else {
-  // c.textDrawingMode = 'glyph';
-  // }
 
   c.font = font(headerHeight);
 
   const width = canvas.width - margin * 2;
   const height = canvas.height - margin * 2;
 
+  avatar && c.drawImage(avatar, padding, padding);
+
   c.save();
-  const [offset, color] = drawRank(c, data);
-  c.fillStyle = color('hex');
-  c.fillText(data.displayname, offset, padding + headerHeight);
+  const [nameOffset, nameColor] = drawRank(
+    c,
+    data,
+    (avatar?.width ?? 0) + (avatar ? 2 : 1) * padding
+  );
+  c.fillStyle = nameColor('hex');
+  c.fillText(leftHeader, nameOffset, padding + headerHeight);
   c.restore();
 
   c.textAlign = 'right';
-  c.fillText(
-    [
-      `${(data.stats.Bedwars.winstreak ?? 0).toLocaleString()} ws`,
-      `${(data.stats.Bedwars.coins ?? 0).toLocaleString()} coins  `,
-    ].join('  '),
-    drawPrestige(c, data),
-    padding + headerHeight
-  );
+  c.fillText(rightHeader, drawPrestige(c, data), padding + headerHeight);
 
   c.textAlign = 'left';
-
   c.save();
-  c.font = font(32);
+  c.font = font(subheaderHeight);
   c.fillStyle = colorCode(0x7)('hex');
-  c.fillText(`bedwars stats by ${client.user.tag}`, padding, headerHeight + 32 + 2 * padding);
-  c.fillText(
-    `generated ${new Date().toISOString()}`,
-    padding,
-    headerHeight + 64 + (3 * padding) / 1.1
-  );
 
-  const level = getLevelForExp(data.stats.Bedwars.Experience!);
-  const levelExp = getExpForLevel(level);
-  c.textAlign = 'right';
-  drawColoredText(
-    c,
-    `§b${Math.floor(((level % 1) * levelExp) / 10) * 10}§r/§a${levelExp}§r to next level`,
-    width - padding,
-    headerHeight + 32 + 2 * padding,
-    'right'
-  );
+  leftSubheaders.forEach((line, index) => {
+    drawFormattedText(
+      c,
+      line,
+      (avatar?.width ?? 0) + (avatar ? 2 : 1) * padding,
+      headerHeight + (index + 1) * subheaderHeight + (2 + index * 0.5) * padding
+    );
+  });
 
-  c.fillText(
-    [
-      `Games Played: ${data.stats.Bedwars.games_played_bedwars}`,
-      `BBLR: ${round(
-        (data.stats.Bedwars.beds_broken_bedwars ?? 0) / (data.stats.Bedwars.beds_lost_bedwars ?? 0)
-      )}`,
-    ].join('  '),
-    width - padding,
-    headerHeight + 64 + (3 * padding) / 1.1
-  );
+  rightSubheaders.forEach((line, index) => {
+    drawFormattedText(
+      c,
+      line,
+      width - padding,
+      headerHeight + (index + 1) * subheaderHeight + (2 + index * 0.5) * padding,
+      'right'
+    );
+  });
+
   c.restore();
 
   c.font = font(mainHeight);
@@ -230,7 +273,7 @@ export const makeBedwarsStats = (data?: Player, quality = true): StatsData => {
         );
       });
 
-      c.transform(1, 0, 0, 1, -(padding * 2 + columnWidths[i]), 0);
+      c.translate(-(padding * 2 + columnWidths[i]), 0);
     });
 
   c.restore();

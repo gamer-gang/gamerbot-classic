@@ -1,5 +1,6 @@
 import { RequestContext } from '@mikro-orm/core';
 import axios from 'axios';
+import { Image } from 'canvas';
 import { Message, MessageAttachment } from 'discord.js';
 import { Player, PlayerResponse } from 'hypixel-types';
 import yaml from 'js-yaml';
@@ -10,17 +11,11 @@ import { Command, CommandDocs } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
 import { client } from '../../providers';
 import { Context } from '../../types';
-import { codeBlock, Embed } from '../../util';
+import { codeBlock, Embed, insertUuidDashes } from '../../util';
 import { makeBedwarsStats } from './bedwars';
 
 const uuidRegex = /^\b[0-9a-f]{8}\b-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?\b[0-9a-f]{12}\b$/i;
 const userRegex = /^([A-Za-z0-9_]{3,16}|[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})$/;
-
-const insertUuidDashes = (uuid: string) =>
-  `${uuid.slice(0, 8)}-${uuid.slice(8, 12)}-${uuid.slice(12, 16)}-${uuid.slice(
-    16,
-    20
-  )}-${uuid.slice(20, 32)}`;
 
 const statsCache = new Map<string, Player>();
 const uuidCache = new Map<string, string>();
@@ -62,8 +57,11 @@ export class CommandStats implements Command {
     default: { debug: process.env.NODE_ENV === 'development' },
   };
 
-  readonly gamemodes: Record<Gamemode, (data: Player, quality: boolean) => StatsData> = {
-    bedwars: (data, quality) => makeBedwarsStats(data, quality),
+  readonly gamemodes: Record<
+    Gamemode,
+    (data: Player, avatar: Image, quality: boolean) => StatsData
+  > = {
+    bedwars: (data, avatar, quality) => makeBedwarsStats(data, avatar, quality),
   };
 
   async execute(context: Context): Promise<void | Message> {
@@ -71,6 +69,8 @@ export class CommandStats implements Command {
 
     const { msg, args } = context;
     const debug = !!args.debug;
+
+    const timeStart = process.hrtime();
 
     if (!process.env.HYPIXEL_API_KEY) {
       return msg.channel.send(
@@ -200,22 +200,24 @@ export class CommandStats implements Command {
     const player = _.cloneDeep(statsCache.get(uuid!));
     if (!player) throw new Error("Player is undefined after checking that it isn't");
 
+    const avatarSize = 165;
+
+    const avatarStart = process.hrtime();
+    if (!avatarCache.has(uuid!)) {
+      const avatar = await axios.get(
+        `https://crafatar.com/avatars/${player.uuid}?size=${avatarSize}&overlay`,
+        { responseType: 'arraybuffer' }
+      );
+
+      avatarCache.set(uuid!, avatar.data);
+      setTimeout(() => avatarCache.delete(uuid!), 1000 * 60 * 15);
+    }
+    const avatarEnd = process.hrtime(avatarStart);
+    const avatarDuration = Math.round((avatarEnd![0] * 1e9 + avatarEnd![1]) / 1e6);
+
+    const avatar = avatarCache.get(uuid!)!;
+
     if (args.info) {
-      const avatarStart = process.hrtime();
-      if (!avatarCache.has(uuid!)) {
-        const avatar = await axios.get(`https://crafatar.com/avatars/${player.uuid}`, {
-          responseType: 'arraybuffer',
-        });
-        avatarCache.set(uuid!, Buffer.from(avatar.data));
-        setTimeout(() => avatarCache.delete(uuid!), 1000 * 60 * 15);
-      }
-
-      const avatar = avatarCache.get(uuid!);
-      if (!avatar) throw new Error("Avatar is undefined after checking that it isn't");
-
-      const avatarEnd = process.hrtime(avatarStart);
-      const avatarDuration = Math.round((avatarEnd![0] * 1e9 + avatarEnd![1]) / 1e6);
-
       const formatString = 'dddd, MMMM Do YYYY, h:mm:ss A [UTC]Z';
 
       const embed = new Embed({ title: player.displayname })
@@ -234,7 +236,7 @@ export class CommandStats implements Command {
         );
 
       msg.channel.send(embed);
-      msg.channel.stopTyping();
+      msg.channel.stopTyping(true);
       return;
     }
 
@@ -251,9 +253,14 @@ export class CommandStats implements Command {
           )
         );
 
+      const avatarImage = new Image();
+      avatarImage.src = avatar;
+      avatarImage.width = avatarSize;
+      avatarImage.height = avatarSize;
+
       const canvasStart = process.hrtime();
       const gamemode = exec ? (exec[1] as Gamemode) : 'bedwars';
-      const [image, info] = this.gamemodes[gamemode](player, !args.fast);
+      const [image, info] = this.gamemodes[gamemode](player, avatarImage, !args.fast);
       const canvasEnd = process.hrtime(canvasStart);
       const canvasDuration = Math.round((canvasEnd![0] * 1e9 + canvasEnd![1]) / 1e6);
 
@@ -261,23 +268,30 @@ export class CommandStats implements Command {
 
       const file = new MessageAttachment(image);
 
+      const timeEnd = process.hrtime(timeStart);
+      const totalDuration = Math.round((timeEnd![0] * 1e9 + timeEnd![1]) / 1e6);
+
       const debugInfo = [
         `${dataDuration < 10 ? 'data cached' : `data ${dataDuration}ms`}`,
+        `${avatarDuration < 10 ? 'avatar cached' : `avatar ${avatarDuration}ms`}`,
         `img ${canvasDuration}ms`,
+        `total ${totalDuration}ms`,
         ...(info?.filter(v => !!v) ?? []),
       ].join('   ');
 
       await (debug
         ? msg.channel.send({ content: `\`${debugInfo}\``, files: [file] })
         : msg.channel.send(file));
+
+      msg.channel.stopTyping(true);
     } catch (err) {
       if ((err.toString() as string).includes('no data'))
         await msg.channel.send(
           Embed.info(`${player.displayname} has no ${args._[1]?.toLowerCase() ?? 'bedwars'} data`)
         );
       else await msg.channel.send(Embed.error(codeBlock(err)));
-    }
 
-    msg.channel.stopTyping();
+      msg.channel.stopTyping(true);
+    }
   }
 }

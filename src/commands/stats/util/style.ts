@@ -35,6 +35,7 @@ type Text = {
 };
 
 export const parseFormattedText = (text: string, defaultStyle = 0xdfe0e4): Text[] => {
+  if (!text.includes('§')) return [{ text, color: color(defaultStyle) }];
   return text
     .split('§')
     .filter(t => !!t)
@@ -62,7 +63,9 @@ export const getCharWidth = (measure: number | CanvasRenderingContext2D): number
   } else return getCharWidth(+measure.font.split('px')[0]);
 };
 
-export const drawColoredText = (
+export const stripFormatting = (text: string): string => text.replace(/§[0-9a-f]/gi, '');
+
+export const drawFormattedText = (
   c: CanvasRenderingContext2D,
   text: Text[] | string,
   x: number,

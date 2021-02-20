@@ -1,4 +1,5 @@
 import { Player } from 'hypixel-types';
+import { stripFormatting } from './style';
 
 export const rankWeights = {
   NON_DONOR: 1,
@@ -50,4 +51,8 @@ export const getRank = (player: Player): Rank => {
   out ??= 'NON_DONOR';
 
   return out;
+};
+
+export const getRankPlaintext = (player: Player): string => {
+  return stripFormatting(rankPrefixes[getRank(player)]);
 };

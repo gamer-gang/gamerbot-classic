@@ -118,12 +118,19 @@ export const getPrestigePalette = (level: number): Color[] => {
   return [gray];
 };
 
+export const getPrestigePlaintext = (player: Player): string => {
+  const level = Math.floor(getLevelForExp(player.stats.Bedwars.Experience ?? 0));
+  const star = level >= 2100 ? '⚝' : level >= 1100 ? '✪' : '★';
+  const tag = `[${level}${star}]`;
+  return tag;
+};
+
 export const drawPrestige = (c: CanvasRenderingContext2D, player: Player): number => {
   c.save();
 
   const charWidth = getCharWidth(+c.font.split('px')[0]);
 
-  const level = Math.floor(getLevelForExp(player.stats.Bedwars.Experience!));
+  const level = Math.floor(getLevelForExp(player.stats.Bedwars.Experience ?? 0));
   const palette = getPrestigePalette(level);
 
   const star = level >= 2100 ? '⚝' : level >= 1100 ? '✪' : '★';
@@ -152,7 +159,9 @@ export const drawPrestige = (c: CanvasRenderingContext2D, player: Player): numbe
 
 export const drawRank = (
   c: CanvasRenderingContext2D,
-  player: Player
+  player: Player,
+  x = padding,
+  y = padding + headerHeight
 ): [width: number, nameColor: Color] => {
   c.save();
 
@@ -169,10 +178,10 @@ export const drawRank = (
 
   const prefixWidth = split.reduce((offset, segment) => {
     c.fillStyle = segment.color('hex');
-    c.fillText(segment.text, offset - charWidth * 0.2, padding + headerHeight);
+    c.fillText(segment.text, offset - charWidth * 0.2, y);
 
     return offset + charWidth * segment.text.length;
-  }, padding);
+  }, x);
 
   c.restore();
 
