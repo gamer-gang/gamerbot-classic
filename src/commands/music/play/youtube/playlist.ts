@@ -1,8 +1,9 @@
 import { Message } from 'discord.js';
 import { getLogger } from 'log4js';
+import moment from 'moment';
 import { client } from '../../../../providers';
 import { Context, YoutubeTrack } from '../../../../types';
-import { codeBlock, Embed } from '../../../../util';
+import { codeBlock, Embed, getPlaylistVideos, regExps } from '../../../../util';
 import { CommandPlay } from '../play';
 
 export const getYoutubePlaylist = async (
@@ -10,28 +11,39 @@ export const getYoutubePlaylist = async (
   caller: CommandPlay
 ): Promise<void | Message> => {
   const { msg, args } = context;
-  try {
-    const playlist = await client.youtube.getPlaylist(args._[0]);
-    if (!playlist)
-      return msg.channel.send(
-        Embed.error("Playlist not found (either it doesn't exist or it's private)")
-      );
 
-    const videos = await playlist.getVideos();
-    (await Promise.all(videos.map(v => client.youtube.getVideoByID(v.id)))).map(
-      v =>
-        v &&
-        caller.queueTrack(new YoutubeTrack(msg.author.id, v), {
-          context,
-          silent: true,
-          beginPlaying: false,
-        })
-    );
+  try {
+    const id = regExps.youtube.playlist.exec(args._[0])![1];
+
+    const [playlist, videos] = await getPlaylistVideos(id);
+
+    args.sort === 'newest'
+      ? videos.sort(
+          (a, b) => moment(a.snippet?.publishedAt).date() - moment(b.snippet?.publishedAt).date()
+        )
+      : args.sort === 'oldest'
+      ? videos.sort(
+          (a, b) => moment(b.snippet?.publishedAt).date() - moment(a.snippet?.publishedAt).date()
+        )
+      : args.sort === 'views'
+      ? videos.sort(
+          (a, b) =>
+            parseInt(b.statistics?.viewCount ?? '0') - parseInt(a.statistics?.viewCount ?? '0')
+        )
+      : undefined;
+
+    videos.forEach(v => {
+      caller.queueTrack(new YoutubeTrack(msg.author.id, v), {
+        context,
+        silent: true,
+        beginPlaying: false,
+      });
+    });
 
     msg.channel.send(
       Embed.success(
         `Queued ${videos.length.toString()} videos from ` +
-          `**[${playlist.title}](https://youtube.com/playlist?list=${playlist.id})**`
+          `**[${playlist.snippet?.title}](https://youtube.com/playlist?list=${playlist.id})**`
       )
     );
 

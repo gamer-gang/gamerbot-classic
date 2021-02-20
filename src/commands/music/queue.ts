@@ -67,7 +67,7 @@ export class CommandQueue implements Command {
 
         const removed = queue.tracks.splice(start - 1, end - start + 1);
 
-        const trackMarkup = removed.map(track => `**[${track.title}](${track.url})**`);
+        const trackMarkup = removed.map(track => `**${track.titleMarkup}**`);
 
         // update current index
         queue.index = queue.tracks.indexOf(current);
@@ -87,9 +87,7 @@ export class CommandQueue implements Command {
         // update current index
         queue.index = queue.tracks.indexOf(current);
 
-        return msg.channel.send(
-          Embed.success(`Removed **[${removed.title}](${removed.url})** from the queue`)
-        );
+        return msg.channel.send(Embed.success(`Removed **${removed.titleMarkup}** from the queue`));
       }
     }
 
@@ -98,7 +96,7 @@ export class CommandQueue implements Command {
 
     const queueLines = tracks.map(
       (track, i) =>
-        `${i + 1}. **[${track.title}](${track.url})** (${track.duration})${
+        `${i + 1}. **${track.titleMarkup}** (${track.durationString})${
           queue.playing && queue.index === i
             ? ` **(${formatDuration(queue.remainingTime)} remaining)**`
             : ''

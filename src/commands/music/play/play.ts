@@ -1,11 +1,12 @@
 import { Message, StreamOptions, TextChannel, VoiceChannel } from 'discord.js';
 import _ from 'lodash';
 import miniget from 'miniget';
+import moment from 'moment';
 import * as mm from 'music-metadata';
 import { Command, CommandDocs } from '../..';
 import { client, getLogger, logger } from '../../../providers';
 import { Context, FileTrack, Track } from '../../../types';
-import { Embed, regExps, toDuration } from '../../../util';
+import { Embed, regExps } from '../../../util';
 import { getSpotifyAlbum } from './spotify/album';
 import { getSpotifyPlaylist } from './spotify/playlist';
 import { getSpotifyTrack } from './spotify/track';
@@ -25,12 +26,20 @@ const handlers: {
   spotifyTrach: [regExps.spotify.track, getSpotifyTrack],
 };
 
+const sortAliases = {
+  newest: ['newest', 'recent'],
+  oldest: ['oldest'],
+  views: ['views', 'popularity'],
+};
+
 export class CommandPlay implements Command {
   cmd = ['play', 'p'];
   docs: CommandDocs = [
     {
-      usage: ['play <url>'],
-      description: 'play youtube video from a video/playlist/channel url; must not be private',
+      usage: ['play <url> [--sort <type>]'],
+      description:
+        'play youtube video from a video/playlist/channel url; must not be private\n' +
+        'use --sort to order playlist and channel videos or search results',
     },
     {
       usage: ['play <...searchString>'],
@@ -42,6 +51,8 @@ export class CommandPlay implements Command {
 
     const voice = msg.member?.voice;
     if (!voice?.channel) return msg.channel.send(Embed.error('You are not in a voice channel'));
+    if (msg.guild.me?.voice.channelID && msg.guild.me.voice.channelID !== voice.channelID)
+      return msg.channel.send(Embed.error('You are not in the channel'));
 
     const queue = client.queues.get(msg.guild.id);
 
@@ -60,7 +71,7 @@ export class CommandPlay implements Command {
           new FileTrack(msg.author?.id as string, {
             title: (attachment.name || _.last(attachment.url.split('/'))) ?? 'Unknown',
             url: attachment.url,
-            duration: toDuration(metadata.format.duration),
+            duration: moment.duration(metadata.format.duration, 'seconds'),
           }),
           { context }
         );
@@ -81,6 +92,18 @@ export class CommandPlay implements Command {
       }
 
       return msg.channel.send(Embed.error('Expected at least one arg'));
+    }
+
+    if (args.sort !== undefined) {
+      const sort = args.sort.toLowerCase();
+      const normalizedSort = Object.keys(sortAliases).find(k =>
+        sortAliases[k].find(keyword => sort === keyword || keyword.includes(sort))
+      );
+
+      if (!normalizedSort)
+        return msg.channel.send(Embed.error('Invalid sort type (valid: newest, oldest, views)'));
+
+      args.sort = normalizedSort;
     }
 
     msg.channel.startTyping();
@@ -118,7 +141,7 @@ export class CommandPlay implements Command {
     } else if (!(options?.silent ?? false)) {
       msg.channel.send(
         Embed.success(
-          `**[${track.data.title}](${track.url})** queued (#${queue.tracks.length - 1} in queue)`,
+          `**${track.titleMarkup}** queued (#${queue.tracks.length - 1} in queue)`,
           queue.paused ? 'music is paused btw' : undefined
         )
       );
@@ -151,7 +174,7 @@ export class CommandPlay implements Command {
 
       const queue = client.queues.get(msg.guild.id);
 
-      getLogger(`MESSAGE ${msg.id}`).debug(`track "${track.data.title}" ended with info "${info}"`);
+      getLogger(`MESSAGE ${msg.id}`).debug(`track "${track.title}" ended with info "${info}"`);
 
       queue.embed?.delete();
       delete queue.embed;

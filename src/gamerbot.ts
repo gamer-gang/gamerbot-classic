@@ -1,7 +1,7 @@
 import { Connection, EntityManager, IDatabaseDriver } from '@mikro-orm/core';
 import { Client, ClientOptions, ClientUser, Guild, GuildEmoji } from 'discord.js';
 import fse from 'fs-extra';
-import YouTube from 'simple-youtube-api';
+import { google } from 'googleapis';
 import Spotify from 'spotify-web-api-node';
 import { Command } from './commands';
 import { logger } from './providers';
@@ -18,7 +18,10 @@ export class Gamerbot extends Client {
   readonly commands: Command[] = [];
   readonly presenceManager: PresenceManager;
   readonly user!: ClientUser;
-  readonly youtube = new YouTube(process.env.YT_API_KEY as string);
+  readonly youtube = google.youtube({
+    version: 'v3',
+    auth: process.env.YT_API_KEY,
+  });
   readonly spotify = new Spotify({
     clientId: process.env.SPOTIFY_CLIENT_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,

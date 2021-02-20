@@ -1,10 +1,19 @@
 import { Message } from 'discord.js';
 import { getLogger } from 'log4js';
+import moment from 'moment';
 import yts from 'yt-search';
 import { client } from '../../../../providers';
 import { Context, YoutubeTrack } from '../../../../types';
 import { codeBlock, Embed } from '../../../../util';
 import { CommandPlay } from '../play';
+
+const parseAgo = (ago: string) => {
+  if (!ago) return Date.now();
+  const [number, type] = ago.replace(/ ago$/g, '').split(' ');
+  return moment(Date.now())
+    .subtract(parseInt(number), type as moment.DurationInputArg2)
+    .date();
+};
 
 export const searchYoutube = async (
   context: Context,
@@ -17,28 +26,48 @@ export const searchYoutube = async (
 
     const search = await yts({ query: args._.join(' '), category: 'music' });
 
-    const videos = (
-      await Promise.all(search.videos.slice(0, 5).map(v => client.youtube.getVideo(v.url)))
-    )
-      .flatMap(v => {
-        if (!v) return [];
-        return {
-          ...v,
-          livestream: (v.raw.snippet as Record<string, string>).liveBroadcastContent === 'live',
-        };
-      })
+    const results =
+      args.sort === 'newest'
+        ? search.videos.sort((a, b) => parseAgo(a.ago) - parseAgo(b.ago))
+        : args.sort === 'oldest'
+        ? search.videos.sort((a, b) => parseAgo(b.ago) - parseAgo(a.ago))
+        : args.sort === 'views'
+        ? search.videos.sort((a, b) => b.views - a.views)
+        : search.videos;
+
+    if (!results.length) return searchMessage.edit(Embed.error('no results found'));
+
+    const list = await client.youtube.videos.list({
+      part: ['statistics', 'contentDetails', 'snippet'],
+      id: results.slice(0, 5).map(v => v.videoId),
+    });
+
+    const tracks = list.data.items
+      ?.map(v => ({
+        ...v,
+        livestream: v.snippet?.liveBroadcastContent === 'live',
+      }))
       .map(data => new YoutubeTrack(msg.author.id, data));
 
-    if (!videos.length) return searchMessage.edit(Embed.error('no results found'));
+    if (!tracks?.length) return searchMessage.edit(Embed.error('no results found'));
 
     searchMessage.edit(
       new Embed({
         title: 'choose a video',
-        description: videos
-          .filter(t => !!t)
+        description: tracks
           .map(
             (track, index) =>
-              `${index + 1}. ` + `**[${track.title}](${track.url})**` + ` (${track.duration})`
+              `${index + 1}. **${track.titleMarkup}** by ${track.authorMarkup} (${
+                track.durationString
+              }), ${
+                args.sort === 'views'
+                  ? `${
+                      parseInt(track.data.statistics?.viewCount ?? '0')?.toLocaleString() ?? '?'
+                    } views`
+                  : args.sort !== undefined
+                  ? moment(track.data.snippet?.publishedAt).fromNow()
+                  : ''
+              }`
           )
           .join('\n'),
       })
@@ -56,7 +85,7 @@ export const searchYoutube = async (
         return collector.stop('playcmd');
 
       const i = parseInt(collected.content);
-      if (isNaN(i) || i < 1 || i > videos.length)
+      if (isNaN(i) || i < 1 || i > tracks.length)
         return msg.channel.send(Embed.warning('invalid selection, try again'));
 
       index = i;
@@ -66,10 +95,10 @@ export const searchYoutube = async (
     collector.on('end', async (collected, reason) => {
       if (reason === 'playcmd') return;
       if (reason === 'cancel') return msg.channel.send(Embed.info('cancelled'));
-      if (!index || Number.isNaN(index) || index < 1 || index > videos.length)
+      if (!index || Number.isNaN(index) || index < 1 || index > tracks.length)
         return msg.channel.send(Embed.error("invalid selection, time's up"));
 
-      const video = videos[index - 1];
+      const video = tracks[index - 1];
       if (!video)
         throw new Error('invalid state: video is null after selecting valid returned search');
 

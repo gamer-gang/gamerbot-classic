@@ -1,7 +1,8 @@
 import { Message } from 'discord.js';
+import moment from 'moment';
 import { client } from '../../../../providers';
 import { Context, SpotifyTrack } from '../../../../types';
-import { Embed, regExps, toDuration } from '../../../../util';
+import { Embed, regExps } from '../../../../util';
 import { CommandPlay } from '../play';
 import { checkSpotify } from '../util';
 
@@ -24,7 +25,7 @@ export const getSpotifyTrack = async (
       cover: track.body.album.images[0],
       artists: track.body.artists,
       id: track.body.id,
-      duration: toDuration(track.body.duration_ms, 'ms'),
+      duration: moment.duration(track.body.duration_ms, 'ms'),
     }),
     { context }
   );

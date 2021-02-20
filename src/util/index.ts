@@ -9,4 +9,5 @@ export * from './message';
 export * from './presence';
 export * from './regexp';
 export * from './snowflake';
+export * from './youtube';
 export { resolvePath, Store };

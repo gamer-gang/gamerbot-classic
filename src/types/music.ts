@@ -1,29 +1,20 @@
 import { Message, TextChannel, VoiceChannel, VoiceConnection } from 'discord.js';
+import { youtube_v3 } from 'googleapis';
 import he from 'he';
-import { Duration, Video } from 'simple-youtube-api';
+import moment from 'moment';
 import { Readable } from 'stream';
 import yts from 'yt-search';
 import ytdl from 'ytdl-core';
 import { client } from '../providers';
-import { Embed, formatDuration, toDuration, toDurationSeconds } from '../util';
+import { Embed, formatDuration } from '../util';
 
 export type TrackType = 'youtube' | 'file' | 'spotify';
 
 export type BaseTrack = {
   requesterId: string;
 };
-
-export interface BaseTrackData {
-  title: string;
-  duration: Duration;
-}
-
 export abstract class Track {
   internalType = 'unknown';
-  data: BaseTrackData = {
-    title: 'Unknown',
-    duration: toDuration(0, 'seconds'),
-  };
 
   constructor(public requesterId: string) {}
 
@@ -42,17 +33,13 @@ export abstract class Track {
   abstract get url(): string | undefined;
   abstract get type(): string;
   abstract getPlayable(): Promise<string | Readable>;
+  abstract get titleMarkup(): string;
+  abstract get title(): string;
+  abstract get durationString(): string;
+  abstract get duration(): moment.Duration;
 
-  get title(): string {
-    return he.decode(this.data.title);
-  }
-
-  get coverUrl(): string | undefined {
+  get coverUrl(): string | null | undefined {
     return;
-  }
-
-  get duration(): string {
-    return formatDuration(this.data.duration);
   }
 }
 
@@ -60,41 +47,61 @@ export class YoutubeTrack extends Track {
   internalType = 'youtube' as const;
   livestream: boolean;
 
-  constructor(requesterId: string, public data: Omit<Video, 'fetch'>) {
+  constructor(requesterId: string, public data: youtube_v3.Schema$Video) {
     super(requesterId);
-    this.livestream =
-      (this.data.raw.snippet as Record<string, string>).liveBroadcastContent === 'live';
+    this.livestream = this.data.snippet?.liveBroadcastContent === 'live';
   }
 
   get type(): string {
     return this.livestream ? 'Livestream' : 'YouTube';
   }
 
-  get coverUrl(): string {
-    return this.data.maxRes?.url as string;
+  get coverUrl(): string | null | undefined {
+    return (
+      this.data.snippet?.thumbnails?.maxres ||
+      this.data.snippet?.thumbnails?.high ||
+      this.data.snippet?.thumbnails?.medium ||
+      this.data.snippet?.thumbnails?.standard ||
+      this.data.snippet?.thumbnails?.default
+    )?.url;
   }
 
   get url(): string {
     return 'https://youtube.com/watch?v=' + this.data.id;
   }
 
-  get authorMarkup(): string {
-    return `[${this.data.channel.title}](https://youtube.com/channel/${this.data.channel.id})`;
+  get title(): string {
+    return he.decode(this.data.snippet?.title ?? '[unknown title]');
   }
 
-  get duration(): string {
-    return this.livestream ? 'livestream' : formatDuration(this.data.duration);
+  get titleMarkup(): string {
+    return `[${this.title}](${this.url})`;
+  }
+
+  get authorMarkup(): string {
+    return `[${this.data.snippet?.channelTitle}](https://youtube.com/channel/${this.data.snippet?.channelId})`;
+  }
+
+  get durationString(): string {
+    return this.livestream
+      ? 'livestream'
+      : formatDuration(moment.duration(this.data.contentDetails?.duration));
+  }
+
+  get duration(): moment.Duration {
+    return moment.duration(this.data.contentDetails?.duration);
   }
 
   async getPlayable(): Promise<Readable> {
-    return ytdl(this.data.id ?? this.data.raw.id ?? this.data.url);
+    if (!this.data.id) throw new Error(`video '${this.data.snippet?.title}' has no video id`);
+    return ytdl(this.data.id);
   }
 }
 
 export interface FileTrackData {
   url: string;
   title: string;
-  duration: Duration;
+  duration: moment.Duration;
 }
 
 export class FileTrack extends Track {
@@ -112,6 +119,22 @@ export class FileTrack extends Track {
     return this.data.url;
   }
 
+  get title(): string {
+    return this.data.title;
+  }
+
+  get titleMarkup(): string {
+    return this.title;
+  }
+
+  get durationString(): string {
+    return formatDuration(this.data.duration);
+  }
+
+  get duration(): moment.Duration {
+    return this.data.duration;
+  }
+
   async getPlayable(): Promise<string> {
     return this.data.url;
   }
@@ -121,7 +144,7 @@ export interface SpotifyTrackData {
   artists: (SpotifyApi.ArtistObjectSimplified | SpotifyApi.ArtistObjectFull)[];
   id: string;
   cover: SpotifyApi.ImageObject;
-  duration: Duration;
+  duration: moment.Duration;
 }
 
 export class SpotifyTrack extends Track {
@@ -143,6 +166,22 @@ export class SpotifyTrack extends Track {
     return 'https://open.spotify.com/track/' + this.data.id;
   }
 
+  get title(): string {
+    return this.data.title;
+  }
+
+  get titleMarkup(): string {
+    return `[${this.title}](${this.url})`;
+  }
+
+  get durationString(): string {
+    return formatDuration(this.data.duration);
+  }
+
+  get duration(): moment.Duration {
+    return this.data.duration;
+  }
+
   get authorMarkup(): string {
     return this.data.artists
       .map(a => `[${a.name}](https://open.spotify.com/artist/${a.id})`)
@@ -151,18 +190,20 @@ export class SpotifyTrack extends Track {
 
   async getPlayable(): Promise<Readable> {
     const error =
-      `could not play **[${this.data.title}](${this.url})**\n` +
-      `couldn't find an equivalent video on youtube`;
+      `could not play **${this.titleMarkup}**\n` + `couldn't find an equivalent video on youtube`;
 
     const search = await yts({
       query: `${this.data.title} ${this.data.artists.map(a => a.name).join(' ')} topic`,
       category: 'music',
     });
     if (!search.videos.length) throw new Error(error);
-    const video = await client.youtube.getVideo(search.videos[0].url);
-    if (!video) throw new Error(error);
+    const video = await client.youtube.videos.list({
+      part: ['contentDetails', 'snippet'],
+      id: [search.videos[0].videoId],
+    });
+    if (!video || !video.data.items || !video.data.items[0]) throw new Error(error);
 
-    return ytdl(video.id);
+    return ytdl(video.data.items[0].id!);
   }
 }
 
@@ -189,7 +230,7 @@ export class Queue {
   get remainingTime(): number {
     if (!this.playing || !this.voiceConnection?.dispatcher) return 0;
     return (
-      toDurationSeconds(this.tracks[this.index].data.duration) -
+      this.tracks[this.index].duration.asSeconds() -
       Math.floor(
         this.voiceConnection.dispatcher.totalStreamTime - this.voiceConnection.dispatcher.pausedTime
       ) /
@@ -201,7 +242,7 @@ export class Queue {
     if (this.tracks.find(v => v.isYoutube() && v.livestream)) return '?';
 
     const totalDurationSeconds = this.tracks
-      .map(t => toDurationSeconds(t.data.duration as Duration))
+      .map(t => t.duration.asSeconds())
       .reduce((a, b) => a + Math.round(b), 0);
 
     return formatDuration(isNaN(totalDurationSeconds) ? 0 : totalDurationSeconds);
@@ -215,13 +256,15 @@ export class Queue {
 
     const embed = new Embed({
       title: `Now Playing ${this.loopSymbol} ${this.paused ? '⏸️' : ''}`,
-      description: `**[${track.data.title}](${track.url})** (${track.type})`,
+      description: `**${track.titleMarkup}** (${track.type})`,
     });
 
-    if (track.isYoutube())
-      embed.setThumbnail(track.coverUrl).addField('Channel', track.authorMarkup, true);
-    else if (track.isSpotify())
+    if (track.isYoutube()) {
+      track.coverUrl && embed.setThumbnail(track.coverUrl);
+      embed.addField('Channel', track.authorMarkup, true);
+    } else if (track.isSpotify()) {
       embed.setThumbnail(track.coverUrl).addField('Artist', track.authorMarkup, true);
+    }
 
     embed.addField('Requested by', `<@!${track.requesterId}>`, true);
 
