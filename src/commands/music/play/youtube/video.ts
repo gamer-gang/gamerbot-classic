@@ -13,7 +13,7 @@ export const getYoutubeVideo = async (
 
   try {
     const video = await client.youtube.videos.list({
-      part: [],
+      part: ['snippet', 'contentDetails', 'statistics'],
       id: [regExps.youtube.video.exec(args._[0])![1]],
     });
     if (!video.data.items?.length)
