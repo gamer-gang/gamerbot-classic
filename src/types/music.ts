@@ -1,12 +1,12 @@
 import { Message, TextChannel, VoiceChannel, VoiceConnection } from 'discord.js';
 import { youtube_v3 } from 'googleapis';
 import he from 'he';
-import moment from 'moment';
+import { Duration } from 'luxon';
 import { Readable } from 'stream';
 import yts from 'yt-search';
 import ytdl from 'ytdl-core';
 import { client } from '../providers';
-import { Embed, formatDuration } from '../util';
+import { Embed, formatDuration, normalizeDuration } from '../util';
 
 export type TrackType = 'youtube' | 'file' | 'spotify';
 
@@ -36,7 +36,7 @@ export abstract class Track {
   abstract get titleMarkup(): string;
   abstract get title(): string;
   abstract get durationString(): string;
-  abstract get duration(): moment.Duration;
+  abstract get duration(): Duration;
 
   get coverUrl(): string | null | undefined {
     return;
@@ -83,13 +83,11 @@ export class YoutubeTrack extends Track {
   }
 
   get durationString(): string {
-    return this.livestream
-      ? 'livestream'
-      : formatDuration(moment.duration(this.data.contentDetails?.duration));
+    return this.livestream ? 'livestream' : formatDuration(this.duration);
   }
 
-  get duration(): moment.Duration {
-    return moment.duration(this.data.contentDetails?.duration);
+  get duration(): Duration {
+    return normalizeDuration(Duration.fromISO(this.data.contentDetails?.duration as string));
   }
 
   async getPlayable(): Promise<Readable> {
@@ -101,7 +99,7 @@ export class YoutubeTrack extends Track {
 export interface FileTrackData {
   url: string;
   title: string;
-  duration: moment.Duration;
+  duration: Duration;
 }
 
 export class FileTrack extends Track {
@@ -124,14 +122,14 @@ export class FileTrack extends Track {
   }
 
   get titleMarkup(): string {
-    return this.title;
+    return `[${this.title}](${this.url})`;
   }
 
   get durationString(): string {
-    return formatDuration(this.data.duration);
+    return formatDuration(this.duration);
   }
 
-  get duration(): moment.Duration {
+  get duration(): Duration {
     return this.data.duration;
   }
 
@@ -144,7 +142,7 @@ export interface SpotifyTrackData {
   artists: (SpotifyApi.ArtistObjectSimplified | SpotifyApi.ArtistObjectFull)[];
   id: string;
   cover: SpotifyApi.ImageObject;
-  duration: moment.Duration;
+  duration: Duration;
 }
 
 export class SpotifyTrack extends Track {
@@ -175,10 +173,10 @@ export class SpotifyTrack extends Track {
   }
 
   get durationString(): string {
-    return formatDuration(this.data.duration);
+    return formatDuration(this.duration);
   }
 
-  get duration(): moment.Duration {
+  get duration(): Duration {
     return this.data.duration;
   }
 
@@ -230,7 +228,7 @@ export class Queue {
   get remainingTime(): number {
     if (!this.playing || !this.voiceConnection?.dispatcher) return 0;
     return (
-      this.tracks[this.index].duration.asSeconds() -
+      this.tracks[this.index].duration.as('seconds') -
       Math.floor(
         this.voiceConnection.dispatcher.totalStreamTime - this.voiceConnection.dispatcher.pausedTime
       ) /
@@ -242,7 +240,7 @@ export class Queue {
     if (this.tracks.find(v => v.isYoutube() && v.livestream)) return '?';
 
     const totalDurationSeconds = this.tracks
-      .map(t => t.duration.asSeconds())
+      .map(t => t.duration.as('seconds'))
       .reduce((a, b) => a + Math.round(b), 0);
 
     return formatDuration(isNaN(totalDurationSeconds) ? 0 : totalDurationSeconds);
@@ -265,6 +263,8 @@ export class Queue {
     } else if (track.isSpotify()) {
       embed.setThumbnail(track.coverUrl).addField('Artist', track.authorMarkup, true);
     }
+
+    embed.addField('Duration', track.durationString, true);
 
     embed.addField('Requested by', `<@!${track.requesterId}>`, true);
 

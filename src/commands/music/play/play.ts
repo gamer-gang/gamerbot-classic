@@ -1,12 +1,12 @@
 import { Message, StreamOptions, TextChannel, VoiceChannel } from 'discord.js';
 import _ from 'lodash';
+import { Duration } from 'luxon';
 import miniget from 'miniget';
-import moment from 'moment';
 import * as mm from 'music-metadata';
 import { Command, CommandDocs } from '../..';
 import { client, getLogger, logger } from '../../../providers';
 import { Context, FileTrack, Track } from '../../../types';
-import { Embed, regExps } from '../../../util';
+import { Embed, normalizeDuration, regExps } from '../../../util';
 import { getSpotifyAlbum } from './spotify/album';
 import { getSpotifyPlaylist } from './spotify/playlist';
 import { getSpotifyTrack } from './spotify/track';
@@ -71,7 +71,7 @@ export class CommandPlay implements Command {
           new FileTrack(msg.author?.id as string, {
             title: (attachment.name || _.last(attachment.url.split('/'))) ?? 'Unknown',
             url: attachment.url,
-            duration: moment.duration(metadata.format.duration, 'seconds'),
+            duration: normalizeDuration(Duration.fromObject({ seconds: metadata.format.duration })),
           }),
           { context }
         );

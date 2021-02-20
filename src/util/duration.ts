@@ -1,38 +1,44 @@
-import moment from 'moment';
+import { Duration } from 'luxon';
 
-const isDuration = (value: moment.Duration | number): value is moment.Duration => {
-  return (
-    (value as moment.Duration).seconds !== undefined &&
-    (value as moment.Duration).minutes !== undefined &&
-    (value as moment.Duration).hours !== undefined
-  );
-};
+export const normalizeDuration = (duration: Duration): Duration =>
+  Duration.fromObject({
+    years: 0,
+    months: 0,
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    ...duration.toObject(),
+  }).normalize();
 
-export function formatDuration(duration: moment.Duration): string;
+export function formatDuration(duration: Duration): string;
 export function formatDuration(seconds: number): string;
-export function formatDuration(length: moment.Duration | number): string {
-  let duration: moment.Duration;
+export function formatDuration(length: Duration | number): string {
+  let duration: Duration;
 
-  if (isDuration(length)) {
-    duration = length;
-  } else {
-    duration = moment.duration(length, 'seconds');
+  if (Duration.isDuration(length)) duration = normalizeDuration(length);
+  else duration = normalizeDuration(Duration.fromObject({ seconds: length }));
+
+  if (duration.years || duration.months || duration.days) {
+    const obj = duration.normalize().toObject();
+
+    const units = ['years', 'months', 'days', 'hours', 'minutes', 'seconds'] as const;
+
+    const segments = units.map(unit => {
+      const count = obj[unit];
+      return count && `${count} ${unit.replace(/s$/, '')}${count > 1 ? 's' : ''}`;
+    });
+
+    return segments.filter(part => !!part).join(', ');
   }
 
   return [
-    duration.hours() ?? '',
-    (duration.minutes() ?? 0).toString().padStart(2, '0'),
-    (duration.seconds() ?? 0).toString().padStart(2, '0'),
-  ].join(':');
+    duration.hours,
+    (duration.minutes ?? 0).toString().padStart(2, '0'),
+    Math.round(duration.seconds ?? 0)
+      .toString()
+      .padStart(2, '0'),
+  ]
+    .filter(part => !!part)
+    .join(':');
 }
-
-// export const toDuration = (
-//   amount?: number | moment.Duration,
-//   type?: moment.unitOfTime.DurationConstructor
-// ): Duration =>
-//   fromMoment(typeof amount === 'number' ? moment.duration(amount, type ?? 'seconds') : amount);
-
-// export const toDurationSeconds = (duration: Duration): number => {
-//   const { hours, minutes, seconds } = duration;
-//   return (hours ?? 0) * 60 * 60 + (minutes ?? 0) * 60 + (seconds ?? 0);
-// };

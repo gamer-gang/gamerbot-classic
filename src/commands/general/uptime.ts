@@ -1,8 +1,8 @@
 import { Message } from 'discord.js';
-import moment from 'moment';
+import { Duration } from 'luxon';
 import { Command } from '..';
 import { Context } from '../../types';
-import { Embed } from '../../util';
+import { Embed, normalizeDuration } from '../../util';
 
 export class CommandUptime implements Command {
   cmd = 'uptime';
@@ -16,16 +16,22 @@ export class CommandUptime implements Command {
   async execute(context: Context): Promise<void | Message> {
     const { msg } = context;
 
-    const uptime = moment.duration(Math.round(process.uptime()), 'seconds');
+    const uptime = normalizeDuration(
+      Duration.fromObject({
+        seconds: Math.round(process.uptime()),
+      })
+    );
 
     return msg.channel.send(Embed.info('**uptime:** ' + this.makeDurationString(uptime)));
   }
 
-  makeDurationString(duration: moment.Duration): string {
+  makeDurationString(duration: Duration): string {
+    const obj = duration.normalize().toObject();
+
     const units = ['years', 'months', 'days', 'hours', 'minutes', 'seconds'] as const;
 
     const segments = units.map(unit => {
-      const count = duration[unit]();
+      const count = obj[unit];
       return count && `${count} ${unit.replace(/s$/, '')}${count > 1 ? 's' : ''}`;
     });
 

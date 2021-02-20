@@ -4,6 +4,6 @@ export interface Economy {
 
 export interface MemberEconomy {
   coins: number;
-  /** Pass to `moment` to get usable date */
+  /** Pass to luxon to get usable date */
   nextAllowedBankrupt?: string;
 }

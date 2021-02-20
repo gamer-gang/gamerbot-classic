@@ -1,8 +1,8 @@
 import { Message } from 'discord.js';
-import moment from 'moment';
+import { Duration } from 'luxon';
 import { client } from '../../../../providers';
 import { Context, SpotifyTrack } from '../../../../types';
-import { Embed, regExps } from '../../../../util';
+import { Embed, normalizeDuration, regExps } from '../../../../util';
 import { CommandPlay } from '../play';
 import { checkSpotify } from '../util';
 
@@ -27,7 +27,7 @@ export const getSpotifyPlaylist = async (
         title: name,
         cover: album.images[0],
         artists,
-        duration: moment.duration(duration_ms, 'ms'),
+        duration: normalizeDuration(Duration.fromMillis(duration_ms)),
         id,
       }),
       { context, silent: true, beginPlaying: false }

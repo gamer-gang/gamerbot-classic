@@ -1,7 +1,7 @@
 import { GuildMember, Invite, TextChannel, User } from 'discord.js';
 import fse from 'fs-extra';
 import _ from 'lodash';
-import moment from 'moment';
+import { DateTime } from 'luxon';
 import { intToLogEvents, LogHandlers } from '.';
 import {
   CachedInvite,
@@ -91,9 +91,11 @@ export const guildMemberHandlers: LogHandlers = {
         'Invite used',
         `${usedCached?.code} (created by ${
           client.users.resolve(usedCached?.creatorId ?? '') ?? usedCached?.creatorTag
-        } ${moment(usedNew?.createdTimestamp).fromNow()}, expires ${moment(
-          usedNew?.expiresTimestamp
-        ).fromNow()})`
+        } ${DateTime.fromMillis(
+          usedNew?.createdTimestamp as number
+        ).toRelative()}, expires ${DateTime.fromMillis(
+          usedNew?.expiresTimestamp as number
+        ).toRelative()})`
       );
     else if (!member.user.bot)
       embed.setDescription(

@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
 import { getLogger } from 'log4js';
-import moment from 'moment';
+import { DateTime } from 'luxon';
 import yts from 'yt-search';
 import { client } from '../../../../providers';
 import { Context, YoutubeTrack } from '../../../../types';
@@ -10,9 +10,9 @@ import { CommandPlay } from '../play';
 const parseAgo = (ago: string) => {
   if (!ago) return Date.now();
   const [number, type] = ago.replace(/ ago$/g, '').split(' ');
-  return moment(Date.now())
-    .subtract(parseInt(number), type as moment.DurationInputArg2)
-    .date();
+  return DateTime.now()
+    .minus({ [type]: parseInt(number) })
+    .toMillis();
 };
 
 export const searchYoutube = async (
@@ -59,13 +59,13 @@ export const searchYoutube = async (
             (track, index) =>
               `${index + 1}. **${track.titleMarkup}** by ${track.authorMarkup} (${
                 track.durationString
-              }), ${
+              }) ${
                 args.sort === 'views'
-                  ? `${
+                  ? `, ${
                       parseInt(track.data.statistics?.viewCount ?? '0')?.toLocaleString() ?? '?'
                     } views`
                   : args.sort !== undefined
-                  ? moment(track.data.snippet?.publishedAt).fromNow()
+                  ? `, ${DateTime.fromISO(track.data.snippet?.publishedAt as string).toRelative()}`
                   : ''
               }`
           )

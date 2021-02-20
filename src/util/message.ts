@@ -1,6 +1,6 @@
 import { FileOptions, MessageOptions } from 'discord.js';
 import _ from 'lodash';
-import moment from 'moment';
+import { DateTime } from 'luxon';
 import { Embed, EmbedOptions } from './embed';
 import { resolvePath } from './path';
 
@@ -58,7 +58,7 @@ export const parseDiscohookJSON = (json: string): MessageOptions => {
 };
 
 export const getProfilePicture = (): FileOptions => {
-  const dec = moment(moment.now()).month() === 11;
+  const dec = DateTime.now().month === 11;
   const dev = process.env.NODE_ENV === 'development';
 
   const path = dev

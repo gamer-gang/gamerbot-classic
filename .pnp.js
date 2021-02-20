@@ -48,6 +48,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/he", "npm:1.1.1"],
             ["@types/js-yaml", "npm:4.0.0"],
             ["@types/lodash", "npm:4.14.168"],
+            ["@types/luxon", "npm:1.26.0"],
             ["@types/mime-types", "npm:2.1.0"],
             ["@types/node", "npm:14.14.31"],
             ["@types/nodemon", "npm:1.19.0"],
@@ -85,9 +86,9 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["lodash", "npm:4.17.21"],
             ["log4js", "npm:6.3.0"],
             ["lorem-ipsum", "npm:2.0.3"],
+            ["luxon", "npm:1.26.0"],
             ["mime-types", "npm:2.1.29"],
             ["miniget", "npm:4.2.0"],
-            ["moment", "npm:2.29.1"],
             ["music-metadata", "npm:7.8.0"],
             ["node-gyp", "npm:7.1.2"],
             ["node-loader", "virtual:1146e3009ff3e1a5581766c147edbc930ca669db3b39d1d6e699ae3ac247ff6a95863891d8eb3b970b1a1b938a06286c180ea01938ac6e0ba3c660c96e621580#npm:1.0.2"],
@@ -813,6 +814,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/@types-lodash-npm-4.14.168-2d65abe211-9a4e25f89f.zip/node_modules/@types/lodash/",
           "packageDependencies": [
             ["@types/lodash", "npm:4.14.168"]
+          ],
+          "linkType": "HARD",
+        }]
+      ]],
+      ["@types/luxon", [
+        ["npm:1.26.0", {
+          "packageLocation": "./.yarn/cache/@types-luxon-npm-1.26.0-1ccffdd906-e03965e909.zip/node_modules/@types/luxon/",
+          "packageDependencies": [
+            ["@types/luxon", "npm:1.26.0"]
           ],
           "linkType": "HARD",
         }]
@@ -4772,6 +4782,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/he", "npm:1.1.1"],
             ["@types/js-yaml", "npm:4.0.0"],
             ["@types/lodash", "npm:4.14.168"],
+            ["@types/luxon", "npm:1.26.0"],
             ["@types/mime-types", "npm:2.1.0"],
             ["@types/node", "npm:14.14.31"],
             ["@types/nodemon", "npm:1.19.0"],
@@ -4809,9 +4820,9 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["lodash", "npm:4.17.21"],
             ["log4js", "npm:6.3.0"],
             ["lorem-ipsum", "npm:2.0.3"],
+            ["luxon", "npm:1.26.0"],
             ["mime-types", "npm:2.1.29"],
             ["miniget", "npm:4.2.0"],
-            ["moment", "npm:2.29.1"],
             ["music-metadata", "npm:7.8.0"],
             ["node-gyp", "npm:7.1.2"],
             ["node-loader", "virtual:1146e3009ff3e1a5581766c147edbc930ca669db3b39d1d6e699ae3ac247ff6a95863891d8eb3b970b1a1b938a06286c180ea01938ac6e0ba3c660c96e621580#npm:1.0.2"],
@@ -6661,6 +6672,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD",
         }]
       ]],
+      ["luxon", [
+        ["npm:1.26.0", {
+          "packageLocation": "./.yarn/cache/luxon-npm-1.26.0-09624ad59c-e12bb8bfdd.zip/node_modules/luxon/",
+          "packageDependencies": [
+            ["luxon", "npm:1.26.0"]
+          ],
+          "linkType": "HARD",
+        }]
+      ]],
       ["m3u8stream", [
         ["npm:0.8.3", {
           "packageLocation": "./.yarn/cache/m3u8stream-npm-0.8.3-d7ad9ac45c-91704b8748.zip/node_modules/m3u8stream/",
@@ -7023,15 +7043,6 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["yargs", "npm:13.3.2"],
             ["yargs-parser", "npm:13.1.2"],
             ["yargs-unparser", "npm:1.6.0"]
-          ],
-          "linkType": "HARD",
-        }]
-      ]],
-      ["moment", [
-        ["npm:2.29.1", {
-          "packageLocation": "./.yarn/cache/moment-npm-2.29.1-787d9fdafd-86729013fe.zip/node_modules/moment/",
-          "packageDependencies": [
-            ["moment", "npm:2.29.1"]
           ],
           "linkType": "HARD",
         }]

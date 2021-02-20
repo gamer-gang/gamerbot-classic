@@ -1,15 +1,9 @@
-import moment from 'moment';
+import { DateTime } from 'luxon';
 
-export const getDateFromSnowflake = (
-  id: string,
-  ageSuffix = true
-): [timestamp: string, age: string] => {
+export const getDateFromSnowflake = (id: string): [timestamp: string, age: string] => {
   const timestamp = parseInt(id.padStart(18, '0'), 10) / 4194304 + 1420070400000;
 
-  const time = moment(timestamp);
+  const time = DateTime.fromMillis(timestamp);
 
-  return [
-    time.format('dddd, MMMM Do YYYY, h:mm:ss A [UTC]Z'),
-    moment.duration(time.diff(moment.now())).humanize(ageSuffix),
-  ];
+  return [time.toLocaleString(DateTime.DATETIME_FULL), time.toRelative() as string];
 };

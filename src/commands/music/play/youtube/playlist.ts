@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
 import { getLogger } from 'log4js';
-import moment from 'moment';
+import { DateTime } from 'luxon';
 import { client } from '../../../../providers';
 import { Context, YoutubeTrack } from '../../../../types';
 import { codeBlock, Embed, getPlaylistVideos, regExps } from '../../../../util';
@@ -19,11 +19,15 @@ export const getYoutubePlaylist = async (
 
     args.sort === 'newest'
       ? videos.sort(
-          (a, b) => moment(a.snippet?.publishedAt).date() - moment(b.snippet?.publishedAt).date()
+          (a, b) =>
+            DateTime.fromISO(a.snippet?.publishedAt as string).toMillis() -
+            DateTime.fromISO(b.snippet?.publishedAt as string).toMillis()
         )
       : args.sort === 'oldest'
       ? videos.sort(
-          (a, b) => moment(b.snippet?.publishedAt).date() - moment(a.snippet?.publishedAt).date()
+          (a, b) =>
+            DateTime.fromISO(b.snippet?.publishedAt as string).toMillis() -
+            DateTime.fromISO(a.snippet?.publishedAt as string).toMillis()
         )
       : args.sort === 'views'
       ? videos.sort(

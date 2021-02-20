@@ -1,5 +1,5 @@
 import { Message } from 'discord.js';
-import moment from 'moment';
+import { DateTime } from 'luxon';
 import { client } from '../../../providers';
 import { Embed } from '../../../util';
 
@@ -15,9 +15,9 @@ export const checkSpotify = (msg: Message): boolean => {
     msg.channel.send(
       Embed.error(
         'Cannot connect to spotify',
-        `Please try again in ${moment
-          .duration(client.spotifyTimeoutSeconds, 'seconds')
-          .humanize(true)}`
+        `Please try again in ${DateTime.now()
+          .plus({ seconds: client.spotifyTimeoutSeconds })
+          .toRelative({})}`
       )
     );
 

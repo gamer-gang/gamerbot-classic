@@ -16,7 +16,7 @@ export class CommandTimestamp implements Command {
     if (!/^\d{18}$/.test(snowflake)) return msg.channel.send(Embed.error('Invalid snowflake'));
 
     return msg.channel.send(
-      Embed.info('Timestamp of ' + snowflake, getDateFromSnowflake(snowflake, true).join('; '))
+      Embed.info('Timestamp of ' + snowflake, getDateFromSnowflake(snowflake).join('; '))
     );
   }
 }

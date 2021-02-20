@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
 import _ from 'lodash';
-import moment from 'moment';
+import { DateTime } from 'luxon';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context } from '../../types';
@@ -31,7 +31,8 @@ export class CommandDetails implements Command {
       embed.addField('Duration', track.durationString, true);
       embed.addField(
         'Published at',
-        moment(track.data.snippet?.publishedAt).format('dddd, MMMM Do YYYY, h:mm:ss A [UTC]Z'),
+        DateTime.fromISO(track.data.snippet?.publishedAt as string).toLocaleString(),
+        // 'dddd, MMMM Do YYYY, h:mm:ss A [UTC]Z'
         true
       );
 

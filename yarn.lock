@@ -447,6 +447,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/luxon@npm:^1":
+  version: 1.26.0
+  resolution: "@types/luxon@npm:1.26.0"
+  checksum: e03965e909590344a01b10c0e5265cc90d65ec63d530f59cad72d8a65a752d9a3af45629eeec82ad27f70a36ff15337bbf02995cc80d9ba39677bef7219c2a0d
+  languageName: node
+  linkType: hard
+
 "@types/mime-types@npm:^2.1.0":
   version: 2.1.0
   resolution: "@types/mime-types@npm:2.1.0"
@@ -3852,6 +3859,7 @@ __metadata:
     "@types/he": ^1.1.1
     "@types/js-yaml": ^4.0.0
     "@types/lodash": ^4.14.168
+    "@types/luxon": ^1
     "@types/mime-types": ^2.1.0
     "@types/node": ^14.14.31
     "@types/nodemon": ^1.19.0
@@ -3889,9 +3897,9 @@ __metadata:
     lodash: ^4.17.21
     log4js: ^6.3.0
     lorem-ipsum: ^2.0.3
+    luxon: ^1.26.0
     mime-types: ^2.1.29
     miniget: ^4.2.0
-    moment: ^2.29.1
     music-metadata: ^7.8.0
     node-gyp: ^7.1.2
     node-loader: ^1.0.2
@@ -5515,6 +5523,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"luxon@npm:^1.26.0":
+  version: 1.26.0
+  resolution: "luxon@npm:1.26.0"
+  checksum: e12bb8bfdd69707f0f3e57b1b2ff39042c67904bdc437602064519f3eb87d3267497bc56cc0b7611faa40e22019991440a8e8e179d4c6a0440e9f226571fce46
+  languageName: node
+  linkType: hard
+
 "m3u8stream@npm:^0.8.3":
   version: 0.8.3
   resolution: "m3u8stream@npm:0.8.3"
@@ -5852,13 +5867,6 @@ __metadata:
     _mocha: bin/_mocha
     mocha: bin/mocha
   checksum: 1a7a4df6b8a66e7c6e6d4b7a5a0118838ba76ada0488194958d6bd1edc504e85421f0fd709c0b575f5af2b6d8511436e9265821135ea3a577eb88f98b7c74f0f
-  languageName: node
-  linkType: hard
-
-"moment@npm:^2.29.1":
-  version: 2.29.1
-  resolution: "moment@npm:2.29.1"
-  checksum: 86729013febf7160de5b93da69273dd304d674b0224f9544b3abd09a87671ddd2cdd57598261ce57588910d63747ffd5590965e83c790d8bf327083c0e0a06e0
   languageName: node
   linkType: hard
 

@@ -1,7 +1,7 @@
 import { RequestContext } from '@mikro-orm/core';
 import { Guild, Invite, TextChannel } from 'discord.js';
 import _ from 'lodash';
-import moment from 'moment';
+import { DateTime } from 'luxon';
 import { intToLogEvents, LogHandlers } from '.';
 import { client, getLogger, inviteCache, logger } from '../../providers';
 import { Embed } from '../../util';
@@ -63,7 +63,7 @@ export const inviteHandlers: LogHandlers = {
       );
     if (!intToLogEvents(config.logSubscribedEvents).includes('inviteCreate')) return;
 
-    const expiry = invite.expiresAt && moment(invite.expiresAt);
+    const expiry = invite.expiresAt && DateTime.fromJSDate(invite.expiresAt);
 
     const embed = new Embed({
       author: {
@@ -77,7 +77,9 @@ export const inviteHandlers: LogHandlers = {
       .addField('Max uses', invite.maxUses ? invite.maxUses : 'infinite')
       .addField(
         'Expiration',
-        expiry ? `${expiry.format('dddd, MMMM Do YYYY, h:mm:ss A')}, ${expiry.fromNow()}` : 'never'
+        expiry
+          ? `${expiry.toLocaleString(DateTime.DATETIME_FULL)}, ${expiry.toRelative()}`
+          : 'never'
       )
       .addField('Created by', invite.inviter)
       .setTimestamp();

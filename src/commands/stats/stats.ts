@@ -5,7 +5,7 @@ import { Message, MessageAttachment } from 'discord.js';
 import { Player, PlayerResponse } from 'hypixel-types';
 import yaml from 'js-yaml';
 import _ from 'lodash';
-import moment from 'moment';
+import { DateTime } from 'luxon';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
@@ -218,12 +218,20 @@ export class CommandStats implements Command {
     const avatar = avatarCache.get(uuid!)!;
 
     if (args.info) {
-      const formatString = 'dddd, MMMM Do YYYY, h:mm:ss A [UTC]Z';
-
       const embed = new Embed({ title: player.displayname })
         .addField('UUID', insertUuidDashes(player.uuid))
-        .addField('First login', moment(player.firstLogin).format(formatString))
-        .addField('Last login', moment(player.lastLogin).format(formatString))
+        .addField(
+          'First login',
+          player.firstLogin
+            ? DateTime.fromMillis(player.firstLogin).toLocaleString(DateTime.DATETIME_FULL)
+            : 'Unknown'
+        )
+        .addField(
+          'Last login',
+          player.lastLogin
+            ? DateTime.fromMillis(player.lastLogin).toLocaleString(DateTime.DATETIME_FULL)
+            : 'Unknown'
+        )
         .attachFiles([{ attachment: avatar, name: 'avatar.png' }])
         .setThumbnail('attachment://avatar.png');
 
