@@ -9,9 +9,9 @@ export const regExps = {
   url: /^https?:\/\/[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)$/,
   ascii: /^[ -~]+$/,
   youtube: {
-    playlist: /^https?:\/\/((www\.|music\.|)youtube.com)\/playlist(.+)$/,
-    video: /^https?:\/\/(((www\.|music\.|)youtube\.com)\/watch\?v=(.+)|youtu\.be\/.+)$/,
-    channel: /^https?:\/\/((www\.|music\.|)youtube\.com)\/channel\/(.+)$/,
+    playlist: /^https?:\/\/(?:www\.|music\.|)youtube.com\/playlist\?list=([A-Za-z0-9_-]+).*$/,
+    video: /^https?:\/\/(?:(?:www\.|music\.|)youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]+).*$/,
+    channel: /^https?:\/\/(?:www\.|music\.|)youtube\.com\/channel\/([A-Za-z0-9_-]+).*$/,
   },
   spotify: {
     // https://open.spotify.com/<track|playlist|album>/<id>
