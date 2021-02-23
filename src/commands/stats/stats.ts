@@ -207,6 +207,7 @@ export class CommandStats implements Command {
     const avatarStart = process.hrtime();
     if (!avatarCache.has(uuid!)) {
       let avatar;
+      let err;
 
       if (Math.abs(normalizeDuration(lastAvatarError.diffNow()).as('minutes')) > 5) {
         try {
@@ -214,8 +215,9 @@ export class CommandStats implements Command {
             `https://crafatar.com/avatars/${player.uuid}?size=${avatarSize}&overlay`,
             { responseType: 'arraybuffer' }
           );
-        } catch {
-          // ignore
+        } catch (error) {
+          err = error;
+          // ignore for now
         }
       }
 
@@ -227,6 +229,7 @@ export class CommandStats implements Command {
         setTimeout(() => avatarCache.delete(uuid!), 1000 * 60 * 15);
       } else {
         lastAvatarError = DateTime.now();
+        throw err;
       }
     }
     const avatarEnd = process.hrtime(avatarStart);
