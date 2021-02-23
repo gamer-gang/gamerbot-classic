@@ -11,7 +11,7 @@ import { Command, CommandDocs } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
 import { client } from '../../providers';
 import { Context } from '../../types';
-import { codeBlock, Embed, insertUuidDashes } from '../../util';
+import { codeBlock, Embed, insertUuidDashes, normalizeDuration } from '../../util';
 import { makeBedwarsStats } from './bedwars';
 
 const uuidRegex = /^\b[0-9a-f]{8}\b-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?\b[0-9a-f]{12}\b$/i;
@@ -20,6 +20,7 @@ const userRegex = /^([A-Za-z0-9_]{3,16}|[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[
 const statsCache = new Map<string, Player>();
 const uuidCache = new Map<string, string>();
 const avatarCache = new Map<string, Buffer>();
+let lastAvatarError = DateTime.fromMillis(0);
 
 type Gamemode = 'bedwars';
 export type StatsData = [image: Buffer, metadata?: (string | boolean)[]];
@@ -59,7 +60,7 @@ export class CommandStats implements Command {
 
   readonly gamemodes: Record<
     Gamemode,
-    (data: Player, avatar: Image, quality: boolean) => StatsData
+    (data: Player, avatar: Image | undefined, quality: boolean) => StatsData
   > = {
     bedwars: (data, avatar, quality) => makeBedwarsStats(data, avatar, quality),
   };
@@ -157,6 +158,7 @@ export class CommandStats implements Command {
       args._[0] = entity.hypixelUsername;
     }
 
+    const warnings: string[] = [];
     msg.channel.startTyping();
 
     const isUuid = uuidRegex.test(args._[0]);
@@ -204,18 +206,33 @@ export class CommandStats implements Command {
 
     const avatarStart = process.hrtime();
     if (!avatarCache.has(uuid!)) {
-      const avatar = await axios.get(
-        `https://crafatar.com/avatars/${player.uuid}?size=${avatarSize}&overlay`,
-        { responseType: 'arraybuffer' }
-      );
+      let avatar;
 
-      avatarCache.set(uuid!, avatar.data);
-      setTimeout(() => avatarCache.delete(uuid!), 1000 * 60 * 15);
+      if (Math.abs(normalizeDuration(lastAvatarError.diffNow()).as('minutes')) > 5) {
+        try {
+          avatar = await axios.get(
+            `https://crafatar.com/avatars/${player.uuid}?size=${avatarSize}&overlay`,
+            { responseType: 'arraybuffer' }
+          );
+        } catch {
+          // ignore
+        }
+      }
+
+      if ((avatar?.status ?? 600) > 500) {
+        warnings.push(`avatar returned ${avatar?.statusText}`);
+        lastAvatarError = DateTime.now();
+      } else if (avatar?.data) {
+        avatarCache.set(uuid!, avatar.data);
+        setTimeout(() => avatarCache.delete(uuid!), 1000 * 60 * 15);
+      } else {
+        lastAvatarError = DateTime.now();
+      }
     }
     const avatarEnd = process.hrtime(avatarStart);
     const avatarDuration = Math.round((avatarEnd![0] * 1e9 + avatarEnd![1]) / 1e6);
 
-    const avatar = avatarCache.get(uuid!)!;
+    const avatar = avatarCache.get(uuid!);
 
     if (args.info) {
       const embed = new Embed({ title: player.displayname })
@@ -231,9 +248,13 @@ export class CommandStats implements Command {
           player.lastLogin
             ? DateTime.fromMillis(player.lastLogin).toLocaleString(DateTime.DATETIME_FULL)
             : 'Unknown'
-        )
-        .attachFiles([{ attachment: avatar, name: 'avatar.png' }])
-        .setThumbnail('attachment://avatar.png');
+        );
+
+      if (avatar) {
+        embed
+          .attachFiles([{ attachment: avatar, name: 'avatar.png' }])
+          .setThumbnail('attachment://avatar.png');
+      }
 
       debug &&
         embed.setFooter(
@@ -262,13 +283,19 @@ export class CommandStats implements Command {
         );
 
       const avatarImage = new Image();
-      avatarImage.src = avatar;
-      avatarImage.width = avatarSize;
-      avatarImage.height = avatarSize;
+      if (avatar) {
+        avatarImage.src = avatar;
+        avatarImage.width = avatarSize;
+        avatarImage.height = avatarSize;
+      }
 
       const canvasStart = process.hrtime();
       const gamemode = exec ? (exec[1] as Gamemode) : 'bedwars';
-      const [image, info] = this.gamemodes[gamemode](player, avatarImage, !args.fast);
+      const [image, info] = this.gamemodes[gamemode](
+        player,
+        avatar ? avatarImage : undefined,
+        !args.fast
+      );
       const canvasEnd = process.hrtime(canvasStart);
       const canvasDuration = Math.round((canvasEnd![0] * 1e9 + canvasEnd![1]) / 1e6);
 
@@ -288,7 +315,15 @@ export class CommandStats implements Command {
       ].join('   ');
 
       await (debug
-        ? msg.channel.send({ content: `\`${debugInfo}\``, files: [file] })
+        ? msg.channel.send({
+            content: `${warnings ? `*${warnings.join('\n')}*\n` : ''}\`${debugInfo}\``,
+            files: [file],
+          })
+        : warnings.length
+        ? msg.channel.send({
+            content: `*${warnings.join('\n')}*\n`,
+            files: [file],
+          })
         : msg.channel.send(file));
 
       msg.channel.stopTyping(true);
