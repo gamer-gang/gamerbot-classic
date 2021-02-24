@@ -79,6 +79,11 @@ export const onMessage = (
   if (!config || msg.author?.bot || !config.egg) return;
 
   if (eggy(msg, config.prefix)) {
+    if (msg.author?.tag.endsWith('#0000')) {
+      msg.react('🥚');
+      return;
+    }
+
     if (cooldowns[msg.author?.id as string]) {
       const cooldown = cooldowns[msg.author?.id as string];
       if (!cooldown.expired() && !cooldown.warned) {

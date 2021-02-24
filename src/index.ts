@@ -16,7 +16,7 @@ import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
 import { client, getLogger, logger, usernameCache } from './providers';
 import { Queue } from './types';
-import { codeBlock, dbFindOneError, Embed, resolvePath } from './util';
+import { codeBlock, dbFindOneError, Embed, listify, resolvePath } from './util';
 
 dotenv.config({ path: resolvePath('.env') });
 
@@ -91,7 +91,8 @@ client.on('message', async msg => {
     );
   })(msg);
 
-  !msg.author.bot && eggs.onMessage(msg, config, client.em)();
+  if (!msg.author.bot || msg.author?.tag.endsWith('#0000'))
+    eggs.onMessage(msg, config, client.em)();
 
   if (new RegExp(`^<@!?${client.user.id}>$`).test(msg.content)) {
     msg.channel.send(
@@ -141,6 +142,32 @@ client.on('message', async msg => {
   if (context.args.help) {
     context.args._ = [cmd];
     command = new CommandHelp();
+  }
+
+  if (!msg.guild.me?.permissionsIn(msg.channel).has('SEND_MESSAGES')) {
+    logger.error(
+      `cannot respond to ${msg.cleanContent} in ${msg.channel.id} due to missing permissions`
+    );
+  }
+
+  const userPermissions = msg.guild?.members.resolve(msg.author.id)?.permissionsIn(msg.channel);
+
+  if (command.userPermissions) {
+    const missingPermissions = command.userPermissions
+      .map(perm => [perm, userPermissions?.has(perm)])
+      .filter(([perm, has]) => has === false && perm)
+      .filter(v => !!v);
+
+    if (missingPermissions.length) {
+      return msg.channel.send(
+        Embed.error(
+          `Missing permissions for ${config.prefix}${cmd}`,
+          `${config.prefix}${cmd} requires ${listify(
+            command.userPermissions.map(v => `\`${v}\``)
+          )}, but you are missing ${listify(missingPermissions.map(v => `\`${v}\``))}`
+        )
+      );
+    }
   }
 
   RequestContext.create(client.em, () => {
