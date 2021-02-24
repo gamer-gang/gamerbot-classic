@@ -19,7 +19,7 @@ export interface EmbedOptions {
 }
 
 const intentText = (message: string, desc?: string) =>
-  message.match(/\*\*|```/)
+  message.match(/\*\*|```|`.+`/)
     ? `${message}${desc ? `\n\n${desc}` : ''}`
     : `**${message}**${desc ? `\n\n${desc}` : ''}`;
 
@@ -83,7 +83,7 @@ export class Embed extends MessageEmbed {
   }
 
   setDefaultAuthor(): this {
-    this.setAuthor('gamerbot80', 'attachment://hexagon.png');
+    this.setAuthor('gamerbot', 'attachment://hexagon.png');
     this.attachFiles([getProfilePicture()]);
     return this;
   }

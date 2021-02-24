@@ -93,6 +93,15 @@ client.on('message', async msg => {
 
   !msg.author.bot && eggs.onMessage(msg, config, client.em)();
 
+  if (new RegExp(`^<@!?${client.user.id}>$`).test(msg.content)) {
+    msg.channel.send(
+      Embed.info(
+        `Prefix is set to \`${config.prefix}\`\nSee \`$help\` or https://gamerbot-dev.web.app for more information`
+      ).setDefaultAuthor()
+    );
+    return;
+  }
+
   if (!msg.content.startsWith(config.prefix)) return;
 
   const [cmd, ...argv] = msg.content.slice(config.prefix.length).replace(/ +/g, ' ').split(' ');
