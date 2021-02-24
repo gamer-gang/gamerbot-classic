@@ -76,7 +76,7 @@ export const onMessage = (
   config: Config,
   em: Gamerbot['em']
 ) => async (): Promise<void | Message | MessageReaction> => {
-  if (!config || msg.author?.bot || !config.egg) return;
+  if (!config || !config.egg) return;
 
   if (eggy(msg, config.prefix)) {
     if (msg.author?.tag.endsWith('#0000')) {
