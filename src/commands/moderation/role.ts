@@ -1,5 +1,5 @@
 import { RequestContext } from '@mikro-orm/core';
-import { GuildEmoji, Message, User } from 'discord.js';
+import { GuildEmoji, Message, PermissionString, User } from 'discord.js';
 import emojiRegex from 'emoji-regex';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
@@ -31,6 +31,8 @@ export class CommandRole implements Command {
       description: 'list the boyes',
     },
   ];
+  userPermissions: PermissionString[] = ['MANAGE_ROLES'];
+  botPermissions: PermissionString[] = ['MANAGE_ROLES'];
   async execute(context: Context): Promise<void | Message> {
     const em = RequestContext.getEntityManager() ?? client.em;
 

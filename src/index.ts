@@ -144,19 +144,21 @@ client.on('message', async msg => {
     command = new CommandHelp();
   }
 
-  if (!msg.guild.me?.permissionsIn(msg.channel).has('SEND_MESSAGES')) {
+  const userPermissions = msg.guild?.members.resolve(msg.author.id)?.permissionsIn(msg.channel);
+  const botPermissions = msg.guild?.me?.permissionsIn(msg.channel);
+
+  if (!botPermissions?.has('SEND_MESSAGES')) {
     logger.error(
       `cannot respond to ${msg.cleanContent} in ${msg.channel.id} due to missing permissions`
     );
+    return;
   }
-
-  const userPermissions = msg.guild?.members.resolve(msg.author.id)?.permissionsIn(msg.channel);
 
   if (command.userPermissions) {
     const missingPermissions = command.userPermissions
       .map(perm => [perm, userPermissions?.has(perm)])
-      .filter(([perm, has]) => has === false && perm)
-      .filter(v => !!v);
+      .filter(([perm, has]) => has === false)
+      .map(([perm]) => perm);
 
     if (missingPermissions.length) {
       return msg.channel.send(
@@ -165,6 +167,26 @@ client.on('message', async msg => {
           `${config.prefix}${cmd} requires ${listify(
             command.userPermissions.map(v => `\`${v}\``)
           )}, but you are missing ${listify(missingPermissions.map(v => `\`${v}\``))}`
+        )
+      );
+    }
+  }
+
+  if (command.botPermissions) {
+    const missingPermissions = command.botPermissions
+      .map(perm => [perm, botPermissions?.has(perm)])
+      .filter(([perm, has]) => has === false)
+      .map(([perm]) => perm);
+
+    if (missingPermissions.length) {
+      return msg.channel.send(
+        Embed.error(
+          `gamerbot missing permissions for ${config.prefix}${cmd}`,
+          `${config.prefix}${cmd} requires ${listify(
+            command.botPermissions.map(v => `\`${v}\``)
+          )}, but gamerbot does not have access to ${listify(
+            missingPermissions.map(v => `\`${v}\``)
+          )}`
         )
       );
     }

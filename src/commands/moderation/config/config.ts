@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { Message, PermissionString } from 'discord.js';
 import { Command } from '../..';
 import { Config } from '../../../entities/Config';
 import { Context } from '../../../types';
@@ -22,11 +22,9 @@ export class CommandConfig implements Command {
     usage: 'config <option> [newValue]',
     description: 'get/set a config value',
   };
+  userPermissions: PermissionString[] = ['ADMINISTRATOR'];
   async execute(context: Context): Promise<void | Message> {
     const { msg, args, config } = context;
-
-    if (!msg.guild?.member(msg.author?.id as string)?.hasPermission('ADMINISTRATOR'))
-      return msg.channel.send(Embed.error('you must be an administrator to use this command'));
 
     const handlerName = Object.keys(configHandlers).find(
       n => n.toLowerCase() === args._[0].toLowerCase()
@@ -35,8 +33,8 @@ export class CommandConfig implements Command {
     if (!args._[0] || !handlerName)
       return msg.channel.send(
         Embed.error(
-          'invalid config option',
-          'valid options:\n' + codeBlock(Object.keys(configHandlers).join('\n'))
+          'Invalid config option',
+          'Valid options:\n' + codeBlock(Object.keys(configHandlers).join('\n'))
         )
       );
 
