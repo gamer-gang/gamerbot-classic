@@ -228,24 +228,27 @@ export class CommandTrivia implements Command {
 
     const data = question.results[0];
     const embed = new Embed();
-    const answers =
-      data.type === 'boolean'
-        ? ['True', 'False']
-        : _.shuffle([data.correct_answer, ...data.incorrect_answers]);
+    const answers = (data.type === 'boolean'
+      ? ['True', 'False']
+      : _.shuffle([data.correct_answer, ...data.incorrect_answers])
+    ).map(str => he.decode(str));
 
     const answerLetters = alphabet.slice(0, answers.length).split('');
     const formattedAnswers = answers.map(
       (res, index) => `**${alphabet[index].toUpperCase()}.** ${sanitize(he.decode(res))}`
     );
 
-    const correctIndex = answers.findIndex(res => res === data.correct_answer)!;
+    const correctIndex = answers.findIndex(res => res === he.decode(data.correct_answer))!;
     embed.setDescription(formattedAnswers.join('\n'));
 
+    const decodedQuestion = he.decode(data.question);
     if (data.type === 'boolean') {
-      embed.setTitle(`True or false: ${he.decode(data.question)}`);
+      embed.setTitle(
+        decodedQuestion.includes('?') ? decodedQuestion : `True or false: ${decodedQuestion}`
+      );
       embed.addField('Type', 'True/False', true);
     } else {
-      embed.setTitle(he.decode(data.question));
+      embed.setTitle(decodedQuestion);
       embed.addField('Type', 'Multiple Choice', true);
     }
 
@@ -254,29 +257,53 @@ export class CommandTrivia implements Command {
     embed.addField('Time Limit', '15s');
 
     process.env.NODE_ENV === 'development' &&
-      embed.setFooter(`Correct answer: ${data.correct_answer}`);
+      embed.setFooter(
+        `Correct answer: ${answerLetters[correctIndex].toUpperCase()}. ${answers[correctIndex]}`
+      );
 
     const message = await msg.channel.send(msg.author, embed);
 
     const collector = message.channel.createMessageCollector(
-      (m: Message) =>
-        m.author.id === msg.author.id &&
-        (answers.some(a => a.toLowerCase() === m.content.toLowerCase()) ||
-          answerLetters.includes(m.content.toLowerCase())),
+      (m: Message) => m.author.id === msg.author.id,
       { dispose: true, time: 15000 }
     );
 
-    collector.on('collect', message => {
+    collector.on('collect', (message: Message) => {
       const content = message.content.toLowerCase();
-      if (answerLetters.includes(content)) {
+      if (data.type === 'boolean' && ['t', 'f'].includes(content)) {
+        // handle special case of t or f
+        if (content === answers[correctIndex][0].toLowerCase()) collector.stop('correct');
+        else collector.stop('incorrect');
+      } else if (answerLetters.includes(content)) {
         // a, b, c, d
         if (alphabet[correctIndex] !== content) collector.stop('incorrect');
         else collector.stop('correct');
       } else {
-        const index = answers.findIndex(a => a.toLowerCase() === message.content.toLowerCase());
+        if (
+          // only a few chars
+          message.content.length <= 2 ||
+          // only one unique character
+          _.uniq(message.content.toLowerCase().split('')).length === 1
+        ) {
+          // they probably weren't trying to answer
+          return;
+        }
+        // look for substrings
+        const matches = answers.filter(a =>
+          a.toLowerCase().includes(message.content.toLowerCase())
+        );
 
-        if (index !== correctIndex) collector.stop('incorrect');
-        else collector.stop('correct');
+        if (matches.length >= 2) {
+          // answer matched multiple strings, too ambiguous
+          message.channel.send(Embed.warning('Too ambiguous, be more specific'));
+        } else if (matches.length === 1) {
+          // single match
+          const index = answers.indexOf(matches[0]);
+          if (index !== correctIndex) collector.stop('incorrect');
+          else collector.stop('correct');
+        }
+
+        // do nothing otherwise
       }
     });
 
@@ -284,7 +311,13 @@ export class CommandTrivia implements Command {
       if (reason === 'incorrect')
         return msg.channel.send(
           msg.author,
-          Embed.error(`Incorrect! The correct answer was ${formattedAnswers[correctIndex]}.`)
+          Embed.error(
+            `Incorrect! The correct answer was **${
+              data.type === 'boolean'
+                ? answers[correctIndex].toLowerCase()
+                : sanitize(answers[correctIndex])
+            }**.`
+          )
         );
 
       if (reason === 'correct') return msg.channel.send(msg.author, Embed.success('Correct!'));
