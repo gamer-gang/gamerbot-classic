@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { Message, PermissionString } from 'discord.js';
 import yargsParser from 'yargs-parser';
 import { Context } from '../types';
 
@@ -6,6 +6,8 @@ export interface Command {
   cmd: string | string[];
   yargs?: yargsParser.Options;
   docs: CommandDocs;
+  userPermissions?: PermissionString[];
+  botPermissions?: PermissionString[];
   execute: (args: Context) => Promise<void | Message>;
 }
 
