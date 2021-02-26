@@ -12,7 +12,7 @@ export interface GamerbotOptions extends Omit<ClientOptions, 'partials'> {
   em: EntityManager<IDatabaseDriver<Connection>>;
 }
 
-export type KnownEmojis = 'success' | 'error' | 'warn';
+export type KnownEmojis = 'success' | 'error' | 'warn' | 'worksonmymachine';
 
 export class Gamerbot extends Client {
   readonly commands: Command[] = [];
@@ -67,6 +67,9 @@ export class Gamerbot extends Client {
         if (!this.getCustomEmoji(name))
           logger.warn(`media server missing '${name}' emoji! using fallback`);
       });
+
+      if (!this.getCustomEmoji('worksonmymachine'))
+        logger.warn(`media server missing '${name}' emoji! disabling $techsupport`);
     });
   }
 
