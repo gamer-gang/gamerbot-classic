@@ -69,6 +69,8 @@ const triviaDifficultyAliases = {
 
 const alphabet = 'abcdefghijklmnopqrstuvwxyz';
 
+export const ongoingTriviaQuestions = new Set<string>();
+
 export class CommandTrivia implements Command {
   cmd = ['trivia', 'triv', 'tr'];
   yargs: yargsParser.Options = {
@@ -221,10 +223,12 @@ export class CommandTrivia implements Command {
   }
 
   private async sendQuestion(question: TriviaResponse, context: Context): Promise<void> {
-    const { msg } = context;
+    const { msg, config } = context;
 
     if (question.response_code !== 0)
       throw new Error(`sendQuestion called with question with code ${question.response_code}`);
+
+    ongoingTriviaQuestions.add(msg.author.id);
 
     const data = question.results[0];
     const embed = new Embed();
@@ -270,6 +274,11 @@ export class CommandTrivia implements Command {
 
     collector.on('collect', (message: Message) => {
       const content = message.content.toLowerCase();
+
+      if (/^\$.+/.test(content)) {
+        return msg.channel.send(Embed.warning('Finish the question first!'));
+      }
+
       if (data.type === 'boolean' && ['t', 'f'].includes(content)) {
         // handle special case of t or f
         if (content === answers[correctIndex][0].toLowerCase()) collector.stop('correct');
@@ -309,7 +318,7 @@ export class CommandTrivia implements Command {
 
     collector.on('end', (__, reason) => {
       if (reason === 'incorrect')
-        return msg.channel.send(
+        msg.channel.send(
           msg.author,
           Embed.error(
             `Incorrect! The correct answer was **${
@@ -319,13 +328,14 @@ export class CommandTrivia implements Command {
             }**.`
           )
         );
+      else if (reason === 'correct') msg.channel.send(msg.author, Embed.success('Correct!'));
+      else
+        msg.channel.send(
+          msg.author,
+          Embed.error(`Time's up! The correct answer was **${data.correct_answer}**.`)
+        );
 
-      if (reason === 'correct') return msg.channel.send(msg.author, Embed.success('Correct!'));
-
-      return msg.channel.send(
-        msg.author,
-        Embed.error(`Time's up! The correct answer was **${data.correct_answer}**.`)
-      );
+      ongoingTriviaQuestions.delete(msg.author.id);
     });
   }
 }

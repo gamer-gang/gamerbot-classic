@@ -8,6 +8,7 @@ import 'source-map-support/register';
 import yargsParser from 'yargs-parser';
 import { Command } from './commands';
 import { CommandHelp } from './commands/general/help';
+import { ongoingTriviaQuestions } from './commands/messages/trivia';
 import { Config } from './entities/Config';
 import * as eggs from './listeners/eggs';
 import { LogEventHandler, logEvents, logHandlers } from './listeners/log';
@@ -104,6 +105,8 @@ client.on('message', async msg => {
   }
 
   if (!msg.content.startsWith(config.prefix)) return;
+
+  if (ongoingTriviaQuestions.has(msg.author.id)) return;
 
   const [cmd, ...argv] = msg.content.slice(config.prefix.length).replace(/ +/g, ' ').split(' ');
 
