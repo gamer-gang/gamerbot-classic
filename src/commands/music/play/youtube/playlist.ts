@@ -1,4 +1,5 @@
 import { Message } from 'discord.js';
+import _ from 'lodash';
 import { getLogger } from 'log4js';
 import { DateTime } from 'luxon';
 import { client } from '../../../../providers';
@@ -15,26 +16,34 @@ export const getYoutubePlaylist = async (
   try {
     const id = regExps.youtube.playlist.exec(args._[0])![1];
 
-    const [playlist, videos] = await getPlaylistVideos(id);
+    // eslint-disable-next-line prefer-const
+    let [playlist, videos] = await getPlaylistVideos(id);
 
-    args.sort === 'newest'
-      ? videos.sort(
+    switch (args.sort) {
+      case 'newest':
+        videos.sort(
           (a, b) =>
             DateTime.fromISO(a.snippet?.publishedAt as string).toMillis() -
             DateTime.fromISO(b.snippet?.publishedAt as string).toMillis()
-        )
-      : args.sort === 'oldest'
-      ? videos.sort(
+        );
+        break;
+      case 'oldest':
+        videos.sort(
           (a, b) =>
             DateTime.fromISO(b.snippet?.publishedAt as string).toMillis() -
             DateTime.fromISO(a.snippet?.publishedAt as string).toMillis()
-        )
-      : args.sort === 'views'
-      ? videos.sort(
+        );
+        break;
+      case 'views':
+        videos.sort(
           (a, b) =>
             parseInt(b.statistics?.viewCount ?? '0') - parseInt(a.statistics?.viewCount ?? '0')
-        )
-      : undefined;
+        );
+        break;
+      case 'random':
+        videos = _.shuffle(videos);
+        break;
+    }
 
     videos.forEach(v => {
       caller.queueTrack(new YoutubeTrack(msg.author.id, v), {
@@ -52,8 +61,6 @@ export const getYoutubePlaylist = async (
     );
 
     const queue = client.queues.get(msg.guild.id);
-
-    queue.updateNowPlaying();
     if (!queue.playing) caller.playNext(context);
   } catch (err) {
     getLogger(`MESSAGE ${msg.id}`).error(err);

@@ -1,4 +1,5 @@
 import { Message } from 'discord.js';
+import _ from 'lodash';
 import { Duration } from 'luxon';
 import { client } from '../../../../providers';
 import { Context, SpotifyTrack } from '../../../../types';
@@ -19,7 +20,25 @@ export const getSpotifyAlbum = async (
   const album = await client.spotify.getAlbum(albumId[1]);
   if (!album) return msg.channel.send(Embed.error('Invalid album'));
 
-  for (const { name, artists, duration_ms, id } of album.body.tracks.items) {
+  let tracks = album.body.tracks.items;
+
+  switch (args.sort) {
+    case 'newest':
+    case 'oldest':
+    case 'views':
+      msg.channel.send(
+        Embed.warning(
+          'Sorting by date or popularity is not supported for Spotify albums',
+          'Using original album order'
+        )
+      );
+      break;
+    case 'random':
+      tracks = _.shuffle(tracks);
+      break;
+  }
+
+  for (const { name, artists, duration_ms, id } of tracks) {
     caller.queueTrack(
       new SpotifyTrack(msg.author.id, {
         title: name,
@@ -33,8 +52,6 @@ export const getSpotifyAlbum = async (
   }
 
   const queue = client.queues.get(msg.guild.id);
-  queue.updateNowPlaying();
-
   msg.channel.send(
     Embed.success(
       `Queued ${album.body.tracks.items.length} tracks from ` +

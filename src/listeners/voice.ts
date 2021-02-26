@@ -7,6 +7,9 @@ const cleanQueue = (guild: Guild) => {
   queue.playing = false;
   queue.paused = false;
   queue.voiceConnection?.dispatcher?.end();
+  delete queue.voiceChannel;
+  delete queue.voiceConnection;
+  delete queue.embed;
 };
 
 export const onVoiceStateUpdate = () => (oldState: VoiceState, newState: VoiceState): void => {

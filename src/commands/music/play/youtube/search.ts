@@ -1,4 +1,5 @@
 import { Message } from 'discord.js';
+import _ from 'lodash';
 import { getLogger } from 'log4js';
 import { DateTime } from 'luxon';
 import yts from 'yt-search';
@@ -33,6 +34,8 @@ export const searchYoutube = async (
         ? search.videos.sort((a, b) => parseAgo(b.ago) - parseAgo(a.ago))
         : args.sort === 'views'
         ? search.videos.sort((a, b) => b.views - a.views)
+        : args.sort === 'random'
+        ? _.shuffle(search.videos)
         : search.videos;
 
     if (!results.length) return searchMessage.edit(Embed.error('no results found'));

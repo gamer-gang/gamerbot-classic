@@ -1,4 +1,5 @@
 import { Message } from 'discord.js';
+import _ from 'lodash';
 import { getLogger } from 'log4js';
 import { DateTime } from 'luxon';
 import { client } from '../../../../providers';
@@ -26,26 +27,34 @@ export const getYoutubeChannel = async (
     const uploadsId = channel?.contentDetails?.relatedPlaylists?.uploads;
     if (!uploadsId) return msg.channel.send(Embed.error('Channel has no uploads list'));
 
-    const [uploads, videos] = await getPlaylistVideos(uploadsId);
+    // eslint-disable-next-line prefer-const
+    let [uploads, videos] = await getPlaylistVideos(uploadsId);
 
-    args.sort === 'newest'
-      ? videos.sort(
+    switch (args.sort) {
+      case 'newest':
+        videos.sort(
           (a, b) =>
             DateTime.fromISO(a.snippet?.publishedAt as string).toMillis() -
             DateTime.fromISO(b.snippet?.publishedAt as string).toMillis()
-        )
-      : args.sort === 'oldest'
-      ? videos.sort(
+        );
+        break;
+      case 'oldest':
+        videos.sort(
           (a, b) =>
             DateTime.fromISO(b.snippet?.publishedAt as string).toMillis() -
             DateTime.fromISO(a.snippet?.publishedAt as string).toMillis()
-        )
-      : args.sort === 'views'
-      ? videos.sort(
+        );
+        break;
+      case 'views':
+        videos.sort(
           (a, b) =>
             parseInt(b.statistics?.viewCount ?? '0') - parseInt(a.statistics?.viewCount ?? '0')
-        )
-      : undefined;
+        );
+        break;
+      case 'random':
+        videos = _.shuffle(videos);
+        break;
+    }
 
     videos.forEach(v => {
       caller.queueTrack(new YoutubeTrack(msg.author.id, v), {

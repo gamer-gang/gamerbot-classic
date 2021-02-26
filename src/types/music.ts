@@ -5,7 +5,7 @@ import { Duration } from 'luxon';
 import { Readable } from 'stream';
 import yts from 'yt-search';
 import ytdl from 'ytdl-core';
-import { client } from '../providers';
+import { client, getLogger } from '../providers';
 import { Embed, formatDuration, normalizeDuration } from '../util';
 
 export type TrackType = 'youtube' | 'file' | 'spotify';
@@ -247,6 +247,8 @@ export class Queue {
   }
 
   async updateNowPlaying(): Promise<void | Message> {
+    const logger = getLogger(`GUILD ${this.guildId}`);
+    logger.debug(`updating now playing embed`);
     if (this.tracks.length === 0 || this.tracks[this.index] == undefined)
       throw new Error('track is null nerd');
 
@@ -265,15 +267,17 @@ export class Queue {
     }
 
     embed.addField('Duration', track.durationString, true);
-
     embed.addField('Requested by', `<@!${track.requesterId}>`, true);
 
-    if (this.embed && !this.embed.deleted) return this.embed.edit(embed);
-    else if (this.textChannel) {
+    if (this.embed && !this.embed.deleted) {
+      logger.debug(`existing non-deleted embed, editing it`);
+      return this.embed.edit(embed);
+    } else if (this.textChannel) {
+      logger.debug(`sending new now playing embed`);
       this.embed = await this.textChannel.send(embed);
       return this.embed;
     }
 
-    throw new Error('no text channel set; embed has no where to go');
+    throw new Error('no text channel set; embed has nowhere to go');
   }
 }

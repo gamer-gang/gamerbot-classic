@@ -4,9 +4,9 @@ import { Duration } from 'luxon';
 import miniget from 'miniget';
 import * as mm from 'music-metadata';
 import { Command, CommandDocs } from '../..';
-import { client, getLogger, logger } from '../../../providers';
+import { client, getLogger } from '../../../providers';
 import { Context, FileTrack, Track } from '../../../types';
-import { Embed, normalizeDuration, regExps } from '../../../util';
+import { codeBlock, Embed, normalizeDuration, regExps } from '../../../util';
 import { getSpotifyAlbum } from './spotify/album';
 import { getSpotifyPlaylist } from './spotify/playlist';
 import { getSpotifyTrack } from './spotify/track';
@@ -30,6 +30,7 @@ const sortAliases = {
   newest: ['newest', 'recent'],
   oldest: ['oldest'],
   views: ['views', 'popularity'],
+  random: ['random', 'shuffle'],
 };
 
 export class CommandPlay implements Command {
@@ -101,10 +102,14 @@ export class CommandPlay implements Command {
       );
 
       if (!normalizedSort)
-        return msg.channel.send(Embed.error('Invalid sort type (valid: newest, oldest, views)'));
+        return msg.channel.send(
+          Embed.error('Invalid sort type (valid: newest, oldest, views, random)')
+        );
 
       args.sort = normalizedSort;
     }
+
+    queue.textChannel = msg.channel as TextChannel;
 
     msg.channel.startTyping();
     let handled = false;
@@ -145,15 +150,15 @@ export class CommandPlay implements Command {
           queue.paused ? 'music is paused btw' : undefined
         )
       );
-      queue.updateNowPlaying();
     }
   }
 
   async playNext(context: Context): Promise<void | Message> {
     const { msg } = context;
 
-    const queue = client.queues.get(msg.guild.id);
+    const logger = getLogger(`MESSAGE ${msg.id}`);
 
+    const queue = client.queues.get(msg.guild.id);
     const track = queue.tracks[queue.index];
 
     if (!queue.playing) {
@@ -169,39 +174,54 @@ export class CommandPlay implements Command {
     let called = false;
 
     const callback = async (info: unknown) => {
-      if (called) return;
-      called = true;
-
-      const queue = client.queues.get(msg.guild.id);
-
-      getLogger(`MESSAGE ${msg.id}`).debug(`track "${track.title}" ended with info "${info}"`);
-
-      queue.embed?.delete();
-      delete queue.embed;
-
-      if (!queue.playing) {
-        queue.voiceConnection?.disconnect();
-        return;
-      }
-
-      if (queue.loop === 'one') return this.playNext(context);
-
-      const nextTrack = queue.tracks[queue.index + 1];
-      if (!nextTrack) {
-        if (queue.loop === 'all') {
-          queue.index = 0;
-          this.playNext(context);
-        } else {
-          // no more in queue and not looping
-          queue.voiceConnection?.disconnect();
-          delete queue.voiceConnection;
-          delete queue.voiceChannel;
-          queue.playing = false;
+      try {
+        if (called) {
+          logger.debug('aborting callback because already called');
           return;
         }
-      } else {
-        queue.index++;
-        return this.playNext(context);
+        called = true;
+
+        const queue = client.queues.get(msg.guild.id);
+
+        logger.debug(`track "${track.title}" ended with info "${info}"`);
+
+        queue.embed?.delete();
+        delete queue.embed;
+
+        if (!queue.playing) {
+          logger.debug(`queue.playing = false, disconnecting`);
+          queue.voiceConnection?.disconnect();
+          return;
+        }
+
+        if (queue.loop === 'one') {
+          logger.debug('looping one');
+          return this.playNext(context);
+        }
+
+        const nextTrack = queue.tracks[queue.index + 1];
+        if (!nextTrack) {
+          logger.debug('next track does not exist');
+          if (queue.loop === 'all') {
+            logger.debug('looping all, setting index to 0');
+            queue.index = 0;
+            this.playNext(context);
+          } else {
+            // no more in queue and not looping
+            logger.debug('not looping all, disconnecting');
+            queue.playing = false;
+            queue.voiceConnection?.disconnect();
+            return;
+          }
+        } else {
+          logger.debug('next track exists, incrementing index and continuing');
+          queue.index++;
+          return this.playNext(context);
+        }
+      } catch (err) {
+        logger.error('error encountered in callback');
+        logger.error(err);
+        msg.channel.send(Embed.error(codeBlock(err)));
       }
     };
 
@@ -211,10 +231,18 @@ export class CommandPlay implements Command {
     };
 
     try {
+      logger.debug(`playing track "${track.title}" of type "${track.type}"`);
       queue.voiceConnection
         ?.play(await track.getPlayable(), options)
-        .on('close', callback)
-        .on('finish', callback)
+        .once('close', (info: string) => {
+          logger.debug(`close emitted for "${track.title}", calling callback`);
+          callback(info);
+        })
+        .once('finish', (info: string) => {
+          logger.debug(`finish emitted for "${track.title}", calling callback`);
+          callback(info);
+        })
+        .on('debug', (info: string) => logger.debug(info))
         .on('error', err => logger.error(err));
     } catch (err) {
       queue.embed?.edit(Embed.error(err.message));

@@ -1,4 +1,5 @@
 import { Message } from 'discord.js';
+import _ from 'lodash';
 import { Duration } from 'luxon';
 import { client } from '../../../../providers';
 import { Context, SpotifyTrack } from '../../../../types';
@@ -19,9 +20,29 @@ export const getSpotifyPlaylist = async (
   const playlist = await client.spotify.getPlaylist(playlistId[1]);
   if (!playlist) return msg.channel.send(Embed.error('Invalid playlist'));
 
+  let tracks = playlist.body.tracks.items;
+
+  switch (args.sort) {
+    case 'newest':
+    case 'oldest':
+      msg.channel.send(
+        Embed.warning(
+          'Sorting by date is not supported for Spotify playlists',
+          'Using original playlist order'
+        )
+      );
+      break;
+    case 'views':
+      tracks.sort((a, b) => (b.track.popularity ?? 0) - (a.track.popularity ?? 0));
+      break;
+    case 'random':
+      tracks = _.shuffle(tracks);
+      break;
+  }
+
   for (const {
     track: { name, artists, duration_ms, id, album },
-  } of playlist.body.tracks.items) {
+  } of tracks) {
     caller.queueTrack(
       new SpotifyTrack(msg.author.id, {
         title: name,
@@ -35,7 +56,6 @@ export const getSpotifyPlaylist = async (
   }
 
   const queue = client.queues.get(msg.guild.id);
-  queue.updateNowPlaying();
 
   msg.channel.send(
     Embed.success(
