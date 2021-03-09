@@ -145,6 +145,7 @@ export interface SpotifyTrackData {
   duration: Duration;
 }
 
+// TODO: split spotify track for each track response type
 export class SpotifyTrack extends Track {
   internalType = 'spotify' as const;
 

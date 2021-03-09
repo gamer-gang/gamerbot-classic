@@ -68,10 +68,18 @@ export class CommandDetails implements Command {
 
       embed.addField(
         'Description',
-        _.truncate(track.data.snippet?.description ?? 'None', { length: 1024 })
+        _.truncate(track.data.snippet?.description ?? 'None', { length: 900 })
       );
 
       track.coverUrl && embed.setThumbnail(track.coverUrl);
+    } else if (track.isSpotify()) {
+      embed.addField(`Artist${track.data.artists.length > 1 ? 's' : ''}`, track.authorMarkup, true);
+      embed.addField('Duration', track.durationString, true);
+
+      track.coverUrl && embed.setThumbnail(track.coverUrl);
+    } else if (track.isFile()) {
+      embed.addField('Uploaded by', `<@!${track.requesterId}>`, true);
+      embed.addField('Duration', track.durationString, true);
     }
 
     msg.channel.send(embed);
