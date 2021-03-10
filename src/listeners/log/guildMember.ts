@@ -80,6 +80,7 @@ export const guildMemberHandlers: LogHandlers = {
       },
       color: logColorFor('guildMemberAdd'),
       title: 'User joined',
+      description: member.toString(),
     })
       .addField('User ID', member.id)
       .addField('Accout creation', getDateFromSnowflake(member.id).join(', '))
@@ -157,7 +158,7 @@ export const guildMemberHandlers: LogHandlers = {
       return logger.error(
         'could not get log channel ' + config.logChannelId + ' for ' + guild.name
       );
-    if (!intToLogEvents(config.logSubscribedEvents).includes('guildMemberRemove')) return;
+    if (!intToLogEvents(config.logSubscribedEvents).includes('guildMemberUpdate')) return;
 
     const changes = _.omitBy(next, (v, k) => _.isEqual(v, prev[k as keyof GuildMember]));
 
@@ -167,7 +168,8 @@ export const guildMemberHandlers: LogHandlers = {
         iconURL: next.user.displayAvatarURL({ format: 'png' }) ?? undefined,
         name: next.user.tag,
       },
-      color: logColorFor('guildMemberAdd'),
+      description: next.toString(),
+      color: logColorFor('guildMemberUpdate'),
     })
       .setThumbnail(next.user.displayAvatarURL({ format: 'png' }))
       .setTimestamp();
@@ -196,7 +198,21 @@ export const guildMemberHandlers: LogHandlers = {
       discriminator: next.user.discriminator,
     });
 
-    if (changes.nickname) add('nickname', prev.nickname, next.nickname);
+    if (prev.nickname !== next.nickname) {
+      const auditEvent = await getLatestAuditEvent(guild);
+      add('nickname', prev.nickname, next.nickname);
+
+      console.log(auditEvent.changes);
+
+      if (
+        auditEvent.action === 'MEMBER_UPDATE' &&
+        auditEvent.changes?.some(
+          change =>
+            change.key === 'nick' && change.new == next.nickname && change.old == prev.nickname
+        )
+      )
+        embed.addField('Changed by', auditEvent.executor);
+    }
 
     embed.fields.length && logChannel.send(embed);
   },
