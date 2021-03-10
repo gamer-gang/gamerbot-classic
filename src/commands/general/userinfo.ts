@@ -2,7 +2,7 @@ import { Message, User } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context } from '../../types';
-import { Embed, getDateFromSnowflake } from '../../util';
+import { Embed, getDateFromSnowflake, getProfileImageUrl } from '../../util';
 
 export class CommandUserInfo implements Command {
   cmd = ['userinfo', 'user'];
@@ -16,7 +16,6 @@ export class CommandUserInfo implements Command {
     let user = msg.author;
 
     if (args._[0]) {
-      console.log(args._[0]);
       user =
         client.users.resolve(args._.join('')) ??
         (client.users.resolve(args._[0].replace(/<@!?(\d+)>/g, '$1')) as User);
@@ -29,7 +28,7 @@ export class CommandUserInfo implements Command {
         );
     }
 
-    const icon = user.avatarURL({ format: 'png', size: 512 });
+    const icon = getProfileImageUrl(user);
 
     const inGuild = msg.guild.members.cache.get(user.id);
 

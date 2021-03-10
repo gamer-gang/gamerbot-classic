@@ -1,3 +1,4 @@
+import { User } from 'discord.js';
 import { DateTime } from 'luxon';
 
 export const getDateFromSnowflake = (id: string): [timestamp: string, age: string] => {
@@ -6,4 +7,10 @@ export const getDateFromSnowflake = (id: string): [timestamp: string, age: strin
   const time = DateTime.fromMillis(timestamp);
 
   return [time.toLocaleString(DateTime.DATETIME_FULL), time.toRelative() as string];
+};
+
+export const getProfileImageUrl = (user: User): string => {
+  let icon = user.displayAvatarURL({ size: 4096, dynamic: true });
+  if (icon.includes('.webp')) icon = user.displayAvatarURL({ size: 4096, format: 'png' });
+  return icon;
 };

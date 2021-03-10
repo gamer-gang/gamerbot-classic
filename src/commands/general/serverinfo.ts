@@ -29,14 +29,17 @@ export class CommandServerInfo implements Command {
     const inGuild = guild === msg.guild;
 
     const bots = (await guild.members.fetch()).array().filter(member => member.user.bot).length;
-    const icon = guild.iconURL({ format: 'png', size: 512 });
+    let icon = guild.iconURL({ dynamic: true, size: 4096 });
+    if (icon?.includes('.webp')) icon = guild.iconURL({ format: 'png', size: 4096 });
 
+    guild.nameAcronym;
     const embed = new Embed({
       author: {
         iconURL: icon ?? undefined,
         name: guild.name,
       },
       title: 'Server info',
+      description: icon ? undefined : 'No icon set',
     })
       .addField('Creation date', getDateFromSnowflake(guild.id).join('; '))
       .addField('Owner', inGuild ? guild.owner : `${guild.owner?.user.tag} (${guild.owner?.id})`)
