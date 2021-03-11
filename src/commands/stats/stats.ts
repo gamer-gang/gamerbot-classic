@@ -9,9 +9,9 @@ import { DateTime } from 'luxon';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
-import { client } from '../../providers';
+import { client, logger } from '../../providers';
 import { Context } from '../../types';
-import { codeBlock, Embed, insertUuidDashes, normalizeDuration } from '../../util';
+import { codeBlock, Embed, insertUuidDashes } from '../../util';
 import { makeBedwarsStats } from './bedwars';
 
 const uuidRegex = /^\b[0-9a-f]{8}\b-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?\b[0-9a-f]{12}\b$/i;
@@ -205,37 +205,37 @@ export class CommandStats implements Command {
     const avatarSize = 165;
 
     const avatarStart = process.hrtime();
-    if (!avatarCache.has(uuid!)) {
-      let avatar;
-      let err;
+    // if (!avatarCache.has(uuid!)) {
+    //   let avatar;
+    //   let err;
 
-      if (Math.abs(normalizeDuration(lastAvatarError.diffNow()).as('minutes')) > 5) {
-        try {
-          avatar = await axios.get(
-            `https://crafatar.com/avatars/${player.uuid}?size=${avatarSize}&overlay`,
-            { responseType: 'arraybuffer' }
-          );
-        } catch (error) {
-          err = error;
-          // ignore for now
-        }
-      }
-
-      if ((avatar?.status ?? 600) > 500) {
-        warnings.push(`avatar returned ${avatar?.statusText}`);
-        lastAvatarError = DateTime.now();
-      } else if (avatar?.data) {
-        avatarCache.set(uuid!, avatar.data);
-        setTimeout(() => avatarCache.delete(uuid!), 1000 * 60 * 15);
-      } else {
-        lastAvatarError = DateTime.now();
-        throw err;
-      }
+    //   if (Math.abs(normalizeDuration(lastAvatarError.diffNow()).as('minutes')) > 5) {
+    let avatar;
+    let err;
+    try {
+      avatar = await axios.get(
+        `${process.env.CRAFATAR_URL}/avatars/${player.uuid}?size=${avatarSize}&overlay`,
+        { responseType: 'arraybuffer' }
+      );
+    } catch (error) {
+      err = error;
+      logger.error(err.stack);
     }
+    // }
+
+    if ((avatar?.status ?? 600) > 500) {
+      warnings.push(`avatar error: ${avatar?.status}`);
+      lastAvatarError = DateTime.now();
+    } else if (avatar?.data) {
+      avatarCache.set(uuid!, avatar.data);
+      setTimeout(() => avatarCache.delete(uuid!), 1000 * 60 * 15);
+    } else {
+      lastAvatarError = DateTime.now();
+      throw err;
+    }
+
     const avatarEnd = process.hrtime(avatarStart);
     const avatarDuration = Math.round((avatarEnd![0] * 1e9 + avatarEnd![1]) / 1e6);
-
-    const avatar = avatarCache.get(uuid!);
 
     if (args.info) {
       const embed = new Embed({ title: player.displayname })
@@ -255,7 +255,7 @@ export class CommandStats implements Command {
 
       if (avatar) {
         embed
-          .attachFiles([{ attachment: avatar, name: 'avatar.png' }])
+          .attachFiles([{ attachment: avatar.data, name: 'avatar.png' }])
           .setThumbnail('attachment://avatar.png');
       }
 
@@ -287,7 +287,7 @@ export class CommandStats implements Command {
 
       const avatarImage = new Image();
       if (avatar) {
-        avatarImage.src = avatar;
+        avatarImage.src = avatar.data;
         avatarImage.width = avatarSize;
         avatarImage.height = avatarSize;
       }
@@ -311,23 +311,16 @@ export class CommandStats implements Command {
 
       const debugInfo = [
         `${dataDuration < 10 ? 'data cached' : `data ${dataDuration}ms`}`,
-        `${avatarDuration < 10 ? 'avatar cached' : `avatar ${avatarDuration}ms`}`,
+        `${avatarDuration < 30 ? 'avatar cached' : `avatar ${avatarDuration}ms`}`,
         `img ${canvasDuration}ms`,
         `total ${totalDuration}ms`,
         ...(info?.filter(v => !!v) ?? []),
       ].join('   ');
 
-      await (debug
-        ? msg.channel.send({
-            content: `${warnings ? `*${warnings.join('\n')}*\n` : ''}\`${debugInfo}\``,
-            files: [file],
-          })
-        : warnings.length
-        ? msg.channel.send({
-            content: `*${warnings.join('\n')}*\n`,
-            files: [file],
-          })
-        : msg.channel.send(file));
+      const content =
+        (warnings.length ? `*${warnings.join('\n')}*\n` : '') + (debug ? `\`${debugInfo}\`` : '');
+      if (content.length) msg.channel.send({ content, files: [file] });
+      else msg.channel.send(file);
 
       msg.channel.stopTyping(true);
     } catch (err) {

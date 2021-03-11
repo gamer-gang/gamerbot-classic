@@ -27,7 +27,9 @@ export default <Configuration>{
   resolve: { extensions: ['.ts', '.js'] },
   plugins: [
     ...(process.env.DOCKER || process.env.CI ? [] : [new ProgressPlugin({})]),
-    ...(process.env.NODEMON ? [new NodemonPlugin()] : []),
+    ...(process.env.NODEMON
+      ? [new NodemonPlugin({ exec: 'node ' + (process.env.NODE_ARGS ?? '') })]
+      : []),
     new EnvironmentPlugin({
       WEBPACK: true,
       LATEST_COMMIT_HASH: execSync('git rev-parse HEAD').toString().trim(),

@@ -2,19 +2,11 @@
   "configurations": [
     {
       "name": "dev",
-      "request": "launch",
+      "request": "attach",
       "type": "node",
-      "runtimeExecutable": "yarn",
-      "runtimeArgs": ["node", "${workspaceFolder}/dist/main.js"],
       "sourceMaps": true,
-      "sourceMapPathOverrides": {
-        "webpack:///./*": "${workspaceFolder}/*",
-        "internal:///./*": "${workspaceFolder}/*"
-      },
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-      "env": {
-        "NODE_ENV": "development"
-      }
+      "remoteRoot": "/app",
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"]
     }
   ]
 }

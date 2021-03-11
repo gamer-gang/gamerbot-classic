@@ -8,6 +8,16 @@ services:
       - POSTGRES_DB
       - POSTGRES_USER
       - POSTGRES_PASSWORD
+  redis:
+    image: redis:6
+  crafatar:
+    image: crafatar/crafatar:latest
+    volumes:
+      - crafatar-images:/crafatar/images
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=redis://redis
   app:
     build: .
     volumes:
@@ -15,11 +25,15 @@ services:
       - app-logs:/app/logs
     depends_on:
       - db
+      - crafatar
     env_file: .env
     environment:
-      POSTGRES_HOST: db
+      - POSTGRES_HOST=db
+      - CRAFATAR_URL=http://crafatar:3000
 
 volumes:
   app-data: {}
   app-logs: {}
+  app-node_modules: {}
+  crafatar-images: {}
   db-data: {}
