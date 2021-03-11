@@ -9,7 +9,7 @@ import { DateTime } from 'luxon';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
-import { client, logger } from '../../providers';
+import { client } from '../../providers';
 import { Context } from '../../types';
 import { codeBlock, Embed, insertUuidDashes } from '../../util';
 import { makeBedwarsStats } from './bedwars';
@@ -19,8 +19,6 @@ const userRegex = /^([A-Za-z0-9_]{3,16}|[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[
 
 const statsCache = new Map<string, Player>();
 const uuidCache = new Map<string, string>();
-const avatarCache = new Map<string, Buffer>();
-let lastAvatarError = DateTime.fromMillis(0);
 
 type Gamemode = 'bedwars';
 export type StatsData = [image: Buffer, metadata?: (string | boolean)[]];
@@ -180,7 +178,7 @@ export class CommandStats implements Command {
       if (response.status !== 200 || !data.success)
         return msg.channel.send(
           Embed.error(
-            'Request failed: ' + response.statusText,
+            `Request failed: ${response.status} ${response.statusText}`,
             data ? codeBlock(yaml.dump(data), 'yaml') : ''
           )
         );
@@ -205,33 +203,18 @@ export class CommandStats implements Command {
     const avatarSize = 165;
 
     const avatarStart = process.hrtime();
-    // if (!avatarCache.has(uuid!)) {
-    //   let avatar;
-    //   let err;
 
-    //   if (Math.abs(normalizeDuration(lastAvatarError.diffNow()).as('minutes')) > 5) {
-    let avatar;
-    let err;
-    try {
-      avatar = await axios.get(
-        `${process.env.CRAFATAR_URL}/avatars/${player.uuid}?size=${avatarSize}&overlay`,
-        { responseType: 'arraybuffer' }
+    const avatar = await axios.get(
+      `${process.env.CRAFATAR_URL}/avatars/${player.uuid}?size=${avatarSize}&overlay`,
+      { responseType: 'arraybuffer', validateStatus: () => true }
+    );
+
+    if (avatar.status >= 500) {
+      warnings.push(
+        `${client.getCustomEmoji('error')} Avatar error: ${avatar.status} ${avatar.statusText}`
       );
-    } catch (error) {
-      err = error;
-      logger.error(err.stack);
-    }
-    // }
-
-    if ((avatar?.status ?? 600) > 500) {
-      warnings.push(`avatar error: ${avatar?.status}`);
-      lastAvatarError = DateTime.now();
-    } else if (avatar?.data) {
-      avatarCache.set(uuid!, avatar.data);
-      setTimeout(() => avatarCache.delete(uuid!), 1000 * 60 * 15);
-    } else {
-      lastAvatarError = DateTime.now();
-      throw err;
+    } else if (!avatar.data) {
+      throw new Error(`Avatar fetch failed with no data and status code ${avatar.status}`);
     }
 
     const avatarEnd = process.hrtime(avatarStart);
@@ -318,7 +301,7 @@ export class CommandStats implements Command {
       ].join('   ');
 
       const content =
-        (warnings.length ? `*${warnings.join('\n')}*\n` : '') + (debug ? `\`${debugInfo}\`` : '');
+        (warnings.length ? `${warnings.join('\n')}\n` : '') + (debug ? `\`${debugInfo}\`` : '');
       if (content.length) msg.channel.send({ content, files: [file] });
       else msg.channel.send(file);
 
