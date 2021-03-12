@@ -2,23 +2,18 @@ import { RequestContext } from '@mikro-orm/core';
 import axios from 'axios';
 import { Image } from 'canvas';
 import { Message, MessageAttachment } from 'discord.js';
-import { Player, PlayerResponse } from 'hypixel-types';
-import yaml from 'js-yaml';
-import _ from 'lodash';
+import { Player } from 'hypixel-types';
 import { DateTime } from 'luxon';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
 import { client } from '../../providers';
 import { Context } from '../../types';
-import { codeBlock, Embed, insertUuidDashes } from '../../util';
+import { codeBlock, Embed, insertUuidDashes, sanitize } from '../../util';
 import { makeBedwarsStats } from './bedwars';
+import { statsProvider } from './cache';
 
-const uuidRegex = /^\b[0-9a-f]{8}\b-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?\b[0-9a-f]{12}\b$/i;
 const userRegex = /^([A-Za-z0-9_]{3,16}|[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})$/;
-
-const statsCache = new Map<string, Player>();
-const uuidCache = new Map<string, string>();
 
 type Gamemode = 'bedwars';
 export type StatsData = [image: Buffer, metadata?: (string | boolean)[]];
@@ -154,51 +149,28 @@ export class CommandStats implements Command {
         );
 
       args._[0] = entity.hypixelUsername;
+    } else if (/^(<@!?)?\d{18}>?$/.test(args._[0])) {
+      const exec = /^(?:<@!?)?(\d{18})>?$/.exec(args._[0]);
+
+      const entity = await em.findOne(HypixelPlayer, { userId: exec && exec[1] });
+      if (!entity)
+        return msg.channel.send(
+          Embed.error(`User ${sanitize(args._[0])} doesn't have a username set`)
+        );
+
+      args._[0] = entity.hypixelUsername;
     }
 
     const warnings: string[] = [];
     msg.channel.startTyping();
 
-    const isUuid = uuidRegex.test(args._[0]);
-    let uuid = (isUuid ? args._[0] : uuidCache.get(args._[0].toLowerCase()))?.replace(/-/g, '');
-
     const dataStart = process.hrtime();
 
-    if (!statsCache.has(uuid ?? '')) {
-      const response = await axios.get('https://api.hypixel.net/player', {
-        params: {
-          key: process.env.HYPIXEL_API_KEY,
-          uuid: isUuid ? encodeURIComponent(args._[0]) : undefined,
-          name: isUuid ? undefined : encodeURIComponent(args._[0]),
-        },
-      });
-
-      const data = response.data as PlayerResponse;
-
-      if (response.status !== 200 || !data.success)
-        return msg.channel.send(
-          Embed.error(
-            `Request failed: ${response.status} ${response.statusText}`,
-            data ? codeBlock(yaml.dump(data), 'yaml') : ''
-          )
-        );
-
-      if (!data.player) return msg.channel.send(Embed.error('Player does not exist'));
-
-      uuid = data.player.uuid;
-
-      statsCache.set(uuid, data.player);
-      setTimeout(() => statsCache.delete(uuid!), 1000 * 60 * 5);
-
-      uuidCache.set(data.player.playername, uuid);
-      setTimeout(() => uuidCache.delete(data.player!.playername), 1000 * 60 * 15);
-    }
+    const player = await statsProvider.get(args._[0]);
+    if (!player) throw new Error('Player is unexpectedly undefined');
 
     const dataEnd = process.hrtime(dataStart);
     const dataDuration = Math.round((dataEnd![0] * 1e9 + dataEnd![1]) / 1e6);
-
-    const player = _.cloneDeep(statsCache.get(uuid!));
-    if (!player) throw new Error("Player is undefined after checking that it isn't");
 
     const avatarSize = 165;
 
@@ -275,15 +247,15 @@ export class CommandStats implements Command {
         avatarImage.height = avatarSize;
       }
 
-      const canvasStart = process.hrtime();
+      const imageStart = process.hrtime();
       const gamemode = exec ? (exec[1] as Gamemode) : 'bedwars';
       const [image, info] = this.gamemodes[gamemode](
         player,
         avatar ? avatarImage : undefined,
         !args.fast
       );
-      const canvasEnd = process.hrtime(canvasStart);
-      const canvasDuration = Math.round((canvasEnd![0] * 1e9 + canvasEnd![1]) / 1e6);
+      const imageEnd = process.hrtime(imageStart);
+      const imageDuration = Math.round((imageEnd![0] * 1e9 + imageEnd![1]) / 1e6);
 
       if (!image) throw new Error('Invalid state: attatchment is null after regexp exec');
 
@@ -295,7 +267,7 @@ export class CommandStats implements Command {
       const debugInfo = [
         `${dataDuration < 10 ? 'data cached' : `data ${dataDuration}ms`}`,
         `${avatarDuration < 30 ? 'avatar cached' : `avatar ${avatarDuration}ms`}`,
-        `img ${canvasDuration}ms`,
+        `${imageDuration < 20 ? 'image cached' : `image ${imageDuration}ms`}`,
         `total ${totalDuration}ms`,
         ...(info?.filter(v => !!v) ?? []),
       ].join('   ');
