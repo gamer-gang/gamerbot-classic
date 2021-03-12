@@ -52,6 +52,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/mime-types", "npm:2.1.0"],
             ["@types/node", "npm:14.14.32"],
             ["@types/nodemon", "npm:1.19.0"],
+            ["@types/object-hash", "npm:1.3.4"],
             ["@types/randomstring", "npm:1.1.6"],
             ["@types/source-map-support", "npm:0.5.3"],
             ["@types/spotify-web-api-node", "npm:5.0.1"],
@@ -94,6 +95,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["node-loader", "virtual:1146e3009ff3e1a5581766c147edbc930ca669db3b39d1d6e699ae3ac247ff6a95863891d8eb3b970b1a1b938a06286c180ea01938ac6e0ba3c660c96e621580#npm:1.0.2"],
             ["nodemon", "npm:2.0.7"],
             ["nodemon-webpack-plugin", "virtual:1146e3009ff3e1a5581766c147edbc930ca669db3b39d1d6e699ae3ac247ff6a95863891d8eb3b970b1a1b938a06286c180ea01938ac6e0ba3c660c96e621580#npm:4.4.4"],
+            ["object-hash", "npm:2.1.1"],
             ["patch-package", "npm:6.4.6"],
             ["pg", "virtual:1146e3009ff3e1a5581766c147edbc930ca669db3b39d1d6e699ae3ac247ff6a95863891d8eb3b970b1a1b938a06286c180ea01938ac6e0ba3c660c96e621580#npm:8.5.1"],
             ["postinstall-postinstall", "npm:2.1.0"],
@@ -879,6 +881,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/@types-normalize-package-data-npm-2.4.0-ed928aaaa8-6d077e73be.zip/node_modules/@types/normalize-package-data/",
           "packageDependencies": [
             ["@types/normalize-package-data", "npm:2.4.0"]
+          ],
+          "linkType": "HARD",
+        }]
+      ]],
+      ["@types/object-hash", [
+        ["npm:1.3.4", {
+          "packageLocation": "./.yarn/cache/@types-object-hash-npm-1.3.4-3b3e2e44e8-2ae12c7b34.zip/node_modules/@types/object-hash/",
+          "packageDependencies": [
+            ["@types/object-hash", "npm:1.3.4"]
           ],
           "linkType": "HARD",
         }]
@@ -4776,6 +4787,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/mime-types", "npm:2.1.0"],
             ["@types/node", "npm:14.14.32"],
             ["@types/nodemon", "npm:1.19.0"],
+            ["@types/object-hash", "npm:1.3.4"],
             ["@types/randomstring", "npm:1.1.6"],
             ["@types/source-map-support", "npm:0.5.3"],
             ["@types/spotify-web-api-node", "npm:5.0.1"],
@@ -4818,6 +4830,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["node-loader", "virtual:1146e3009ff3e1a5581766c147edbc930ca669db3b39d1d6e699ae3ac247ff6a95863891d8eb3b970b1a1b938a06286c180ea01938ac6e0ba3c660c96e621580#npm:1.0.2"],
             ["nodemon", "npm:2.0.7"],
             ["nodemon-webpack-plugin", "virtual:1146e3009ff3e1a5581766c147edbc930ca669db3b39d1d6e699ae3ac247ff6a95863891d8eb3b970b1a1b938a06286c180ea01938ac6e0ba3c660c96e621580#npm:4.4.4"],
+            ["object-hash", "npm:2.1.1"],
             ["patch-package", "npm:6.4.6"],
             ["pg", "virtual:1146e3009ff3e1a5581766c147edbc930ca669db3b39d1d6e699ae3ac247ff6a95863891d8eb3b970b1a1b938a06286c180ea01938ac6e0ba3c660c96e621580#npm:8.5.1"],
             ["postinstall-postinstall", "npm:2.1.0"],
@@ -7528,6 +7541,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["copy-descriptor", "npm:0.1.1"],
             ["define-property", "npm:0.2.5"],
             ["kind-of", "npm:3.2.2"]
+          ],
+          "linkType": "HARD",
+        }]
+      ]],
+      ["object-hash", [
+        ["npm:2.1.1", {
+          "packageLocation": "./.yarn/cache/object-hash-npm-2.1.1-b31a917f31-fe49a0864c.zip/node_modules/object-hash/",
+          "packageDependencies": [
+            ["object-hash", "npm:2.1.1"]
           ],
           "linkType": "HARD",
         }]

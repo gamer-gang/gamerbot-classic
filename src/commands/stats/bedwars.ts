@@ -1,5 +1,6 @@
 import { Canvas, Image } from 'canvas';
 import { Player } from 'hypixel-types';
+import hash from 'object-hash';
 import { client } from '../../providers';
 import { byteSize, insertUuidDashes } from '../../util';
 import { StatsData } from './stats';
@@ -25,6 +26,8 @@ import {
   round,
   stripFormatting,
 } from './util/style';
+
+const imageCache = new Map<string, { playername: string; statsData: StatsData }>();
 
 const columns = {
   K: 'kills',
@@ -65,6 +68,17 @@ const subheaderHeight = 28;
 
 export const makeBedwarsStats = (data?: Player, avatar?: Image, quality = true): StatsData => {
   if (!data?.stats?.Bedwars) throw new Error('no data');
+
+  const argHash = hash(
+    { data: data.stats.Bedwars, avatar: avatar?.src, quality },
+    { algorithm: 'passthrough' }
+  );
+  if (imageCache.has(argHash)) return imageCache.get(argHash)!.statsData;
+  else {
+    imageCache.forEach((v, k) => {
+      if (v.playername === data.playername) imageCache.delete(k);
+    });
+  }
 
   const stats: Record<keyof typeof rows, Record<keyof typeof columns, string>> = {} as any;
 
@@ -279,8 +293,15 @@ export const makeBedwarsStats = (data?: Player, avatar?: Image, quality = true):
   c.restore();
 
   const image = quality
-    ? canvas.toBuffer('image/png')
+    ? canvas.toBuffer('image/png', { compressionLevel: 6 })
     : canvas.toBuffer('image/jpeg', { quality: 1 });
 
-  return [image, [`${width}x${height}`, byteSize(image.byteLength), quality ? 'png' : 'jpeg']];
+  const statsData: StatsData = [
+    image,
+    [`${width}x${height}`, byteSize(image.byteLength), quality ? 'png' : 'jpeg'],
+  ];
+
+  imageCache.set(argHash, { playername: data.playername, statsData });
+
+  return statsData;
 };
