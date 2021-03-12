@@ -33,7 +33,7 @@ class StatsProvider {
   async get(identifier: string): Promise<Player | undefined> {
     const isUuid = uuidRegex.test(identifier);
 
-    const potentialUuid = isUuid ? identifier : this.uuidCache.get(identifier);
+    const potentialUuid = isUuid ? identifier.replace(/-/g, '') : this.uuidCache.get(identifier);
 
     if (!this.map.has(potentialUuid ?? '')) {
       const response = await axios.get('https://api.hypixel.net/player', {
@@ -62,7 +62,7 @@ class StatsProvider {
       setTimeout(() => this.uuidCache.delete(data.player!.playername), 1000 * 60 * 15);
     }
 
-    return this.map.get(isUuid ? identifier : this.uuidCache.get(identifier)!);
+    return this.map.get(isUuid ? identifier.replace(/-/g, '') : this.uuidCache.get(identifier)!);
   }
 }
 
