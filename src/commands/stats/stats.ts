@@ -7,7 +7,7 @@ import { DateTime } from 'luxon';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
-import { client } from '../../providers';
+import { client, getLogger } from '../../providers';
 import { Context } from '../../types';
 import { codeBlock, Embed, insertUuidDashes, sanitize } from '../../util';
 import { makeBedwarsStats } from './bedwars';
@@ -246,6 +246,11 @@ export class CommandStats implements Command {
         avatarImage.width = avatarSize;
         avatarImage.height = avatarSize;
       }
+
+      avatarImage.onerror = (err: Error) => {
+        getLogger(`STATS ${player.playername}`).error(err);
+        throw err;
+      };
 
       const imageStart = process.hrtime();
       const gamemode = exec ? (exec[1] as Gamemode) : 'bedwars';

@@ -42,6 +42,7 @@ class StatsProvider {
           uuid: isUuid ? encodeURIComponent(identifier) : undefined,
           name: isUuid ? undefined : encodeURIComponent(identifier),
         },
+        validateStatus: () => true,
       });
 
       const data = response.data as PlayerResponse;
