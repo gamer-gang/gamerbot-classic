@@ -23,12 +23,12 @@ Reasons to use gamerbot:
 
 ### Setup
 
-- setup a PostgreSQL server
+- install docker and docker-compose
 - copy `.env.example` to `.env` and fill in all variables
 - install dependencies: `yarn`
-- start webpack: `yarn dev`
+- start: `yarn dev`
 
 ### Debugging (VS Code)
 
-- run `yarn watch` in a terminal
-- run `dev` configuration
+- start as usual: `yarn dev`
+- attach to process using `dev` configuration
