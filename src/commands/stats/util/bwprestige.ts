@@ -185,5 +185,5 @@ export const drawRank = (
 
   c.restore();
 
-  return [prefixWidth === padding ? prefixWidth : prefixWidth + charWidth / 2, split[0].color];
+  return [prefixWidth === x ? x : prefixWidth + charWidth / 2, split[0].color];
 };
