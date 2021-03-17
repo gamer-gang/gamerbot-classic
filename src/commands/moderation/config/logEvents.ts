@@ -2,8 +2,8 @@ import { Message } from 'discord.js';
 import { Config } from '../../../entities/Config';
 import {
   intToLogEvents,
+  LogEventName,
   logEvents as logEventNames,
-  LogEventType,
   maxLogInteger,
 } from '../../../listeners/log';
 import { Context } from '../../../types';
@@ -50,7 +50,7 @@ export const logEvents = async (
     ? value
         .split(value.includes(',') ? /\s*,\s*/g : /\s+/g)
         .map(v => {
-          const index = logEventNames.indexOf(v as LogEventType);
+          const index = logEventNames.indexOf(v as LogEventName);
           if (index === -1) return NaN;
           return 2 ** index;
         })

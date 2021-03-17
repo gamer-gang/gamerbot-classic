@@ -1,9 +1,8 @@
-import { RequestContext } from '@mikro-orm/core';
 import { Guild, Invite, TextChannel } from 'discord.js';
 import _ from 'lodash';
 import { DateTime } from 'luxon';
 import { intToLogEvents, LogHandlers } from '.';
-import { client, getLogger, inviteCache, logger } from '../../providers';
+import { client, getLogger, inviteCache, logger, orm } from '../../providers';
 import { Embed } from '../../util';
 import { getConfig, getLatestAuditEvent, logColorFor } from './utils';
 
@@ -39,11 +38,11 @@ client.on('ready', () => {
       )
   );
 
-  Promise.all(inviteFetchers).then(() => (RequestContext.getEntityManager() ?? client.em).flush());
+  Promise.all(inviteFetchers).then(() => orm.em.flush());
 });
 
 export const inviteHandlers: LogHandlers = {
-  onInviteCreate: async (invite: Invite) => {
+  onInviteCreate: (guild: Guild, logChannel: TextChannel) => async (invite: Invite) => {
     const guild = invite.guild as Guild;
 
     inviteCache.set(invite.code, {
@@ -86,7 +85,7 @@ export const inviteHandlers: LogHandlers = {
 
     logChannel.send(embed);
   },
-  onInviteDelete: async (invite: Invite) => {
+  onInviteDelete: (guild: Guild, logChannel: TextChannel) => async (invite: Invite) => {
     const cached = _.clone(inviteCache.get(invite.code));
     inviteCache.delete(invite.code);
 

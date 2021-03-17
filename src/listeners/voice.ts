@@ -12,7 +12,7 @@ const cleanQueue = (guild: Guild) => {
   delete queue.embed;
 };
 
-export const onVoiceStateUpdate = () => (oldState: VoiceState, newState: VoiceState): void => {
+export const onVoiceStateUpdate = (oldState: VoiceState, newState: VoiceState): void => {
   if (oldState.id === client.user?.id && newState.id === client.user?.id) {
     // that's us!
     if (oldState.channelID != null && newState.channelID == null) {

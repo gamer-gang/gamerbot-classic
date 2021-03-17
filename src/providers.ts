@@ -1,4 +1,5 @@
-import { MikroORM } from '@mikro-orm/core';
+import { EntityManager, MikroORM } from '@mikro-orm/core';
+import { AsyncLocalStorage } from 'async_hooks';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import log4js from 'log4js';
@@ -45,8 +46,9 @@ export const getLogger = (category: string): log4js.Logger => log4js.getLogger(c
 export const dbLogger = log4js.getLogger('DB');
 
 // db
-const orm = await MikroORM.init(mikroOrmConfig);
+export const storage = new AsyncLocalStorage<EntityManager>();
+export const orm = await MikroORM.init({ ...mikroOrmConfig, context: () => storage.getStore() });
 await orm.getMigrator().up();
 
 // client
-export const client: Gamerbot = new Gamerbot({ em: orm.em });
+export const client: Gamerbot = new Gamerbot();

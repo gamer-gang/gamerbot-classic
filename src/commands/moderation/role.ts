@@ -1,10 +1,9 @@
-import { RequestContext } from '@mikro-orm/core';
 import { GuildEmoji, Message, PermissionString, User } from 'discord.js';
 import emojiRegex from 'emoji-regex';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { ReactionRole, RoleEmoji } from '../../entities/ReactionRole';
-import { client } from '../../providers';
+import { orm } from '../../providers';
 import { Context } from '../../types';
 import { codeBlock, Embed } from '../../util';
 
@@ -34,8 +33,6 @@ export class CommandRole implements Command {
   userPermissions: PermissionString[] = ['MANAGE_ROLES'];
   botPermissions: PermissionString[] = ['MANAGE_ROLES'];
   async execute(context: Context): Promise<void | Message> {
-    const em = RequestContext.getEntityManager() ?? client.em;
-
     const { msg, args } = context;
 
     if (!msg.guild?.members.resolve(msg.author as User)?.hasPermission('MANAGE_ROLES'))
@@ -110,7 +107,7 @@ export class CommandRole implements Command {
 
       description += `${emoji}: ${role}\n`;
       roles.push(
-        em.create(RoleEmoji, {
+        orm.em.create(RoleEmoji, {
           emoji: emoji instanceof GuildEmoji ? emoji.id : emoji,
           roleId: role.id,
         })
@@ -124,19 +121,19 @@ export class CommandRole implements Command {
     const embedMessage = await msg.channel.send(embed);
 
     // save message to db
-    const collector = em.create(ReactionRole, {
+    const collector = orm.em.create(ReactionRole, {
       messageId: embedMessage.id,
       guildId: msg.guild?.id,
       roles: [],
     });
-    em.populate(collector, 'roles');
-    em.persist(collector);
+    orm.em.populate(collector, 'roles');
+    orm.em.persist(collector);
 
     roles.forEach(role => {
       role.message = collector;
       embedMessage.react(role.emoji);
-      em.populate(role, 'message');
-      em.persist(role);
+      orm.em.populate(role, 'message');
+      orm.em.persist(role);
     });
   }
 }

@@ -1,4 +1,3 @@
-import { Connection, EntityManager, IDatabaseDriver } from '@mikro-orm/core';
 import { Client, ClientOptions, ClientUser, Guild, GuildEmoji } from 'discord.js';
 import fse from 'fs-extra';
 import { google } from 'googleapis';
@@ -8,9 +7,8 @@ import { logger } from './providers';
 import { Queue } from './types';
 import { PresenceManager, resolvePath, Store } from './util';
 
-export interface GamerbotOptions extends Omit<ClientOptions, 'partials'> {
-  em: EntityManager<IDatabaseDriver<Connection>>;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface GamerbotOptions extends Omit<ClientOptions, 'partials'> {}
 
 export type KnownEmojis = 'success' | 'error' | 'warn' | 'worksonmymachine';
 
@@ -34,16 +32,13 @@ export class Gamerbot extends Client {
   spotifyTimeouts = [5, 10, 30, 60, 60 * 2, 60 * 5, 60 * 10];
   spotifyDisabled = false;
 
-  readonly em: GamerbotOptions['em'];
   readonly queues = new Store<Queue>();
 
-  constructor(opts: GamerbotOptions) {
+  constructor(opts: GamerbotOptions = {}) {
     super({
       ...(opts as Pick<GamerbotOptions, keyof Omit<ClientOptions, 'partials'>>),
       partials: ['MESSAGE', 'REACTION'],
     });
-
-    this.em = opts.em;
 
     this.presenceManager = new PresenceManager(this);
 

@@ -1,3 +1,4 @@
+import { Guild, TextChannel } from 'discord.js';
 import { channelHandlers } from './channel';
 import { commandHandlers } from './command';
 import { emojiHandlers } from './emoji';
@@ -6,11 +7,18 @@ import { guildBanHandlers } from './guildBan';
 import { guildMemberHandlers } from './guildMember';
 import { inviteHandlers } from './invite';
 
-export type LogEventType = typeof logEvents[number];
-export type LogEventHandler = `on${Capitalize<LogEventType>}`;
-export type LogHandlers = Partial<Record<LogEventHandler, (...args: any[]) => Promise<void>>>;
+export type LogClientEventName = typeof logClientEvents[number];
+export type LogGamerbotCommandEventName = typeof logGamerbotCommandEvents[number];
+export type LogEventName = typeof logEvents[number];
+export type LogEventHandler = `on${Capitalize<LogEventName>}`;
+export type LogHandlers = Partial<
+  Record<
+    LogEventHandler,
+    (guild: Guild, logChannel: TextChannel) => (...args: any[]) => Promise<void>
+  >
+>;
 
-export const logEvents = [
+const logClientEvents = [
   'channelCreate',
   'channelDelete',
   'channelUpdate',
@@ -30,6 +38,9 @@ export const logEvents = [
   'roleDelete',
   'roleUpdate',
   'voiceStateUpdate',
+] as const;
+
+export const logGamerbotCommandEvents = [
   'gamerbotCommandGif',
   'gamerbotCommandApimessage',
   'gamerbotCommandCowsay',
@@ -50,6 +61,8 @@ export const logEvents = [
   'gamerbotCommandStop',
 ] as const;
 
+export const logEvents = [...logClientEvents, ...logGamerbotCommandEvents] as const;
+
 // https://coolors.co/gradient-palette/40c9ff-e81cff
 export const logColors = [
   0x40c9ff,
@@ -68,7 +81,7 @@ export const logColors = [
 
 export const maxLogInteger = logEvents.map((__, index) => 2 ** index).reduce((a, b) => a + b);
 
-export const intToLogEvents = (permissions: number | bigint): LogEventType[] => {
+export const intToLogEvents = (permissions: number | bigint): LogEventName[] => {
   const bytes = parseInt(permissions.toString(10))
     .toString(2)
     .split('')
@@ -86,10 +99,10 @@ export const intToLogEvents = (permissions: number | bigint): LogEventType[] => 
   return bytes.flatMap((b, index) => (b ? logEvents[index] : []));
 };
 
-export const logEventsToInt = (subscribedEvents: LogEventType[]): bigint => {
+export const logEventsToInt = (subscribedEvents: LogEventName[]): bigint => {
   return BigInt(
     subscribedEvents
-      .map(event => [event, logEvents.indexOf(event as LogEventType)] as const)
+      .map(event => [event, logEvents.indexOf(event as LogEventName)] as const)
       .filter(([event, i]) => {
         if (i === -1) throw new Error(`Invalid event '${event}'.`);
         return true;

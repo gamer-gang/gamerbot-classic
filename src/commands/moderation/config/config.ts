@@ -27,7 +27,7 @@ export class CommandConfig implements Command {
     const { msg, args, config } = context;
 
     const handlerName = Object.keys(configHandlers).find(
-      n => n.toLowerCase() === args._[0].toLowerCase()
+      n => n.toLowerCase() === args._[0]?.toLowerCase()
     );
 
     if (!args._[0] || !handlerName)

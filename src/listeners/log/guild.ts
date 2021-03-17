@@ -1,9 +1,8 @@
-import { Guild } from 'discord.js';
-
+import { Guild, TextChannel } from 'discord.js';
 import { LogHandlers } from '.';
 
 export const guildHandlers: LogHandlers = {
-  onGuildUpdate: async (prev: Guild, next: Guild) => {
-    //
+  onGuildUpdate: (guild: Guild, logChannel: TextChannel) => async (prev: Guild, next: Guild) => {
+    // TODO
   },
 };

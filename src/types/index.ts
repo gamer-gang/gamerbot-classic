@@ -1,6 +1,5 @@
 import { Guild, Message } from 'discord.js';
 import yargsParser from 'yargs-parser';
-
 import { Config } from '../entities/Config';
 
 export * from './economy';

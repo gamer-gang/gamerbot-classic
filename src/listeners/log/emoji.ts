@@ -1,25 +1,14 @@
-import { GuildEmoji, TextChannel } from 'discord.js';
-import { intToLogEvents, LogHandlers } from '.';
-import { client, logger } from '../../providers';
+import { Guild, GuildEmoji, TextChannel } from 'discord.js';
+import { LogHandlers } from '.';
 import { Embed } from '../../util';
-import { formatValue, getConfig, getLatestAuditEvent, logColorFor } from './utils';
+import { formatValue, getLatestAuditEvent, logColorFor } from './utils';
 
 const auditChangeTable: Record<string, string> = {
   name: 'Name',
 };
 
 export const emojiHandlers: LogHandlers = {
-  onEmojiCreate: async (emoji: GuildEmoji) => {
-    const guild = emoji.guild;
-    const config = await getConfig(emoji);
-    if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
-    if (!logChannel)
-      return logger.error(
-        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
-      );
-    if (!intToLogEvents(config.logSubscribedEvents).includes('emojiCreate')) return;
-
+  onEmojiCreate: (guild: Guild, logChannel: TextChannel) => async (emoji: GuildEmoji) => {
     const auditEvent = await getLatestAuditEvent(guild);
 
     const embed = new Embed({
@@ -39,18 +28,7 @@ export const emojiHandlers: LogHandlers = {
 
     logChannel.send(embed);
   },
-  onEmojiDelete: async (emoji: GuildEmoji) => {
-    const guild = emoji.guild;
-    const config = await getConfig(emoji);
-
-    if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
-    if (!logChannel)
-      return logger.error(
-        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
-      );
-    if (!intToLogEvents(config.logSubscribedEvents).includes('emojiDelete')) return;
-
+  onEmojiDelete: (guild: Guild, logChannel: TextChannel) => async (emoji: GuildEmoji) => {
     const auditEvent = await getLatestAuditEvent(guild);
 
     const embed = new Embed({
@@ -71,17 +49,10 @@ export const emojiHandlers: LogHandlers = {
 
     logChannel.send(embed);
   },
-  onEmojiUpdate: async (prev: GuildEmoji, next: GuildEmoji) => {
-    const guild = next.guild;
-    const config = await getConfig(next);
-    if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
-    if (!logChannel)
-      return logger.error(
-        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
-      );
-    if (!intToLogEvents(config.logSubscribedEvents).includes('emojiUpdate')) return;
-
+  onEmojiUpdate: (guild: Guild, logChannel: TextChannel) => async (
+    prev: GuildEmoji,
+    next: GuildEmoji
+  ) => {
     const auditEvent = await getLatestAuditEvent(guild);
 
     const embed = new Embed({

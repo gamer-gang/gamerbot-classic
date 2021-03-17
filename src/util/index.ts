@@ -5,6 +5,7 @@ export * from './db';
 export * from './discord';
 export * from './duration';
 export * from './embed';
+export * from './guild';
 export * from './map';
 export * from './message';
 export * from './presence';

@@ -1,29 +1,15 @@
-import { RequestContext } from '@mikro-orm/core';
-import {
-  Guild,
-  GuildAuditLogsEntry,
-  GuildChannel,
-  GuildEmoji,
-  Message,
-  PartialMessage,
-} from 'discord.js';
-import { logColors, logEvents, LogEventType } from '.';
+import { Guild, GuildAuditLogsEntry } from 'discord.js';
+import { logColors, LogEventName, logEvents } from '.';
 import { Config } from '../../entities/Config';
-import { client } from '../../providers';
+import { orm } from '../../providers';
+import { findGuild, GuildHandle } from '../../util';
 
-type GuildSource = Message | PartialMessage | GuildChannel | GuildEmoji | Guild;
+export const getConfig = async (source: GuildHandle): Promise<Config> => {
+  const guild = findGuild(source);
 
-export const getConfig = async (
-  source: Message | PartialMessage | GuildChannel | GuildEmoji | Guild
-): Promise<Config> => {
-  let guild: Guild;
-  if (client.guilds.cache.get(source.id)) {
-    guild = source as Guild;
-  } else {
-    guild = (source as Exclude<GuildSource, Guild>).guild as Guild;
-  }
+  if (!guild) throw new Error('Could not find a config for resource ' + source?.toString());
 
-  const config = await (RequestContext.getEntityManager() ?? client.em).findOne(Config, {
+  const config = await orm.em.findOne(Config, {
     guildId: guild.id,
   });
   if (!config) throw new Error('Could not get config for ' + guild.name);
@@ -35,7 +21,7 @@ export const getLatestAuditEvent = async (guild: Guild): Promise<GuildAuditLogsE
   return auditLogs.entries.array()[0];
 };
 
-export const logColorFor = (event: LogEventType): number =>
+export const logColorFor = (event: LogEventName): number =>
   logColors[Math.round((logEvents.indexOf(event) / logEvents.length) * logColors.length)];
 
 export const formatValue = (content: unknown): string =>

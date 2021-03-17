@@ -1,4 +1,3 @@
-import { RequestContext } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { Message, MessageReaction, PartialMessage, User } from 'discord.js';
 import fse from 'fs-extra';
@@ -8,6 +7,7 @@ import { setPresence } from '..';
 import { Config } from '../entities/Config';
 import { EggLeaderboard } from '../entities/EggLeaderboard';
 import { Gamerbot } from '../gamerbot';
+import { orm } from '../providers';
 import { resolvePath } from '../util';
 
 const eggfile = yaml.load(fse.readFileSync(resolvePath('assets/egg.yaml')).toString('utf-8'));
@@ -32,8 +32,8 @@ class EggCooldown {
 
 const cooldowns: Record<string, EggCooldown> = {};
 
-const getEggsFromDB = async (em: Gamerbot['em']) => {
-  const builder = (em as EntityManager).createQueryBuilder(EggLeaderboard);
+const getEggsFromDB = async () => {
+  const builder = (orm.em as EntityManager).createQueryBuilder(EggLeaderboard);
   const eggsObjects: { eggs: number }[] = await builder.select('eggs').execute();
 
   return eggsObjects.reduce((a, b) => ({ eggs: a.eggs + b.eggs }), { eggs: 0 }).eggs;
@@ -41,41 +41,40 @@ const getEggsFromDB = async (em: Gamerbot['em']) => {
 
 let eggCount: number;
 
-const getLeaderboardEntry = async (user: User, em: Gamerbot['em']) => {
+const getLeaderboardEntry = async (user: User) => {
   const entry = await (async (user: User) => {
-    const existing = await em.findOne(EggLeaderboard, { userId: user.id });
+    const existing = await orm.em.findOne(EggLeaderboard, { userId: user.id });
     if (existing) {
       if (user.tag !== existing.userTag) existing.userTag = user.tag;
       return existing;
     }
 
-    const fresh = em.create(EggLeaderboard, { userId: user.id, userTag: user.tag });
-    await em.persistAndFlush(fresh);
-    return await em.findOneOrFail(EggLeaderboard, { userId: user.id });
+    const fresh = orm.em.create(EggLeaderboard, { userId: user.id, userTag: user.tag });
+    await orm.em.persistAndFlush(fresh);
+    return await orm.em.findOneOrFail(EggLeaderboard, { userId: user.id });
   })(user);
 
   return entry;
 };
 
 export const get = async (client: Gamerbot): Promise<number> => {
-  return (eggCount ??= await getEggsFromDB(RequestContext.getEntityManager() ?? client.em));
+  return (eggCount ??= await getEggsFromDB());
 };
 
-const grantEgg = async (msg: Message | PartialMessage, em: Gamerbot['em']) => {
+const grantEgg = async (msg: Message | PartialMessage) => {
   msg.react('🥚');
   eggCount++;
   setPresence();
 
-  const lb = await getLeaderboardEntry(msg.author as User, em);
+  const lb = await getLeaderboardEntry(msg.author as User);
   lb.eggs++;
-  em.flush();
+  orm.em.flush();
 };
 
-export const onMessage = (
+export const onMessage = async (
   msg: Message | PartialMessage,
-  config: Config,
-  em: Gamerbot['em']
-) => async (): Promise<void | Message | MessageReaction> => {
+  config: Config
+): Promise<void | Message | MessageReaction> => {
   if (!config || !config.egg) return;
 
   if (eggy(msg, config.prefix)) {
@@ -95,7 +94,7 @@ export const onMessage = (
     }
 
     cooldowns[msg.author?.id as string] = new EggCooldown(Date.now());
-    grantEgg(msg, em);
+    grantEgg(msg);
     return;
   }
 };

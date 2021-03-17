@@ -1,7 +1,6 @@
 import { Message, MessageReaction, PartialMessage, PartialUser, User } from 'discord.js';
 import { ReactionRole, RoleEmoji } from '../entities/ReactionRole';
-import { Gamerbot } from '../gamerbot';
-import { client, getLogger } from '../providers';
+import { client, getLogger, orm } from '../providers';
 import { Embed } from '../util';
 
 const verifyReaction = async (
@@ -49,15 +48,13 @@ const roleError = async ({
 };
 
 const getCollector = async ({
-  em,
   msg,
   reaction,
 }: {
-  em: Gamerbot['em'];
   msg: Message | PartialMessage;
   reaction: MessageReaction;
 }) => {
-  const collectorMessage = await em.findOne(ReactionRole, { messageId: msg.id });
+  const collectorMessage = await orm.em.findOne(ReactionRole, { messageId: msg.id });
   if (!collectorMessage) return;
 
   const items = await collectorMessage.roles.loadItems();
@@ -83,7 +80,7 @@ const missingPermissions = ({
   return false;
 };
 
-export const onMessageReactionAdd = (em: Gamerbot['em']) => async (
+export const onMessageReactionAdd = async (
   reaction: MessageReaction,
   user: User | PartialUser
 ): Promise<unknown> => {
@@ -91,7 +88,7 @@ export const onMessageReactionAdd = (em: Gamerbot['em']) => async (
   if (user.id === client.user?.id) return;
   if (!(await verifyReaction(reaction, user))) return;
 
-  const collector = await getCollector({ em, msg, reaction });
+  const collector = await getCollector({ msg, reaction });
   if (!collector) return;
 
   if (!missingPermissions({ msg, user })) return;
@@ -110,7 +107,7 @@ export const onMessageReactionAdd = (em: Gamerbot['em']) => async (
   );
 };
 
-export const onMessageReactionRemove = (em: Gamerbot['em']) => async (
+export const onMessageReactionRemove = async (
   reaction: MessageReaction,
   user: User | PartialUser
 ): Promise<unknown> => {
@@ -118,7 +115,7 @@ export const onMessageReactionRemove = (em: Gamerbot['em']) => async (
   if (user.id === client.user?.id) return;
   if (!(await verifyReaction(reaction, user))) return;
 
-  const collector = await getCollector({ em, msg, reaction });
+  const collector = await getCollector({ msg, reaction });
   if (!collector) return;
 
   if (!missingPermissions({ msg, user })) return;

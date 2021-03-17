@@ -1,4 +1,3 @@
-import { RequestContext } from '@mikro-orm/core';
 import axios from 'axios';
 import { Image } from 'canvas';
 import { Message, MessageAttachment } from 'discord.js';
@@ -7,7 +6,7 @@ import { DateTime } from 'luxon';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
-import { client, getLogger } from '../../providers';
+import { client, getLogger, orm } from '../../providers';
 import { Context } from '../../types';
 import { codeBlock, Embed, insertUuidDashes, sanitize } from '../../util';
 import { makeBedwarsStats } from './bedwars';
@@ -59,8 +58,6 @@ export class CommandStats implements Command {
   };
 
   async execute(context: Context): Promise<void | Message> {
-    const em = RequestContext.getEntityManager() ?? client.em;
-
     const { msg, args } = context;
     const debug = !!args.debug;
 
@@ -73,10 +70,10 @@ export class CommandStats implements Command {
     }
 
     if (args.clearUser) {
-      const entity = await em.findOne(HypixelPlayer, { userId: msg.author.id });
+      const entity = await orm.em.findOne(HypixelPlayer, { userId: msg.author.id });
       if (!entity) return msg.channel.send(Embed.error(`No username/UUID set`));
 
-      em.removeAndFlush(entity);
+      orm.em.removeAndFlush(entity);
 
       return msg.channel.send(Embed.success(`Cleared username/UUID **${entity.hypixelUsername}**`));
     }
@@ -86,10 +83,10 @@ export class CommandStats implements Command {
       if (!userRegex.test(args.setUser))
         return msg.channel.send(Embed.error('Invalid username/UUID'));
 
-      const entity = await em.findOne(HypixelPlayer, { userId: msg.author.id });
+      const entity = await orm.em.findOne(HypixelPlayer, { userId: msg.author.id });
       if (!entity) {
-        em.persistAndFlush(
-          em.create(HypixelPlayer, {
+        orm.em.persistAndFlush(
+          orm.em.create(HypixelPlayer, {
             userId: msg.author.id,
             hypixelUsername: args.setUser,
           })
@@ -100,7 +97,7 @@ export class CommandStats implements Command {
       } else {
         const existingUsername = entity.hypixelUsername;
         entity.hypixelUsername = args.setUser;
-        em.flush();
+        orm.em.flush();
         return msg.channel.send(
           Embed.success(
             `Set your minecraft username/UUID to **${args.setUser}**`,
@@ -118,7 +115,7 @@ export class CommandStats implements Command {
 
       const displayName = client.users.resolve(userId)?.tag ?? userId;
 
-      const entity = await em.findOne(HypixelPlayer, { userId });
+      const entity = await orm.em.findOne(HypixelPlayer, { userId });
       if (!entity)
         return msg.channel.send(
           Embed.warning(
@@ -133,13 +130,13 @@ export class CommandStats implements Command {
     }
 
     if (args._.length !== 1 && args._.length !== 2) {
-      const entity = await em.findOne(HypixelPlayer, { userId: msg.author.id });
+      const entity = await orm.em.findOne(HypixelPlayer, { userId: msg.author.id });
       if (!entity) return msg.channel.send(Embed.error('expected 1 or 2 args'));
       args._[0] = entity.hypixelUsername;
     }
 
     if (args._[0] === '-') {
-      const entity = await em.findOne(HypixelPlayer, { userId: msg.author.id });
+      const entity = await orm.em.findOne(HypixelPlayer, { userId: msg.author.id });
       if (!entity)
         return msg.channel.send(
           Embed.error(
@@ -152,7 +149,7 @@ export class CommandStats implements Command {
     } else if (/^(<@!?)?\d{18}>?$/.test(args._[0])) {
       const exec = /^(?:<@!?)?(\d{18})>?$/.exec(args._[0]);
 
-      const entity = await em.findOne(HypixelPlayer, { userId: exec && exec[1] });
+      const entity = await orm.em.findOne(HypixelPlayer, { userId: exec && exec[1] });
       if (!entity)
         return msg.channel.send(
           Embed.error(`User ${sanitize(args._[0])} doesn't have a username set`)

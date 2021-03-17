@@ -1,18 +1,11 @@
-import { GuildMember, Invite, TextChannel, User } from 'discord.js';
+import { Guild, GuildMember, Invite, TextChannel, User } from 'discord.js';
 import fse from 'fs-extra';
 import _ from 'lodash';
 import { DateTime } from 'luxon';
-import { intToLogEvents, LogHandlers } from '.';
-import {
-  CachedInvite,
-  client,
-  getLogger,
-  inviteCache,
-  logger,
-  usernameCache,
-} from '../../providers';
+import { LogHandlers } from '.';
+import { CachedInvite, client, getLogger, inviteCache, usernameCache } from '../../providers';
 import { Embed, getDateFromSnowflake, resolvePath } from '../../util';
-import { formatValue, getConfig, getLatestAuditEvent, logColorFor } from './utils';
+import { formatValue, getLatestAuditEvent, logColorFor } from './utils';
 
 fse.ensureFileSync(resolvePath('data/kicks.txt'));
 
@@ -41,7 +34,7 @@ const changeTable = {
 };
 
 export const guildMemberHandlers: LogHandlers = {
-  onGuildMemberAdd: async (member: GuildMember) => {
+  onGuildMemberAdd: (guild: Guild, logChannel: TextChannel) => async (member: GuildMember) => {
     const guild = member.guild;
 
     // figure out which invite was just used
@@ -63,15 +56,6 @@ export const guildMemberHandlers: LogHandlers = {
         break;
       }
     }
-
-    const config = await getConfig(guild);
-    if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
-    if (!logChannel)
-      return logger.error(
-        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
-      );
-    if (!intToLogEvents(config.logSubscribedEvents).includes('guildMemberAdd')) return;
 
     const embed = new Embed({
       author: {
@@ -108,17 +92,7 @@ export const guildMemberHandlers: LogHandlers = {
 
     logChannel.send(embed);
   },
-  onGuildMemberRemove: async (member: GuildMember) => {
-    const guild = member.guild;
-    const config = await getConfig(guild);
-    if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
-    if (!logChannel)
-      return logger.error(
-        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
-      );
-    if (!intToLogEvents(config.logSubscribedEvents).includes('guildMemberRemove')) return;
-
+  onGuildMemberRemove: (guild: Guild, logChannel: TextChannel) => async (member: GuildMember) => {
     const auditEvent = await getLatestAuditEvent(guild);
 
     const embed = new Embed({
@@ -149,16 +123,11 @@ export const guildMemberHandlers: LogHandlers = {
 
     logChannel.send(embed);
   },
-  onGuildMemberUpdate: async (prev: GuildMember, next: GuildMember) => {
+  onGuildMemberUpdate: (guild: Guild, logChannel: TextChannel) => async (
+    prev: GuildMember,
+    next: GuildMember
+  ) => {
     const guild = next.guild;
-    const config = await getConfig(guild);
-    if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
-    if (!logChannel)
-      return logger.error(
-        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
-      );
-    if (!intToLogEvents(config.logSubscribedEvents).includes('guildMemberUpdate')) return;
 
     const changes = _.omitBy(next, (v, k) => _.isEqual(v, prev[k as keyof GuildMember]));
 
@@ -201,8 +170,6 @@ export const guildMemberHandlers: LogHandlers = {
     if (prev.nickname !== next.nickname) {
       const auditEvent = await getLatestAuditEvent(guild);
       add('nickname', prev.nickname, next.nickname);
-
-      console.log(auditEvent.changes);
 
       if (
         auditEvent.action === 'MEMBER_UPDATE' &&

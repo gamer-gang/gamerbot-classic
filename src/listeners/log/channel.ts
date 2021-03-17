@@ -1,9 +1,8 @@
-import { DMChannel, GuildChannel, TextChannel } from 'discord.js';
+import { DMChannel, Guild, GuildChannel, TextChannel } from 'discord.js';
 import _ from 'lodash';
-import { intToLogEvents, LogHandlers } from '.';
-import { client, logger } from '../../providers';
+import { LogHandlers } from '.';
 import { Embed } from '../../util';
-import { formatValue, getConfig, getLatestAuditEvent, logColorFor } from './utils';
+import { formatValue, getLatestAuditEvent, logColorFor } from './utils';
 
 const auditChangeTable: Record<string, string> = {
   topic: 'Topic',
@@ -13,18 +12,11 @@ const auditChangeTable: Record<string, string> = {
 };
 
 export const channelHandlers: LogHandlers = {
-  onChannelCreate: async (channel: DMChannel | GuildChannel) => {
+  onChannelCreate: (guild: Guild, logChannel: TextChannel) => async (
+    channel: DMChannel | GuildChannel
+  ) => {
     if (channel.type === 'dm') return;
-    const config = await getConfig(channel);
-    if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
-    if (!logChannel)
-      return logger.error(
-        'could not get log channel ' + config.logChannelId + ' for ' + channel.guild.name
-      );
-    if (!intToLogEvents(config.logSubscribedEvents).includes('channelCreate')) return;
 
-    const guild = channel.guild;
     const auditEvent = await getLatestAuditEvent(guild);
 
     const embed = new Embed({
@@ -46,18 +38,11 @@ export const channelHandlers: LogHandlers = {
 
     logChannel.send(embed);
   },
-  onChannelDelete: async (channel: DMChannel | GuildChannel) => {
+  onChannelDelete: (guild: Guild, logChannel: TextChannel) => async (
+    channel: DMChannel | GuildChannel
+  ) => {
     if (channel.type === 'dm') return;
-    const config = await getConfig(channel);
-    if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
-    if (!logChannel)
-      return logger.error(
-        'could not get log channel ' + config.logChannelId + ' for ' + channel.guild.name
-      );
-    if (!intToLogEvents(config.logSubscribedEvents).includes('channelDelete')) return;
 
-    const guild = channel.guild;
     const auditEvent = await getLatestAuditEvent(guild);
 
     const embed = new Embed({
@@ -79,19 +64,11 @@ export const channelHandlers: LogHandlers = {
 
     logChannel.send(embed);
   },
-  onChannelUpdate: async (prev: DMChannel | GuildChannel, next: DMChannel | GuildChannel) => {
-    if (prev.type === 'dm') return;
-    if (next.type === 'dm') return;
-    const config = await getConfig(next);
-    const guild = next.guild;
-
-    if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
-    if (!logChannel)
-      return logger.error(
-        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
-      );
-    if (!intToLogEvents(config.logSubscribedEvents).includes('channelUpdate')) return;
+  onChannelUpdate: (guild: Guild, logChannel: TextChannel) => async (
+    prev: DMChannel | GuildChannel,
+    next: DMChannel | GuildChannel
+  ) => {
+    if (prev.type === 'dm' || next.type === 'dm') return;
 
     const auditEvent = await getLatestAuditEvent(guild);
 

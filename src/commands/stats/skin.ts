@@ -1,10 +1,9 @@
-import { RequestContext } from '@mikro-orm/core';
 import axios from 'axios';
 import { Message } from 'discord.js';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
-import { client } from '../../providers';
+import { client, orm } from '../../providers';
 import { Context } from '../../types';
 import { codeBlock, Embed } from '../../util';
 import { statsProvider } from './cache';
@@ -37,7 +36,6 @@ export class CommandSkin implements Command {
     default: { debug: process.env.NODE_ENV === 'development' },
   };
   async execute(context: Context): Promise<void | Message> {
-    const em = RequestContext.getEntityManager() ?? client.em;
     const { msg, args } = context;
 
     const debug = !!args.debug;
@@ -45,13 +43,13 @@ export class CommandSkin implements Command {
     const timeStart = process.hrtime();
 
     if (args._.length !== 1) {
-      const entity = await em.findOne(HypixelPlayer, { userId: msg.author.id });
+      const entity = await orm.em.findOne(HypixelPlayer, { userId: msg.author.id });
       if (!entity) return msg.channel.send(Embed.error('Expected a username or UUID'));
       args._[0] = entity.hypixelUsername;
     }
 
     if (args._[0] === '-') {
-      const entity = await em.findOne(HypixelPlayer, { userId: msg.author.id });
+      const entity = await orm.em.findOne(HypixelPlayer, { userId: msg.author.id });
       if (!entity)
         return msg.channel.send(
           Embed.error(

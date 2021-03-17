@@ -1,10 +1,9 @@
-import { RequestContext } from '@mikro-orm/core';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { Message } from 'discord.js';
 import yargsParser from 'yargs-parser';
 import { Command } from '..';
 import { EggLeaderboard } from '../../entities/EggLeaderboard';
-import { client } from '../../providers';
+import { client, orm } from '../../providers';
 import { Context } from '../../types';
 import { Embed } from '../../util';
 
@@ -40,7 +39,7 @@ export class CommandEggLeaderboard implements Command {
     const eggers: Pick<
       EggLeaderboard,
       'eggs' | 'userTag' | 'userId'
-    >[] = await ((RequestContext.getEntityManager() ?? client.em) as EntityManager)
+    >[] = await (orm.em as EntityManager)
       .createQueryBuilder(EggLeaderboard)
       .select(['eggs', 'userTag', 'userId'])
       .execute();
