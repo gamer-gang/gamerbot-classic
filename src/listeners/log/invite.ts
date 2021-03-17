@@ -1,10 +1,9 @@
 import { Guild, Invite, TextChannel } from 'discord.js';
-import _ from 'lodash';
 import { DateTime } from 'luxon';
-import { intToLogEvents, LogHandlers } from '.';
-import { client, getLogger, inviteCache, logger, orm } from '../../providers';
+import { LogHandlers } from '.';
+import { CachedInvite, client, getLogger, inviteCache, orm } from '../../providers';
 import { Embed } from '../../util';
-import { getConfig, getLatestAuditEvent, logColorFor } from './utils';
+import { getLatestAuditEvent, logColorFor } from './utils';
 
 client.on('ready', () => {
   const inviteFetchers = client.guilds.cache.array().map(
@@ -43,25 +42,6 @@ client.on('ready', () => {
 
 export const inviteHandlers: LogHandlers = {
   onInviteCreate: (guild: Guild, logChannel: TextChannel) => async (invite: Invite) => {
-    const guild = invite.guild as Guild;
-
-    inviteCache.set(invite.code, {
-      code: invite.code,
-      creatorId: invite.inviter?.id,
-      creatorTag: invite.inviter?.tag,
-      guildId: guild.id,
-      uses: invite.uses ?? 0,
-    });
-
-    const config = await getConfig(guild);
-    if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
-    if (!logChannel)
-      return logger.error(
-        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
-      );
-    if (!intToLogEvents(config.logSubscribedEvents).includes('inviteCreate')) return;
-
     const expiry = invite.expiresAt && DateTime.fromJSDate(invite.expiresAt);
 
     const embed = new Embed({
@@ -85,18 +65,9 @@ export const inviteHandlers: LogHandlers = {
 
     logChannel.send(embed);
   },
-  onInviteDelete: (guild: Guild, logChannel: TextChannel) => async (invite: Invite) => {
-    const cached = _.clone(inviteCache.get(invite.code));
-    inviteCache.delete(invite.code);
-
-    const guild = invite.guild as Guild;
-    const config = await getConfig(guild);
-    if (!config.logChannelId) return;
-    const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
-    if (!logChannel)
-      return logger.error(
-        'could not get log channel ' + config.logChannelId + ' for ' + guild.name
-      );
+  onInviteDelete: (guild: Guild, logChannel: TextChannel, cached: CachedInvite) => async (
+    invite: Invite
+  ) => {
     const auditEvent = await getLatestAuditEvent(guild);
 
     const embed = new Embed({

@@ -38,14 +38,15 @@ const hasGuild = (value: GuildHandle): value is HasGuild => !!(value as HasGuild
 
 export const findGuild = (handle: GuildHandle): Guild | undefined => {
   if (!handle) return;
-  if (isGuild(handle)) return;
+  if (isGuild(handle)) return handle;
+
+  if (hasGuild(handle)) return client.guilds.cache.get(handle.guild.id);
+
   if (isInvite(handle)) {
     const cached = Array.from(inviteCache.values()).find(cached => cached.code === handle.code);
     if (!cached) return;
     return client.guilds.cache.get(cached.guildId);
   }
-
-  if (hasGuild(handle)) return client.guilds.cache.get(handle.guild.id);
 
   if (isChannel(handle)) {
     // try to find a guild with this channel

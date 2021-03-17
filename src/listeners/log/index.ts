@@ -14,11 +14,11 @@ export type LogEventHandler = `on${Capitalize<LogEventName>}`;
 export type LogHandlers = Partial<
   Record<
     LogEventHandler,
-    (guild: Guild, logChannel: TextChannel) => (...args: any[]) => Promise<void>
+    (guild: Guild, logChannel: TextChannel, preInfo?: any) => (...args: any[]) => Promise<void>
   >
 >;
 
-const logClientEvents = [
+export const logClientEvents = [
   'channelCreate',
   'channelDelete',
   'channelUpdate',

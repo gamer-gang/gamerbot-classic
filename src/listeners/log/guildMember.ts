@@ -3,7 +3,7 @@ import fse from 'fs-extra';
 import _ from 'lodash';
 import { DateTime } from 'luxon';
 import { LogHandlers } from '.';
-import { CachedInvite, client, getLogger, inviteCache, usernameCache } from '../../providers';
+import { CachedInvite, client, usernameCache } from '../../providers';
 import { Embed, getDateFromSnowflake, resolvePath } from '../../util';
 import { formatValue, getLatestAuditEvent, logColorFor } from './utils';
 
@@ -34,29 +34,12 @@ const changeTable = {
 };
 
 export const guildMemberHandlers: LogHandlers = {
-  onGuildMemberAdd: (guild: Guild, logChannel: TextChannel) => async (member: GuildMember) => {
-    const guild = member.guild;
-
-    // figure out which invite was just used
-    const newInvites = (await guild.fetchInvites()).array();
-
-    let usedCached: CachedInvite | undefined;
-    let usedNew: Invite | undefined;
-
-    for (const invite of newInvites) {
-      const cached = inviteCache.get(invite.code);
-      if (!cached) {
-        getLogger(`GUILD ${guild.id}`).warn(`invite ${invite.code} has no cached counterpart`);
-        continue;
-      }
-      if ((invite.uses ?? 0) > cached.uses) {
-        cached.uses++;
-        usedCached = cached;
-        usedNew = invite;
-        break;
-      }
-    }
-
+  onGuildMemberAdd: (
+    guild: Guild,
+    logChannel: TextChannel,
+    info?: { usedCached?: CachedInvite; usedNew?: Invite }
+  ) => async (member: GuildMember) => {
+    const { usedCached, usedNew } = info!;
     const embed = new Embed({
       author: {
         iconURL: member.user.displayAvatarURL({ format: 'png' }) ?? undefined,
