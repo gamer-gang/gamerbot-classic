@@ -156,18 +156,25 @@ export class CommandPlay implements Command {
   async playNext(context: Context): Promise<void | Message> {
     const { msg } = context;
 
-    const logger = getLogger(`MESSAGE ${msg.id}`);
+    const logger = getLogger(`GUILD ${msg.guild.id}`);
 
     const queue = client.queues.get(msg.guild.id);
     const track = queue.tracks[queue.index];
 
+    if (!track) {
+      logger.debug('playNext called but no track at current index, exiting');
+      return;
+    }
+
     if (!queue.playing) {
+      logger.debug(`playNext called but queue.playing = false, changiing to true`);
       queue.voiceChannel = msg.member?.voice?.channel as VoiceChannel;
+      queue.voiceConnection = await queue.voiceChannel.join();
+      await queue.voiceConnection?.voice?.setSelfDeaf(true);
       queue.playing = true;
     }
 
-    queue.voiceChannel && (queue.voiceConnection = await queue.voiceChannel.join());
-    await queue.voiceConnection?.voice?.setSelfDeaf(true);
+    logger.debug(`playNext called, playing track "${track.title}"`);
 
     queue.updateNowPlaying();
 
@@ -210,6 +217,7 @@ export class CommandPlay implements Command {
             // no more in queue and not looping
             logger.debug('not looping all, disconnecting');
             queue.playing = false;
+            queue.index++;
             queue.voiceConnection?.disconnect();
             return;
           }
@@ -231,9 +239,8 @@ export class CommandPlay implements Command {
     };
 
     try {
-      logger.debug(`playing track "${track.title}" of type "${track.type}"`);
       queue.voiceConnection
-        ?.play(await track.getPlayable(), options)
+        ?.on('error', err => logger.error(err))
         .once('close', (info: string) => {
           logger.debug(`close emitted for "${track.title}", calling callback`);
           callback(info);
@@ -241,9 +248,10 @@ export class CommandPlay implements Command {
         .once('finish', (info: string) => {
           logger.debug(`finish emitted for "${track.title}", calling callback`);
           callback(info);
-        })
-        .on('debug', (info: string) => logger.debug(info))
-        .on('error', err => logger.error(err));
+        });
+
+      logger.debug('playing track to dispatcher');
+      queue.voiceConnection?.play(await track.getPlayable(), options);
     } catch (err) {
       queue.embed?.edit(Embed.error(err.message));
       return callback('error');
