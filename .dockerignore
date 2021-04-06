@@ -1,6 +1,9 @@
 dist
 data
 logs
+.github
+.vscode
+builddir
 
 .env
 .env.*
