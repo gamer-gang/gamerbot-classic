@@ -9,7 +9,7 @@ import { client, getLogger, logger, orm } from '../providers';
 import { Context, Queue } from '../types';
 import { codeBlock, dbFindOneError, Embed, listify } from '../util';
 import * as eggs from './eggs';
-import { intToLogEvents, LogEventHandler, logHandlers } from './log';
+import { intToLogEvents, LogEventHandler, LogEventName, logHandlers } from './log';
 
 const verifyPermissions = async (context: Context, command: Command): Promise<boolean> => {
   const { msg, config, cmd } = context;
@@ -25,10 +25,7 @@ const verifyPermissions = async (context: Context, command: Command): Promise<bo
   }
 
   if (command.userPermissions) {
-    const missingPermissions = command.userPermissions
-      .map(perm => [perm, userPermissions?.has(perm)])
-      .filter(([, has]) => has === false)
-      .map(([perm]) => perm);
+    const missingPermissions = command.userPermissions.filter(perm => !userPermissions?.has(perm));
 
     if (missingPermissions.length) {
       msg.channel.send(
@@ -44,10 +41,7 @@ const verifyPermissions = async (context: Context, command: Command): Promise<bo
   }
 
   if (command.botPermissions) {
-    const missingPermissions = command.botPermissions
-      .map(perm => [perm, botPermissions?.has(perm)])
-      .filter(([, has]) => has === false)
-      .map(([perm]) => perm);
+    const missingPermissions = command.botPermissions.filter(perm => !botPermissions?.has(perm));
 
     if (missingPermissions.length) {
       msg.channel.send(
@@ -70,20 +64,26 @@ const verifyPermissions = async (context: Context, command: Command): Promise<bo
 const logCommandEvents = (context: Context, command: Command) => {
   const { msg, config } = context;
 
-  const eventName = `onGamerbotCommand${_.capitalize(
+  const event = `gamerbotCommand${_.capitalize(
     Array.isArray(command.cmd) ? command.cmd[0].toLowerCase() : command.cmd
-  )}` as LogEventHandler;
+  )}` as LogEventName;
+  const handlerName = `on${_.capitalize(event)}` as LogEventHandler;
 
-  const logHandler = logHandlers[eventName];
+  const logHandler = logHandlers[handlerName];
 
-  const logger = getLogger(`GUILD ${msg.guild.id} EVENT ${eventName}`);
+  const logger = getLogger(`GUILD ${msg.guild.id} EVENT ${event}`);
 
   if (!logHandler) {
-    logger.warn(`no handler for ${eventName}, ignoring event`);
+    logger.warn(`no handler for ${event}, ignoring event`);
     return;
   }
 
-  logger.debug(`handler for ${eventName} exists`);
+  if (!intToLogEvents(config.logSubscribedEvents).includes(event)) {
+    logger.debug('guild has not subscribed to the event, aborting');
+    return;
+  }
+
+  logger.debug(`handler for ${event} exists`);
   if (!config.logChannelId) {
     logger.debug(`guild does not have a log channel set, aborting`);
     return;
@@ -94,11 +94,6 @@ const logCommandEvents = (context: Context, command: Command) => {
     return logger.error(
       `could not get log channel ${config.logChannelId} for ${msg.guild.name}, aborting`
     );
-
-  if (!intToLogEvents(config.logSubscribedEvents).includes('guildMemberUpdate')) {
-    logger.debug('guild has not subscribed to the event, aborting');
-    return;
-  }
 
   logger.debug(`calling handler`);
   logHandler(msg.guild, logChannel)(context);

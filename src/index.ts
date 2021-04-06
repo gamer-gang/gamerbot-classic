@@ -51,27 +51,25 @@ export const setPresence = async (): Promise<void> => {
 const fetchMemberCache = async (): Promise<void> => {
   const guilds = client.guilds.cache.array();
 
-  const members = await Promise.all(
-    guilds.map(
-      (guild, index) =>
-        new Promise<GuildMember[]>(resolve => {
-          setTimeout(() => guild.members.fetch().then(c => resolve(c.array())), index * 2500);
-        })
+  const members = (
+    await Promise.all(
+      guilds.map(
+        (guild, index) =>
+          new Promise<GuildMember[]>(resolve => {
+            setTimeout(() => guild.members.fetch().then(c => resolve(c.array())), index * 2500);
+          })
+      )
     )
-  );
+  ).flat(1);
 
-  members.flat(1).forEach(m => {
-    if (usernameCache.has(m.id)) return;
-
+  members.forEach(m =>
     usernameCache.set(m.id, {
       username: m.user.username,
       discriminator: m.user.discriminator,
-    });
+    })
+  );
 
-    getLogger(`GUILD ${m.guild.id}`).debug('cached user ' + m.id);
-  });
-
-  setTimeout(fetchMemberCache, 1000 * 60 * 5);
+  logger.debug(`successfully cached ${members.length} users`);
 };
 
 client.on('ready', () => {
@@ -79,6 +77,7 @@ client.on('ready', () => {
   setPresence();
   setInterval(setPresence, 1000 * 60 * 10);
   fetchMemberCache();
+  setInterval(fetchMemberCache, 1000 * 60 * 5);
 });
 
 // attach log handlers
@@ -133,70 +132,69 @@ const eventHooks: {
 
 (logClientEvents as readonly (keyof ClientEvents)[]).forEach(event => {
   const handlerName = `on${event[0].toUpperCase()}${event.slice(1)}` as LogEventHandler;
-  if (logHandlers[handlerName]) {
-    client.on(event, async (...args) => {
-      storage.run(orm.em.fork(true, true), async () => {
-        let guild;
+  if (event === 'presenceUpdate' || event === 'voiceStateUpdate') return;
 
-        for (const arg of args) {
-          guild = findGuild(arg);
-          if (guild) break;
-        }
+  client.on(event, async (...args) => {
+    storage.run(orm.em.fork(true, true), async () => {
+      let guild;
 
-        const logger = getLogger(`GUILD ${guild?.id ?? 'unknown'} EVENT ${event}`);
+      for (const arg of args) {
+        guild = findGuild(arg);
+        if (guild) break;
+      }
 
-        if (!guild) return logger.error(`could not find guild for resource ${args[0].toString()}`);
+      const logger = getLogger(`GUILD ${guild?.id ?? 'unknown'} EVENT ${event}`);
 
-        let preInfo;
-        const hooks = eventHooks[event];
-        if (hooks?.pre) {
-          logger.debug(`calling pre-event hook`);
-          preInfo = await hooks.pre(guild)(...args);
-        }
+      if (!guild) return logger.error(`could not find guild for resource ${args[0].toString()}`);
 
-        const logHandler = logHandlers[handlerName];
+      let preInfo;
+      const hooks = eventHooks[event];
+      if (hooks?.pre) {
+        logger.debug(`calling pre-event hook`);
+        preInfo = await hooks.pre(guild)(...args);
+      }
 
-        if (!logHandler) {
-          logger.warn(`no handler for ${event}, ignoring event`);
-          return;
-        }
+      const logHandler = logHandlers[handlerName];
 
-        const config = await orm.em.findOne(Config, { guildId: guild.id });
-        if (!config) return logger.error(`could not get config for ${guild.id}`);
+      if (!logHandler) {
+        logger.warn(`no handler for ${event}, ignoring event`);
+        return;
+      }
 
-        logger.debug(`handler for ${event} exists`);
-        if (!intToLogEvents(config.logSubscribedEvents).includes('guildMemberUpdate')) {
-          logger.debug('guild has not subscribed to the event, aborting');
-          return;
-        }
+      const config = await orm.em.findOne(Config, { guildId: guild.id });
+      if (!config) return logger.error(`could not get config for ${guild.id}`);
 
-        if (!config.logChannelId) {
-          logger.debug(`guild does not have a log channel set, aborting`);
-          return;
-        }
+      logger.debug(`handler for ${event} exists`);
+      if (!intToLogEvents(config.logSubscribedEvents).includes('guildMemberUpdate')) {
+        logger.debug('guild has not subscribed to the event, aborting');
+        return;
+      }
 
-        const logChannel = client.channels.cache.get(config.logChannelId) as
-          | TextChannel
-          | undefined;
-        if (!logChannel)
-          return logger.error(
-            `could not get log channel ${config.logChannelId} for ${guild.name}, aborting`
-          );
+      if (!config.logChannelId) {
+        logger.debug(`guild does not have a log channel set, aborting`);
+        return;
+      }
 
-        try {
-          logger.debug(`calling handler`);
-          await logHandler(guild, logChannel, preInfo)(...args);
-          await orm.em.flush();
-        } catch (err) {
-          getLogger(`GUILD ${guild?.id ?? 'unknown'} EVENT ${event}`).error(err);
-        }
-      });
+      const logChannel = client.channels.cache.get(config.logChannelId) as TextChannel | undefined;
+      if (!logChannel)
+        return logger.error(
+          `could not get log channel ${config.logChannelId} for ${guild.name}, aborting`
+        );
+
+      try {
+        logger.debug(`calling handler`);
+        await logHandler(guild, logChannel, preInfo)(...args);
+        await orm.em.flush();
+      } catch (err) {
+        getLogger(`GUILD ${guild?.id ?? 'unknown'} EVENT ${event}`).error(err);
+      }
     });
-  }
+  });
 });
 
 client.on('debug', content => {
-  if (content.includes('Remaining: '))
+  if (process.env.NODE_ENV === 'development') logger.debug(content);
+  else if (content.includes('Remaining: '))
     logger.info(`remaining gateway sessions: ${content.split(' ').reverse()[0]}`);
 });
 

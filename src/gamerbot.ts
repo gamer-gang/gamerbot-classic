@@ -111,7 +111,7 @@ export class Gamerbot extends Client {
       modules = await Promise.all(requireContext.keys().map(r => requireContext(r)));
     } else {
       modules = await Promise.all(
-        fse.readdirSync(resolvePath('.')).map(file => import(`./commands/${file}`))
+        fse.readdirSync(resolvePath('./commands')).map(file => import(`./commands/${file}`))
       );
     }
 

@@ -5,7 +5,7 @@ import { Context } from '../../types';
 import { codeBlock, Embed } from '../../util';
 
 export class CommandStop implements Command {
-  cmd = 'stop';
+  cmd = ['stop', 'dc', 'disconnect'];
   docs: CommandDocs = {
     usage: 'stop',
     description: 'stop playback',
@@ -23,7 +23,7 @@ export class CommandStop implements Command {
     }
 
     try {
-      if (queue.voiceChannel?.members.size === 1) queue.tracks = [];
+      queue.tracks = [];
       queue.playing = false;
       queue.voiceConnection?.dispatcher?.end();
       msg.guild.me?.voice.kick();
