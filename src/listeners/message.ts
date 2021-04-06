@@ -74,7 +74,7 @@ const logCommandEvents = (context: Context, command: Command) => {
   const logger = getLogger(`GUILD ${msg.guild.id} EVENT ${event}`);
 
   if (!logHandler) {
-    logger.warn(`no handler for ${event}, ignoring event`);
+    logger.warn(`no handler for ${handlerName}, ignoring event`);
     return;
   }
 
