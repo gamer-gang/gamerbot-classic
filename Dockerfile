@@ -12,7 +12,7 @@ RUN apt update && apt -y install yarn ffmpeg \
 WORKDIR /app
 
 # bare minimum to install deps
-COPY package.json .yarnrc.yml yarn.lock .pnp.js ./
+COPY package.json .yarnrc.yml yarn.lock .pnp.cjs ./
 COPY .yarn .yarn
 
 RUN yarn
