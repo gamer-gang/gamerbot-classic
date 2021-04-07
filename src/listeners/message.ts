@@ -67,7 +67,7 @@ const logCommandEvents = (context: Context, command: Command) => {
   const event = `gamerbotCommand${_.capitalize(
     Array.isArray(command.cmd) ? command.cmd[0].toLowerCase() : command.cmd
   )}` as LogEventName;
-  const handlerName = `on${_.capitalize(event)}` as LogEventHandler;
+  const handlerName = `on${event[0].toUpperCase()}${event.substr(1)}` as LogEventHandler;
 
   const logHandler = logHandlers[handlerName];
 
