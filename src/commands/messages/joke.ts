@@ -8,20 +8,21 @@ import { codeBlock, Embed } from '../../util';
 export class CommandJoke implements Command {
   cmd = 'joke';
   yargs: yargsParser.Options = {
-    boolean: ['codepen', 'programming'],
+    boolean: ['codepen', 'programming', 'unsafe'],
     alias: {
       codepen: 'c',
       programming: 'p',
+      unsafe: ['u', 'unfiltered', 'dark'],
     },
   };
   docs = [
     {
       usage: 'joke',
-      description: 'get a joke (https://sv443.net/jokeapi/v2/)',
+      description: 'get a joke (https://jokeapi.dev/); add -u or --unsafe to get the naughty jokes',
     },
     {
       usage: 'joke -p',
-      description: 'get a programming joke (https://sv443.net/jokeapi/v2/)',
+      description: 'get a programming joke (https://jokeapi.dev/)',
     },
     {
       usage: 'joke -c',
@@ -29,16 +30,25 @@ export class CommandJoke implements Command {
     },
   ];
 
-  private makeUrl = (type: string) =>
-    `https://jokeapi.dev/joke/${type}?format=txt&blacklistFlags=religious,political`;
+  private makeUrl(type: string, unsafe = false) {
+    const params = new URLSearchParams();
 
-  async getGenericJoke(): Promise<string> {
-    const response = await axios.get(this.makeUrl('Miscellaneous,Dark,Pun'));
+    params.set('format', 'txt');
+
+    return `https://v2.jokeapi.dev/joke/${type}?${params.toString()}${
+      unsafe ? '' : '&safe-mode&blacklistFlags=nsfw,religious,political,racist,sexist,explicit'
+    }`;
+  }
+
+  async getGenericJoke(unsafe = false): Promise<string> {
+    const response = await axios.get(
+      this.makeUrl(unsafe ? 'Dark' : 'Miscellaneous,Pun,Spooky,Christmas', unsafe)
+    );
     return response.data;
   }
 
-  async getProgrammingJoke(): Promise<string> {
-    const response = await axios.get(this.makeUrl('Programming'));
+  async getProgrammingJoke(unsafe = false): Promise<string> {
+    const response = await axios.get(this.makeUrl('Programming', unsafe));
     return response.data;
   }
 
@@ -52,8 +62,8 @@ export class CommandJoke implements Command {
 
       msg.channel.startTyping();
 
-      args.programming && (joke ??= await this.getProgrammingJoke());
-      joke ??= await this.getGenericJoke();
+      args.programming && (joke ??= await this.getProgrammingJoke(!!args.unsafe));
+      joke ??= await this.getGenericJoke(!!args.unsafe);
 
       msg.channel.send(joke);
     } catch (err) {
