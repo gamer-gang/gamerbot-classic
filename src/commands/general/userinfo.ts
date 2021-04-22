@@ -46,13 +46,13 @@ export class CommandUserInfo implements Command {
 
     if (inGuild) {
       const guildMember = msg.guild.members.cache.get(user.id);
+
+      const roles = guildMember?.roles.cache
+        .array()
+        .filter(r => r.id !== msg.guild.roles.everyone.id);
       embed.addField(
-        'Roles',
-        guildMember?.roles.cache
-          .array()
-          .filter(r => r.id !== msg.guild.roles.everyone.id)
-          .map(r => r.toString())
-          .join(' ')
+        `Roles (${roles?.length ?? 0})`,
+        roles?.map(r => r.toString()).join(' ') || 'None'
       );
     }
 
