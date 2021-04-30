@@ -77,13 +77,18 @@ client.on('ready', () => {
   setPresence();
   setInterval(setPresence, 1000 * 60 * 10);
   fetchMemberCache();
-  setInterval(fetchMemberCache, 1000 * 60 * 5);
+  setInterval(fetchMemberCache, 1000 * 60 * 60);
 });
+
+const usernameCacheUpdates: { [userId: string]: NodeJS.Timeout } = {};
 
 // attach log handlers
 // TODO improve types
 const eventHooks: {
-  [key: string]: { pre?: (guild: Guild) => (...args: any[]) => Promise<any> };
+  [key: string]: {
+    pre?: (guild: Guild) => (...args: any[]) => Promise<any>;
+    post?: (guild: Guild) => (...args: any[]) => Promise<any>;
+  };
 } = {
   inviteCreate: {
     pre: (guild: Guild) => async (invite: Invite) => {
@@ -128,6 +133,38 @@ const eventHooks: {
       return { usedCached, usedNew };
     },
   },
+  guildMemberUpdate: {
+    // we wait to stop receiving all `guildMemberUpdate` events before updating the global cache
+    // required so that all guilds receive the event regardless of order
+    post: (guild: Guild) => async (prev: GuildMember, next: GuildMember) => {
+      if (!usernameCache.has(next.id))
+        usernameCache.set(next.id, {
+          username: next.user.username,
+          discriminator: next.user.discriminator,
+        });
+
+      const cached = usernameCache.get(next.id)!;
+
+      if (
+        cached.username === next.user.username &&
+        cached.discriminator === next.user.discriminator
+      )
+        return;
+
+      usernameCacheUpdates[next.id] && clearTimeout(usernameCacheUpdates[next.id]);
+
+      const updateCache = () => {
+        usernameCache.set(next.id, {
+          username: next.user.username,
+          discriminator: next.user.discriminator,
+        });
+        delete usernameCacheUpdates[next.id];
+      };
+
+      // if no new events in 3 seconds, update the global cache
+      usernameCacheUpdates[next.id] = setTimeout(updateCache, 3000);
+    },
+  },
 };
 
 (logClientEvents as readonly (keyof ClientEvents)[]).forEach(event => {
@@ -165,7 +202,11 @@ const eventHooks: {
       if (!config) return logger.error(`could not get config for ${guild.id}`);
 
       logger.debug(`handler for ${event} exists`);
-      if (!intToLogEvents(config.logSubscribedEvents).includes('guildMemberUpdate')) {
+      if (
+        !intToLogEvents(config.logSubscribedEvents).includes(
+          event as typeof logClientEvents[number]
+        )
+      ) {
         logger.debug('guild has not subscribed to the event, aborting');
         return;
       }
@@ -184,6 +225,12 @@ const eventHooks: {
       try {
         logger.debug(`calling handler`);
         await logHandler(guild, logChannel, preInfo)(...args);
+
+        if (hooks?.post) {
+          logger.debug(`calling post-event hook`);
+          await hooks.post(guild)(...args);
+        }
+
         await orm.em.flush();
       } catch (err) {
         getLogger(`GUILD ${guild?.id ?? 'unknown'} EVENT ${event}`).error(err);

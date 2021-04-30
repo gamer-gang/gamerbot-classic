@@ -1,9 +1,8 @@
 import { Guild, GuildMember, Invite, TextChannel, User } from 'discord.js';
 import fse from 'fs-extra';
-import _ from 'lodash';
 import { DateTime } from 'luxon';
 import { LogHandlers } from '.';
-import { CachedInvite, client, usernameCache } from '../../providers';
+import { CachedInvite, client, getLogger, usernameCache } from '../../providers';
 import { Embed, getDateFromSnowflake, resolvePath } from '../../util';
 import { formatValue, getLatestAuditEvent, logColorFor } from './utils';
 
@@ -110,9 +109,9 @@ export const guildMemberHandlers: LogHandlers = {
     prev: GuildMember,
     next: GuildMember
   ) => {
-    const guild = next.guild;
-
-    const changes = _.omitBy(next, (v, k) => _.isEqual(v, prev[k as keyof GuildMember]));
+    getLogger(`GUILD ${guild.id} EVENT guildMemberUpdate`).debug(
+      `user ${next.user.id} was updated in ${guild.name}`
+    );
 
     const embed = new Embed({
       title: 'Member updated',
@@ -144,11 +143,6 @@ export const guildMemberHandlers: LogHandlers = {
       add('Username', cached.username, next.user.username);
     if (cached.discriminator !== next.user.discriminator)
       add('Discriminator', cached.discriminator, next.user.discriminator);
-
-    usernameCache.set(next.id, {
-      username: next.user.username,
-      discriminator: next.user.discriminator,
-    });
 
     if (prev.nickname !== next.nickname) {
       const auditEvent = await getLatestAuditEvent(guild);
