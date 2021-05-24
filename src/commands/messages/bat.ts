@@ -88,7 +88,7 @@ export class CommandBat implements Command {
       title: `${data.name} (${data.symbol})`,
       description: [
         `**Price:** $${quote.price.toPrecision(4)} ` +
-          `**(${changeEmoji} ${quote.percent_change_24h.toPrecision(2)}%)**`,
+          `**(${changeEmoji} ${quote.percent_change_24h.toFixed(2)}%)**`,
         '',
         `**Market Cap:** $${Math.round(quote.market_cap).toLocaleString()}`,
         `**Volume (24h):** $${Math.round(quote.volume_24h).toLocaleString()} ` +
