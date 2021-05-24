@@ -33,7 +33,7 @@ export class CommandSkin implements Command {
     boolean: ['debug'],
     string: ['type'],
     number: ['scale'],
-    default: { debug: process.env.NODE_ENV === 'development' },
+    default: { debug: client.devMode },
   };
   async execute(context: Context): Promise<void | Message> {
     const { msg, args } = context;

@@ -240,14 +240,16 @@ const eventHooks: {
 });
 
 client.on('debug', content => {
-  if (process.env.NODE_ENV === 'development') logger.debug(content);
+  if (client.devMode) logger.debug(content);
   else if (content.includes('Remaining: '))
     logger.info(`remaining gateway sessions: ${content.split(' ').reverse()[0]}`);
 });
 
-const handleEvent = (handler: (...args: any[]) => unknown) => (...args: any[]) => {
-  storage.run(orm.em.fork(true, true), () => handler(...args));
-};
+const handleEvent =
+  (handler: (...args: any[]) => unknown) =>
+  (...args: any[]) => {
+    storage.run(orm.em.fork(true, true), () => handler(...args));
+  };
 
 client
   .on('message', handleEvent(onMessage))

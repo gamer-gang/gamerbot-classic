@@ -232,9 +232,10 @@ export class CommandTrivia implements Command {
 
     const data = question.results[0];
     const embed = new Embed();
-    const answers = (data.type === 'boolean'
-      ? ['True', 'False']
-      : _.shuffle([data.correct_answer, ...data.incorrect_answers])
+    const answers = (
+      data.type === 'boolean'
+        ? ['True', 'False']
+        : _.shuffle([data.correct_answer, ...data.incorrect_answers])
     ).map(str => he.decode(str));
 
     const answerLetters = alphabet.slice(0, answers.length).split('');
@@ -260,7 +261,7 @@ export class CommandTrivia implements Command {
     embed.addField('Category', he.decode(data.category), true);
     embed.addField('Time Limit', '15s');
 
-    process.env.NODE_ENV === 'development' &&
+    client.devMode &&
       embed.setFooter(
         `Correct answer: ${answerLetters[correctIndex].toUpperCase()}. ${answers[correctIndex]}`
       );

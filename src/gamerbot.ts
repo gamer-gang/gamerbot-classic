@@ -25,6 +25,8 @@ export class Gamerbot extends Client {
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
   });
 
+  readonly devMode = process.env.NODE_ENV === 'development';
+
   /** only safe to access after 'ready' event */
   mediaServer!: Guild;
 
@@ -63,8 +65,10 @@ export class Gamerbot extends Client {
           logger.warn(`media server missing '${name}' emoji! using fallback`);
       });
 
-      if (!this.getCustomEmoji('worksonmymachine'))
-        logger.warn(`media server missing '${name}' emoji! disabling $techsupport`);
+      if (!this.getCustomEmoji('worksonmymachine')) {
+        logger.warn(`media server missing 'worksonmymachine' emoji! disabling $techsupport`);
+        this.commands.splice(this.commands.findIndex(c => c.cmd.includes('techsupport')));
+      }
     });
   }
 

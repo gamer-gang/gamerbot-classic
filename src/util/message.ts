@@ -1,6 +1,7 @@
 import { FileOptions, MessageOptions } from 'discord.js';
 import _ from 'lodash';
 import { DateTime } from 'luxon';
+import { client } from '../providers';
 import { Embed, EmbedOptions } from './embed';
 import { resolvePath } from './path';
 
@@ -59,9 +60,8 @@ export const parseDiscohookJSON = (json: string): MessageOptions => {
 
 export const getProfilePicture = (): FileOptions => {
   const dec = DateTime.now().month === 11;
-  const dev = process.env.NODE_ENV === 'development';
 
-  const path = dev
+  const path = client.devMode
     ? resolvePath('assets/hexagon-dev.png')
     : resolvePath(`assets/hexagon${dec ? '-hat' : ''}.png`);
 

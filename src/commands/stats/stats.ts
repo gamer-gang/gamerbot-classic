@@ -12,7 +12,8 @@ import { codeBlock, Embed, insertUuidDashes, sanitize } from '../../util';
 import { makeBedwarsStats } from './bedwars';
 import { statsProvider } from './cache';
 
-const userRegex = /^([A-Za-z0-9_]{3,16}|[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})$/;
+const userRegex =
+  /^([A-Za-z0-9_]{3,16}|[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})$/;
 
 type Gamemode = 'bedwars';
 export type StatsData = [image: Buffer, metadata?: (string | boolean)[]];
@@ -47,7 +48,7 @@ export class CommandStats implements Command {
     alias: { debug: ['d'], 'set-user': ['s'], 'get-user': ['g'], fast: ['f'], info: ['i'] },
     boolean: ['debug', 'clear-user', 'fast', 'info'],
     string: ['set-user', 'get-user'],
-    default: { debug: process.env.NODE_ENV === 'development' },
+    default: { debug: client.devMode },
   };
 
   readonly gamemodes: Record<
