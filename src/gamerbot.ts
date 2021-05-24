@@ -10,7 +10,13 @@ import { PresenceManager, resolvePath, Store } from './util';
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface GamerbotOptions extends Omit<ClientOptions, 'partials'> {}
 
-export type KnownEmojis = 'success' | 'error' | 'warn' | 'worksonmymachine';
+export type KnownEmojis =
+  | 'success'
+  | 'error'
+  | 'warn'
+  | 'worksonmymachine'
+  | 'up_arrow'
+  | 'down_arrow';
 
 export class Gamerbot extends Client {
   readonly commands: Command[] = [];
@@ -59,7 +65,7 @@ export class Gamerbot extends Client {
 
       this.mediaServer = this.guilds.cache.get(process.env.MEDIA_SERVER_ID)!;
 
-      const expectedEmojis = ['success', 'error', 'warn'];
+      const expectedEmojis = ['success', 'error', 'warn', 'up_arrow', 'down_arrow'];
       expectedEmojis.forEach(name => {
         if (!this.getCustomEmoji(name))
           logger.warn(`media server missing '${name}' emoji! using fallback`);
