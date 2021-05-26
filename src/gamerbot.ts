@@ -3,6 +3,7 @@ import fse from 'fs-extra';
 import { google } from 'googleapis';
 import Spotify from 'spotify-web-api-node';
 import { Command } from './commands';
+import { CryptoManager } from './commands/crypto/CryptoManager';
 import { logger } from './providers';
 import { Queue } from './types';
 import { PresenceManager, resolvePath, Store } from './util';
@@ -32,6 +33,7 @@ export class Gamerbot extends Client {
   });
 
   readonly devMode = process.env.NODE_ENV === 'development';
+  crypto!: CryptoManager;
 
   /** only safe to access after 'ready' event */
   mediaServer!: Guild;
@@ -75,6 +77,8 @@ export class Gamerbot extends Client {
         logger.warn(`media server missing 'worksonmymachine' emoji! disabling $techsupport`);
         this.commands.splice(this.commands.findIndex(c => c.cmd.includes('techsupport')));
       }
+
+      this.crypto = new CryptoManager();
     });
   }
 

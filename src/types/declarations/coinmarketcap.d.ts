@@ -66,6 +66,36 @@ declare namespace CoinMarketCap {
     last_updated: string;
   }
 
+  export interface ListingResponse {
+    status: Status;
+    data: Listing[];
+  }
+
+  export interface Listing {
+    id: number;
+    name: string;
+    symbol: string;
+    slug: string;
+    num_market_pairs: number;
+    date_added: string;
+    tags: string[];
+    max_supply: number | null;
+    circulating_supply: number;
+    total_supply: number;
+    platform: Platform | null;
+    cmc_rank: number;
+    last_updated: string;
+    quote: { [currency: string]: Quote };
+  }
+
+  export interface Platform {
+    id: number;
+    name: string;
+    symbol: string;
+    slug: string;
+    token_address: string;
+  }
+
   export interface Status {
     timestamp: string;
     error_code: number;
