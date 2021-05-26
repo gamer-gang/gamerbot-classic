@@ -239,8 +239,11 @@ export class CommandPlay implements Command {
     };
 
     try {
+      logger.debug('playing track to dispatcher');
+
       queue.voiceConnection
-        ?.on('error', err => logger.error(err))
+        ?.play(await track.getPlayable(), options)
+        .on('error', err => logger.error(err))
         .once('close', (info: string) => {
           logger.debug(`close emitted for "${track.title}", calling callback`);
           callback(info);
@@ -249,9 +252,6 @@ export class CommandPlay implements Command {
           logger.debug(`finish emitted for "${track.title}", calling callback`);
           callback(info);
         });
-
-      logger.debug('playing track to dispatcher');
-      queue.voiceConnection?.play(await track.getPlayable(), options);
     } catch (err) {
       queue.embed?.edit(Embed.error(err.message));
       return callback('error');
