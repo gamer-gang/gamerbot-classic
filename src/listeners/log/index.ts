@@ -6,6 +6,7 @@ import { guildHandlers } from './guild';
 import { guildBanHandlers } from './guildBan';
 import { guildMemberHandlers } from './guildMember';
 import { inviteHandlers } from './invite';
+import { roleHandlers } from './role';
 
 export type LogClientEventName = typeof logClientEvents[number];
 export type LogGamerbotCommandEventName = typeof logGamerbotCommandEvents[number];
@@ -65,18 +66,8 @@ export const logEvents = [...logClientEvents, ...logGamerbotCommandEvents] as co
 
 // https://coolors.co/gradient-palette/40c9ff-e81cff
 export const logColors = [
-  0x40c9ff,
-  0x4fb9ff,
-  0x5faaff,
-  0x6e9aff,
-  0x7d8aff,
-  0x8c7aff,
-  0x9c6bff,
-  0xab5bff,
-  0xba4bff,
-  0xc93bff,
-  0xd92cff,
-  0xe81cff,
+  0x40c9ff, 0x4fb9ff, 0x5faaff, 0x6e9aff, 0x7d8aff, 0x8c7aff, 0x9c6bff, 0xab5bff, 0xba4bff,
+  0xc93bff, 0xd92cff, 0xe81cff,
 ];
 
 export const maxLogInteger = logEvents.map((__, index) => 2 ** index).reduce((a, b) => a + b);
@@ -120,4 +111,5 @@ export const logHandlers: LogHandlers = {
   ...guildMemberHandlers,
   ...guildHandlers,
   ...inviteHandlers,
+  ...roleHandlers,
 };

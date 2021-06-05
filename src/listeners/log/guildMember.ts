@@ -1,8 +1,8 @@
-import { Guild, GuildMember, Invite, TextChannel, User } from 'discord.js';
+import { Guild, GuildMember, Invite, PartialRoleData, TextChannel, User } from 'discord.js';
 import fse from 'fs-extra';
 import { DateTime } from 'luxon';
 import { LogHandlers } from '.';
-import { CachedInvite, client, getLogger, usernameCache } from '../../providers';
+import { CachedInvite, client, usernameCache } from '../../providers';
 import { Embed, getDateFromSnowflake, resolvePath } from '../../util';
 import { formatValue, getLatestAuditEvent, logColorFor } from './utils';
 
@@ -33,47 +33,49 @@ const changeTable = {
 };
 
 export const guildMemberHandlers: LogHandlers = {
-  onGuildMemberAdd: (
-    guild: Guild,
-    logChannel: TextChannel,
-    info?: { usedCached?: CachedInvite; usedNew?: Invite }
-  ) => async (member: GuildMember) => {
-    const { usedCached, usedNew } = info!;
-    const embed = new Embed({
-      author: {
-        iconURL: member.user.displayAvatarURL({ format: 'png' }) ?? undefined,
-        name: member.user.tag,
-      },
-      color: logColorFor('guildMemberAdd'),
-      title: 'User joined',
-      description: member.toString(),
-    })
-      .addField('User ID', member.id)
-      .addField('Accout creation', getDateFromSnowflake(member.id).join(', '))
-      .setThumbnail(member.user.displayAvatarURL({ format: 'png' }))
-      .setTimestamp();
+  onGuildMemberAdd:
+    (
+      guild: Guild,
+      logChannel: TextChannel,
+      info?: { usedCached?: CachedInvite; usedNew?: Invite }
+    ) =>
+    async (member: GuildMember) => {
+      const { usedCached, usedNew } = info!;
+      const embed = new Embed({
+        author: {
+          iconURL: member.user.displayAvatarURL({ format: 'png' }) ?? undefined,
+          name: member.user.tag,
+        },
+        color: logColorFor('guildMemberAdd'),
+        title: 'User joined',
+        description: member.toString(),
+      })
+        .addField('User ID', member.id)
+        .addField('Accout creation', getDateFromSnowflake(member.id).join(', '))
+        .setThumbnail(member.user.displayAvatarURL({ format: 'png' }))
+        .setTimestamp();
 
-    if (usedCached)
-      embed.addField(
-        'Invite used',
-        `${usedCached?.code} (created by ${
-          client.users.resolve(usedCached?.creatorId ?? '') ?? usedCached?.creatorTag
-        } ${DateTime.fromMillis(
-          usedNew?.createdTimestamp as number
-        ).toRelative()}, expires ${DateTime.fromMillis(
-          usedNew?.expiresTimestamp as number
-        ).toRelative()})`
-      );
-    else if (!member.user.bot)
-      embed.setDescription(
-        'No invite candidate could be found. This happens with single-use invites ' +
-          '(which are deleted on use) or if you did not grant gamerbot permission to access ' +
-          'invites. If you enabled the `inviteCreate` and/or `inviteDelete` log events, you ' +
-          'can check the surrounding log events to find which invite was used.'
-      );
+      if (usedCached)
+        embed.addField(
+          'Invite used',
+          `${usedCached?.code} (created by ${
+            client.users.resolve(usedCached?.creatorId ?? '') ?? usedCached?.creatorTag
+          } ${DateTime.fromMillis(
+            usedNew?.createdTimestamp as number
+          ).toRelative()}, expires ${DateTime.fromMillis(
+            usedNew?.expiresTimestamp as number
+          ).toRelative()})`
+        );
+      else if (!member.user.bot)
+        embed.setDescription(
+          'No invite candidate could be found. This happens with single-use invites ' +
+            '(which are deleted on use) or if you did not grant gamerbot permission to access ' +
+            'invites. If you enabled the `inviteCreate` and/or `inviteDelete` log events, you ' +
+            'can check the surrounding log events to find which invite was used.'
+        );
 
-    logChannel.send(embed);
-  },
+      logChannel.send(embed);
+    },
   onGuildMemberRemove: (guild: Guild, logChannel: TextChannel) => async (member: GuildMember) => {
     const auditEvent = await getLatestAuditEvent(guild);
 
@@ -105,59 +107,71 @@ export const guildMemberHandlers: LogHandlers = {
 
     logChannel.send(embed);
   },
-  onGuildMemberUpdate: (guild: Guild, logChannel: TextChannel) => async (
-    prev: GuildMember,
-    next: GuildMember
-  ) => {
-    getLogger(`GUILD ${guild.id} EVENT guildMemberUpdate`).debug(
-      `user ${next.user.id} was updated in ${guild.name}`
-    );
+  onGuildMemberUpdate:
+    (guild: Guild, logChannel: TextChannel) => async (prev: GuildMember, next: GuildMember) => {
+      const embed = new Embed({
+        title: 'Member updated',
+        author: {
+          iconURL: next.user.displayAvatarURL({ format: 'png' }) ?? undefined,
+          name: next.user.tag,
+        },
+        description: next.toString(),
+        color: logColorFor('guildMemberUpdate'),
+      })
+        .setThumbnail(next.user.displayAvatarURL({ format: 'png' }))
+        .setTimestamp();
 
-    const embed = new Embed({
-      title: 'Member updated',
-      author: {
-        iconURL: next.user.displayAvatarURL({ format: 'png' }) ?? undefined,
-        name: next.user.tag,
-      },
-      description: next.toString(),
-      color: logColorFor('guildMemberUpdate'),
-    })
-      .setThumbnail(next.user.displayAvatarURL({ format: 'png' }))
-      .setTimestamp();
+      const add = (name: string, before: unknown, after: unknown) =>
+        embed.addField(
+          changeTable[name as keyof typeof changeTable] ?? name,
+          `\`${formatValue(before)} => ${formatValue(after)}\``
+        );
 
-    const add = (name: string, before: unknown, after: unknown) =>
-      embed.addField(
-        changeTable[name as keyof typeof changeTable] ?? name,
-        `\`${formatValue(before)} => ${formatValue(after)}\``
-      );
+      if (!usernameCache.has(next.id))
+        usernameCache.set(next.id, {
+          username: next.user.username,
+          discriminator: next.user.discriminator,
+        });
 
-    if (!usernameCache.has(next.id))
-      usernameCache.set(next.id, {
-        username: next.user.username,
-        discriminator: next.user.discriminator,
-      });
+      const cached = usernameCache.get(next.id)!;
 
-    const cached = usernameCache.get(next.id)!;
+      if (cached.username !== next.user.username)
+        add('Username', cached.username, next.user.username);
+      if (cached.discriminator !== next.user.discriminator)
+        add('Discriminator', cached.discriminator, next.user.discriminator);
 
-    if (cached.username !== next.user.username)
-      add('Username', cached.username, next.user.username);
-    if (cached.discriminator !== next.user.discriminator)
-      add('Discriminator', cached.discriminator, next.user.discriminator);
-
-    if (prev.nickname !== next.nickname) {
       const auditEvent = await getLatestAuditEvent(guild);
-      add('nickname', prev.nickname, next.nickname);
+
+      if (prev.nickname !== next.nickname) {
+        add('nickname', prev.nickname, next.nickname);
+
+        if (
+          auditEvent.action === 'MEMBER_UPDATE' &&
+          auditEvent.changes?.some(
+            change =>
+              change.key === 'nick' && change.new == next.nickname && change.old == prev.nickname
+          )
+        )
+          embed.addField('Changed by', auditEvent.executor);
+      }
 
       if (
-        auditEvent.action === 'MEMBER_UPDATE' &&
-        auditEvent.changes?.some(
-          change =>
-            change.key === 'nick' && change.new == next.nickname && change.old == prev.nickname
-        )
-      )
-        embed.addField('Changed by', auditEvent.executor);
-    }
+        auditEvent.action === 'MEMBER_ROLE_UPDATE' &&
+        auditEvent.targetType === 'USER' &&
+        (auditEvent.target as User).id === next.user.id
+      ) {
+        auditEvent.changes?.forEach(change => {
+          embed.addField(
+            `${change.key === '$add' ? 'Added' : 'Removed'} roles ${change.new.length}`,
+            (change.new as PartialRoleData[])
+              .map(role => guild.roles.resolve(role.id!.toString()))
+              .join(' ')
+          );
+        });
 
-    embed.fields.length && logChannel.send(embed);
-  },
+        embed.addField('Changed by', auditEvent.executor);
+      }
+
+      embed.fields.length && logChannel.send(embed);
+    },
 };
