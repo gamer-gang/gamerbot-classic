@@ -20,7 +20,7 @@ export const onGuildMemberAdd = async (member: GuildMember | PartialGuildMember)
 
   const replace = (json: string) =>
     json
-      .replace(/%USER%/g, `<@!${member.id}>`)
+      .replace(/%USER%/g, `<@${member.id}>`)
       .replace(/%USERTAG%/g, `${member.user?.tag}`)
       .replace(/%GUILD%/g, `${member.guild.name}`);
 

@@ -268,7 +268,7 @@ export class Queue {
     }
 
     embed.addField('Duration', track.durationString, true);
-    embed.addField('Requested by', `<@!${track.requesterId}>`, true);
+    embed.addField('Requested by', `<@${track.requesterId}>`, true);
 
     if (this.embed && !this.embed.deleted) {
       logger.debug(`existing non-deleted embed, editing it`);

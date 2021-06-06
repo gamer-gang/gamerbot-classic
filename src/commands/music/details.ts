@@ -78,7 +78,7 @@ export class CommandDetails implements Command {
 
       track.coverUrl && embed.setThumbnail(track.coverUrl);
     } else if (track.isFile()) {
-      embed.addField('Uploaded by', `<@!${track.requesterId}>`, true);
+      embed.addField('Uploaded by', `<@${track.requesterId}>`, true);
       embed.addField('Duration', track.durationString, true);
     }
 

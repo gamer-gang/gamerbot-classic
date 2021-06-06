@@ -8,7 +8,7 @@ import { resolvePath } from './path';
 export const hasMentions = (content: string, includeSingleUser = true): boolean =>
   content.includes('@everyone') ||
   content.includes('@here') ||
-  (includeSingleUser ? /<@!\d{18}>/g.test(content) : false);
+  (includeSingleUser ? /<@!?\d{18}>/g.test(content) : false);
 
 export const sanitize = (content?: string): string =>
   content // comment so that replaces are wrapped
