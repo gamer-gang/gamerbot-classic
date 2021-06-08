@@ -162,7 +162,7 @@ export const guildMemberHandlers: LogHandlers = {
       ) {
         auditEvent.changes?.forEach(change => {
           embed.addField(
-            `${change.key === '$add' ? 'Added' : 'Removed'} roles ${change.new.length}`,
+            `Roles ${change.key === '$add' ? 'added' : 'removed'} (${change.new.length})`,
             (change.new as PartialRoleData[])
               .map(role => guild.roles.resolve(role.id!.toString()))
               .join(' ')
