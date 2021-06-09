@@ -3,7 +3,7 @@ import fse from 'fs-extra';
 import { DateTime } from 'luxon';
 import { LogHandlers } from '.';
 import { CachedInvite, client, usernameCache } from '../../providers';
-import { Embed, getDateFromSnowflake, resolvePath } from '../../util';
+import { Embed, getDateStringFromSnowflake, resolvePath } from '../../util';
 import { formatValue, getLatestAuditEvent, logColorFor } from './utils';
 
 fse.ensureFileSync(resolvePath('data/kicks.txt'));
@@ -51,7 +51,7 @@ export const guildMemberHandlers: LogHandlers = {
         description: member.toString(),
       })
         .addField('User ID', member.id)
-        .addField('Accout creation', getDateFromSnowflake(member.id).join(', '))
+        .addField('Accout creation', getDateStringFromSnowflake(member.id).join(', '))
         .setThumbnail(member.user.displayAvatarURL({ format: 'png' }))
         .setTimestamp();
 

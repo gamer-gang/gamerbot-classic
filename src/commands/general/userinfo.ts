@@ -2,7 +2,7 @@ import { Message, User } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context } from '../../types';
-import { Embed, getDateFromSnowflake, getProfileImageUrl } from '../../util';
+import { Embed, getDateStringFromSnowflake, getProfileImageUrl } from '../../util';
 
 export class CommandUserInfo implements Command {
   cmd = ['userinfo', 'user'];
@@ -40,7 +40,7 @@ export class CommandUserInfo implements Command {
       title: 'User info',
       description: inGuild ? user.toString() : undefined,
     })
-      .addField('Account creation', getDateFromSnowflake(user.id).join('; '))
+      .addField('Account creation', getDateStringFromSnowflake(user.id).join('; '))
       .addField('ID', user.id)
       .setTimestamp();
 

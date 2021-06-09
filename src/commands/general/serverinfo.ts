@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context } from '../../types';
-import { Embed, getDateFromSnowflake } from '../../util';
+import { Embed, getDateStringFromSnowflake } from '../../util';
 
 export class CommandServerInfo implements Command {
   cmd = ['serverinfo', 'guildinfo', 'server', 'guild'];
@@ -41,7 +41,7 @@ export class CommandServerInfo implements Command {
       title: 'Server info',
       description: icon ? undefined : 'No icon set',
     })
-      .addField('Creation date', getDateFromSnowflake(guild.id).join('; '))
+      .addField('Creation date', getDateStringFromSnowflake(guild.id).join('; '))
       .addField('Owner', inGuild ? guild.owner : `${guild.owner?.user.tag} (${guild.owner?.id})`)
       .addField(
         'Members',
