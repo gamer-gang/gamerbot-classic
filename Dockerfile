@@ -13,19 +13,13 @@ WORKDIR /app
 
 # bare minimum to install deps
 COPY package.json .yarnrc.yml yarn.lock .pnp.cjs ./
+COPY packages/core/package.json packages/core/package.json
 COPY .yarn .yarn
 
 RUN yarn
 
-# bare minimum to build
-COPY webpack.config.ts .eslintrc.json tsconfig.json ./
-COPY src src
-# needed for version info
-COPY .git .git
-
-RUN yarn build:prod
-
-# copy everything else
 COPY . .
 
-CMD [ "yarn", "start:prod" ]
+RUN yarn build
+
+CMD [ "yarn", "prod" ]

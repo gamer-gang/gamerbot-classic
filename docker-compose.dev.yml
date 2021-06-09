@@ -15,4 +15,4 @@ services:
       - 127.0.0.1:9229:9229
     environment:
       NODE_ARGS: --inspect=0.0.0.0:9229
-    command: ['yarn', 'docker-dev']
+    command: ['yarn', '_docker']
