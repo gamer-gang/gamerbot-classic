@@ -1,7 +1,8 @@
 import { Guild, GuildAuditLogsEntry } from 'discord.js';
+import { inspect } from 'util';
 import { logColors, LogEventName, logEvents } from '.';
 import { Config } from '../../entities/Config';
-import { orm } from '../../providers';
+import { client, getLogger, orm } from '../../providers';
 import { findGuild, GuildHandle } from '../../util';
 
 export const getConfig = async (source: GuildHandle): Promise<Config> => {
@@ -18,7 +19,20 @@ export const getConfig = async (source: GuildHandle): Promise<Config> => {
 
 export const getLatestAuditEvent = async (guild: Guild): Promise<GuildAuditLogsEntry> => {
   const auditLogs = await guild.fetchAuditLogs();
-  return auditLogs.entries.array()[0];
+  const event = auditLogs.entries.array()[0];
+
+  if (client.devMode) {
+    const logger = getLogger('     ');
+
+    const json = inspect(event.toJSON(), false, null, true);
+    const split = json.split('\n');
+
+    getLogger('AUDIT').debug(`audit event ${event.id} in guild ${guild.name}`);
+
+    split.forEach(msg => logger.debug(msg));
+  }
+
+  return event;
 };
 
 export const logColorFor = (event: LogEventName): number =>
