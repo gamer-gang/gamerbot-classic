@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: yarn
-      - run: yarn build:prod
+      - run: yarn build
         env:
           CI: true
           NODEMON: false
