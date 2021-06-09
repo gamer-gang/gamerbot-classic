@@ -27,7 +27,7 @@ client.on('ready', () => {
               trackedInvites.push(invite.code);
             }
 
-            getLogger(`GUILD ${guild.id}`).info('successfully cached invites');
+            getLogger(`GUILD ${guild.id}`).debug('successfully cached invites');
 
             resolve();
           } catch (err) {
@@ -65,32 +65,31 @@ export const inviteHandlers: LogHandlers = {
 
     logChannel.send(embed);
   },
-  onInviteDelete: (guild: Guild, logChannel: TextChannel, cached: CachedInvite) => async (
-    invite: Invite
-  ) => {
-    const auditEvent = await getLatestAuditEvent(guild);
+  onInviteDelete:
+    (guild: Guild, logChannel: TextChannel, cached: CachedInvite) => async (invite: Invite) => {
+      const auditEvent = await getLatestAuditEvent(guild);
 
-    const embed = new Embed({
-      author: {
-        iconURL: guild.iconURL({ format: 'png' }) ?? undefined,
-        name: guild.name,
-      },
-      color: logColorFor('inviteDelete'),
-      title: 'Invite deleted',
-    })
-      .addField('Code', invite.code)
-      .addField(
-        'Uses*',
-        `${(invite.uses || cached?.uses) ?? 0}${
-          invite.maxUses ? '/' + invite.maxUses : ''
-        }\n*approximate.`
-      )
-      .addField('Created by', client.users.resolve(cached?.creatorId ?? '') ?? cached?.creatorTag)
-      .addField('Deleted by', auditEvent.executor)
-      .setTimestamp();
+      const embed = new Embed({
+        author: {
+          iconURL: guild.iconURL({ format: 'png' }) ?? undefined,
+          name: guild.name,
+        },
+        color: logColorFor('inviteDelete'),
+        title: 'Invite deleted',
+      })
+        .addField('Code', invite.code)
+        .addField(
+          'Uses*',
+          `${(invite.uses || cached?.uses) ?? 0}${
+            invite.maxUses ? '/' + invite.maxUses : ''
+          }\n*approximate.`
+        )
+        .addField('Created by', client.users.resolve(cached?.creatorId ?? '') ?? cached?.creatorTag)
+        .addField('Deleted by', auditEvent.executor)
+        .setTimestamp();
 
-    logChannel.send(embed);
+      logChannel.send(embed);
 
-    inviteCache.delete(invite.code);
-  },
+      inviteCache.delete(invite.code);
+    },
 };

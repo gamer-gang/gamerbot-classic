@@ -19,7 +19,7 @@ log4js.configure({
   categories: {
     default: {
       appenders: process.env.NODE_ENV === 'production' ? ['file', 'console'] : ['console'],
-      level: 'debug',
+      level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
       enableCallStack: true,
     },
   },
