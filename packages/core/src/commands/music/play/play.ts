@@ -254,7 +254,7 @@ export class CommandPlay implements Command {
         });
     } catch (err) {
       logger.error(err);
-      queue.embed?.edit(Embed.error(err.message));
+      queue.textChannel?.send(Embed.error(err.message));
       return callback('error');
     }
   }
