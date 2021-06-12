@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { Message, TextChannel } from 'discord.js';
 import _ from 'lodash';
 import { getLogger } from 'log4js';
 import { DateTime } from 'luxon';
@@ -67,7 +67,7 @@ export const searchYoutube = async (
                   ? `, ${
                       parseInt(track.data.statistics?.viewCount ?? '0')?.toLocaleString() ?? '?'
                     } views`
-                  : args.sort !== undefined
+                  : args.sort === 'newest' || args.sort === 'oldest'
                   ? `, ${DateTime.fromISO(track.data.snippet?.publishedAt as string).toRelative()}`
                   : ''
               }`
@@ -89,23 +89,33 @@ export const searchYoutube = async (
 
       const i = parseInt(collected.content);
       if (isNaN(i) || i < 1 || i > tracks.length)
-        return msg.channel.send(Embed.warning('invalid selection, try again'));
+        return msg.channel
+          .send(Embed.warning('invalid selection, try again'))
+          .then(m => m.delete({ timeout: 5000 }));
 
       index = i;
       collector.stop();
     });
 
     collector.on('end', async (collected, reason) => {
-      if (reason === 'playcmd') return;
-      if (reason === 'cancel') return msg.channel.send(Embed.info('cancelled'));
-      if (!index || Number.isNaN(index) || index < 1 || index > tracks.length)
-        return msg.channel.send(Embed.error("invalid selection, time's up"));
+      // iife for easy jumping to end of block
+      (() => {
+        if (reason === 'playcmd') return;
+        if (reason === 'cancel')
+          return msg.channel.send(Embed.info('cancelled')).then(m => m.delete({ timeout: 5000 }));
+        if (!index || Number.isNaN(index) || index < 1 || index > tracks.length)
+          return msg.channel
+            .send(Embed.error("invalid selection, time's up"))
+            .then(m => m.delete({ timeout: 5000 }));
 
-      const video = tracks[index - 1];
-      if (!video)
-        throw new Error('invalid state: video is null after selecting valid returned search');
+        const video = tracks[index - 1];
+        if (!video)
+          throw new Error('invalid state: video is null after selecting valid returned search');
 
-      caller.queueTrack(video, { context });
+        caller.queueTrack(video, { context });
+      })();
+
+      (msg.channel as TextChannel).bulkDelete([...collected.map(m => m.id), searchMessage.id]);
     });
   } catch (err) {
     getLogger(`MESSAGE ${msg.id}`).error(err);
