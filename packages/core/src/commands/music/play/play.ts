@@ -253,6 +253,7 @@ export class CommandPlay implements Command {
           callback(info);
         });
     } catch (err) {
+      logger.error(err);
       queue.embed?.edit(Embed.error(err.message));
       return callback('error');
     }

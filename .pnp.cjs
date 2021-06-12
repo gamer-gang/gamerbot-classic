@@ -8654,6 +8654,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "linkType": "HARD",
         }]
       ]],
+      ["opusscript", [
+        ["npm:0.0.8", {
+          "packageLocation": "./.yarn/cache/opusscript-npm-0.0.8-3f6539b049-0c3175a401.zip/node_modules/opusscript/",
+          "packageDependencies": [
+            ["opusscript", "npm:0.0.8"]
+          ],
+          "linkType": "HARD",
+        }]
+      ]],
       ["os-tmpdir", [
         ["npm:1.0.2", {
           "packageLocation": "./.yarn/cache/os-tmpdir-npm-1.0.2-e305b0689b-5666560f7b.zip/node_modules/os-tmpdir/",
@@ -9200,7 +9209,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/opusscript", null],
             ["ffmpeg-static", null],
             ["node-opus", null],
-            ["opusscript", null]
+            ["opusscript", "npm:0.0.8"]
           ],
           "packagePeers": [
             "@discordjs/opus",
@@ -9209,8 +9218,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             "@types/node-opus",
             "@types/opusscript",
             "ffmpeg-static",
-            "node-opus",
-            "opusscript"
+            "node-opus"
           ],
           "linkType": "HARD",
         }]
