@@ -8,6 +8,11 @@ import ytdl from 'ytdl-core';
 import { client, getLogger } from '../providers';
 import { Embed, formatDuration, normalizeDuration } from '../util';
 
+const ytdlOptions: ytdl.downloadOptions = {
+  highWaterMark: 1 << 25,
+  filter: 'audioonly',
+};
+
 export type TrackType = 'youtube' | 'file' | 'spotify';
 
 export type BaseTrack = {
@@ -92,7 +97,7 @@ export class YoutubeTrack extends Track {
 
   async getPlayable(): Promise<Readable> {
     if (!this.data.id) throw new Error(`video '${this.data.snippet?.title}' has no video id`);
-    return ytdl(this.data.id);
+    return ytdl(this.data.id, ytdlOptions);
   }
 }
 
@@ -202,7 +207,7 @@ export class SpotifyTrack extends Track {
     });
     if (!video || !video.data.items || !video.data.items[0]) throw new Error(error);
 
-    return ytdl(video.data.items[0].id!);
+    return ytdl(video.data.items[0].id!, ytdlOptions);
   }
 }
 

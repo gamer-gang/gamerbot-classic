@@ -234,7 +234,7 @@ export class CommandPlay implements Command {
     };
 
     const options: StreamOptions = {
-      highWaterMark: 20,
+      highWaterMark: 1 << 32,
       volume: false,
     };
 
