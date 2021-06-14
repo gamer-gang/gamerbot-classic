@@ -103,7 +103,7 @@ export const roleHandlers: LogHandlers = {
         switch (change.key) {
           case 'color':
             if (change.old === prev.color && change.new === next.color)
-              add('Color', `#${prev.hexColor}`, `#${next.name}`);
+              add('Color', prev.hexColor, next.hexColor);
             break;
           case 'permissions':
           case 'permissions_new':
