@@ -11,7 +11,7 @@ import { codeBlock, dbFindOneError, Embed, listify } from '../util';
 import * as eggs from './eggs';
 import { intToLogEvents, LogEventHandler, LogEventName, logHandlers } from './log';
 
-const verifyPermissions = async (context: Context, command: Command): Promise<boolean> => {
+const verifyPermissions = (context: Context, command: Command): boolean => {
   const { msg, config, cmd } = context;
 
   const userPermissions = msg.guild?.members.resolve(msg.author.id)?.permissionsIn(msg.channel);
