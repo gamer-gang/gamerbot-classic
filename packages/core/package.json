@@ -85,6 +85,7 @@
     "eslint": "^7.28.0",
     "fork-ts-checker-webpack-plugin": "^6.2.10",
     "hypixel-types": "github:wiisportsresort/hypixel-types#cddb69ce1166744a72be48f56f03feb526bb852c",
+    "mathjs": "^9.4.3",
     "node-loader": "^2.0.0",
     "nodemon": "2.0.7",
     "nodemon-webpack-plugin": "^4.5.2",
