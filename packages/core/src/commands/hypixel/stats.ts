@@ -164,8 +164,16 @@ export class CommandStats implements Command {
 
     const dataStart = process.hrtime();
 
-    const player = await statsProvider.get(args._[0]);
-    if (!player) throw new Error('Player is unexpectedly undefined');
+    let player: Player;
+
+    try {
+      const tempPlayer = await statsProvider.get(args._[0]);
+      if (!tempPlayer) throw new Error('Player is unexpectedly undefined');
+      player = tempPlayer;
+    } catch (err) {
+      if (err.message.startsWith('% ')) return msg.channel.send(Embed.error(err.message));
+      else throw err;
+    }
 
     const dataEnd = process.hrtime(dataStart);
     const dataDuration = Math.round((dataEnd![0] * 1e9 + dataEnd![1]) / 1e6);

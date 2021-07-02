@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { Player, PlayerResponse } from 'hypixel-types';
-import yaml from 'js-yaml';
-import { codeBlock, insertUuidDashes } from '../../../util';
+import { insertUuidDashes } from '../../../util';
 
 const uuidRegex = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i;
 
@@ -48,13 +47,9 @@ class StatsProvider {
       const data = response.data as PlayerResponse;
 
       if (response.status !== 200 || !data.success)
-        throw new Error(
-          `Request failed: ${response.status} ${response.statusText}\n` + data
-            ? codeBlock(yaml.dump(data), 'yaml')
-            : ''
-        );
+        throw new Error(`% API request failed: ${response.status} ${response.statusText}`);
 
-      if (!data.player) throw new Error('Player does not exist');
+      if (!data.player) throw new Error('% Player does not exist');
 
       this.map.set(data.player.uuid, data.player);
       setTimeout(() => this.map.delete(data.player!.uuid!), 1000 * 60 * 5);
