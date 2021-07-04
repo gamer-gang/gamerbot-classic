@@ -189,6 +189,7 @@ __metadata:
     ts-loader: ^9.2.3
     ts-node: ^10.0.0
     typescript: ^4.3.5
+    tzdata: ^1.0.25
     utf-8-validate: ^5.0.5
     uuid: ^8.3.2
     webpack: ^5.42.0
@@ -8828,6 +8829,13 @@ typescript@^4.3.5:
     tsc: bin/tsc
     tsserver: bin/tsserver
   checksum: bc2c4fdf0f1557fdafe4ef74848c72ebd9c8c60829568248f869121aea2bb20e16649a252431d0acb185ec118143be22bed73d08f64379557810d82756afedde
+  languageName: node
+  linkType: hard
+
+"tzdata@npm:^1.0.25":
+  version: 1.0.25
+  resolution: "tzdata@npm:1.0.25"
+  checksum: fdc9c6401bcf8b9b6b887840810ddc85efdbaefab2b63a0b691c26ec0d883529b404b51eef45c814ef4643379d5213854b77d25ff6301d85f4e1ea2ade796ab7
   languageName: node
   linkType: hard
 

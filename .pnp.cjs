@@ -253,6 +253,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["ts-loader", "virtual:0dc3f441387d4b3cf4217c5c8d520e82d74332c0a560a4d426b78c9defa000d30382b4d7978307d98afc6d18a559b14a900d05e7ad30e6fc2b9ac41c76bbc4c6#npm:9.2.3"],
             ["ts-node", "virtual:0dc3f441387d4b3cf4217c5c8d520e82d74332c0a560a4d426b78c9defa000d30382b4d7978307d98afc6d18a559b14a900d05e7ad30e6fc2b9ac41c76bbc4c6#npm:10.0.0"],
             ["typescript", "patch:typescript@npm%3A4.3.5#~builtin<compat/typescript>::version=4.3.5&hash=d8b4e7"],
+            ["tzdata", "npm:1.0.25"],
             ["utf-8-validate", "npm:5.0.5"],
             ["uuid", "npm:8.3.2"],
             ["webpack", "virtual:0dc3f441387d4b3cf4217c5c8d520e82d74332c0a560a4d426b78c9defa000d30382b4d7978307d98afc6d18a559b14a900d05e7ad30e6fc2b9ac41c76bbc4c6#npm:5.42.0"],
@@ -10883,6 +10884,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/typescript-patch-bb3b548ba1-bc2c4fdf0f.zip/node_modules/typescript/",
           "packageDependencies": [
             ["typescript", "patch:typescript@npm%3A4.3.5#~builtin<compat/typescript>::version=4.3.5&hash=d8b4e7"]
+          ],
+          "linkType": "HARD",
+        }]
+      ]],
+      ["tzdata", [
+        ["npm:1.0.25", {
+          "packageLocation": "./.yarn/cache/tzdata-npm-1.0.25-96c988a23f-fdc9c6401b.zip/node_modules/tzdata/",
+          "packageDependencies": [
+            ["tzdata", "npm:1.0.25"]
           ],
           "linkType": "HARD",
         }]
