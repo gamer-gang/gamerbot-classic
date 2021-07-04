@@ -3,6 +3,7 @@ import _ from 'lodash';
 import { Duration } from 'luxon';
 import miniget from 'miniget';
 import * as mm from 'music-metadata';
+import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '../..';
 import { client, getLogger } from '../../../providers';
 import { Context, FileTrack, Track } from '../../../types';
@@ -47,6 +48,9 @@ export class CommandPlay implements Command {
       description: 'search for a video and choose from the top 5 results',
     },
   ];
+  yargs: yargsParser.Options = {
+    boolean: ['1', '2', '3', '4', '5'],
+  };
   async execute(context: Context): Promise<void | Message> {
     const { msg, args } = context;
 
