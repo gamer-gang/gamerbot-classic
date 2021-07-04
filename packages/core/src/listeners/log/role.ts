@@ -143,6 +143,6 @@ export const roleHandlers: LogHandlers = {
     // if (prev.position !== next.position) add('Position', prev.position, next.position);
     // if (prev.rawPosition !== next.rawPosition) add('Position', prev.rawPosition, next.rawPosition);
 
-    embed.fields.length && logChannel.send(embed);
+    embed.fields.length > +permissionCheckNeeded && logChannel.send(embed);
   },
 };
