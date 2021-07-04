@@ -46,7 +46,7 @@ export class CommandDemonlist implements Command {
   }
 
   async execute(context: Context): Promise<void | Message> {
-    const { msg } = context;
+    const { msg, args } = context;
 
     msg.channel.startTyping();
 
@@ -56,7 +56,12 @@ export class CommandDemonlist implements Command {
     msg.channel.stopTyping(true);
 
     const pages = _.chunk(demonLines, 10);
-    let pageNumber = 0;
+
+    const parsedPageNumber = parseInt(args._[0]);
+    const parsedValid =
+      !Number.isNaN(parsedPageNumber) && parsedPageNumber > 0 && parsedPageNumber < pages.length;
+
+    let pageNumber = parsedValid ? parsedPageNumber - 1 : 0;
 
     const listMessage = await msg.channel.send(this.makeEmbed(pages, pageNumber));
 
