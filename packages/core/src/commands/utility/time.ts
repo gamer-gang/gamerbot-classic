@@ -97,17 +97,19 @@ export class CommandTime implements Command {
       let zone: string;
       let supplied = args._.join('_');
 
-      if (/^(?:(?:UTC)?[+-][\d]+(?:\.\d+)?|UTC)$/i.test(supplied)) {
-        if (/^[+-]\d+$/.test(supplied)) supplied = 'UTC' + args._[0];
+      if (/^^(?:(?:UTC|GMT)?[+-]\d{1,2}(?::\d{2})?|UTC|GMT)$$/i.test(supplied)) {
+        supplied = supplied.replace(/GMT/gi, 'UTC');
+        if (/^[+-]\d{1,2}(?::\d{2})?$/.test(supplied)) supplied = 'UTC' + args._[0];
         zone = supplied.toUpperCase();
       } else {
-        const matched = this.ianaList.find(
-          tz =>
-            supplied.toLowerCase() === tz.toString().toLowerCase() ||
-            supplied.replace(/_/, '/').toLowerCase() === tz.toString().toLowerCase()
+        const matched = this.ianaList.filter(tz =>
+          tz
+            .replace(/[_/]/g, ' ')
+            .toLowerCase()
+            .includes(supplied.replace(/[_/]/g, ' ').toLowerCase())
         );
 
-        if (!matched) {
+        if (matched.length !== 1) {
           const possibleMatch = didYouMean(supplied, this.ianaList);
           return msg.channel.send(
             Embed.error(
@@ -117,7 +119,7 @@ export class CommandTime implements Command {
           );
         }
 
-        zone = matched;
+        zone = matched[0];
       }
 
       const date = DateTime.now().setZone(zone);
@@ -127,12 +129,18 @@ export class CommandTime implements Command {
           Embed.error('Error: ' + date.invalidReason, date.invalidExplanation || undefined)
         );
 
-      const utcOffset = date.offset / 60;
+      // TODO figure out how to display the short code for every zone in the correct locale
+      // i.e. Europe/London in en-US is GMT+1, while in en-GB it is BST
+      const shortCode = date.offsetNameShort;
 
       const embed = new Embed({
         author: { name: `Time in ${date.zoneName}` },
         title: date.toLocaleString(DateTime.DATETIME_HUGE_WITH_SECONDS),
-        footer: { text: `Offset: UTC${utcOffset < 0 ? '' : '+'}${utcOffset}` },
+        footer: {
+          text: `Offset: UTC${date.toFormat('ZZ')}${
+            /^[A-Z]+$/.test(shortCode) ? ' • Short code: ' + shortCode : ''
+          }`,
+        },
       });
 
       return msg.channel.send(embed);
