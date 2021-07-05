@@ -19,6 +19,7 @@ export default <Configuration>{
     devtoolModuleFilenameTemplate: '[absolute-resource-path]',
     devtoolFallbackModuleFilenameTemplate: '[absolute-resource-path]?[hash]',
   },
+  cache: { type: 'filesystem' },
   devtool: devMode
     ? process.env.NODEMON
       ? 'eval-cheap-module-source-map'
@@ -59,8 +60,13 @@ export default <Configuration>{
   },
   module: {
     rules: [
-      { test: /\.js(x?)$/, enforce: 'pre', loader: require.resolve('source-map-loader') },
-      { test: /\.ts(x?)/, loader: require.resolve('ts-loader'), options: { transpileOnly: true } },
+      { test: /\.js$/, enforce: 'pre', loader: require.resolve('source-map-loader') },
+      {
+        test: /\.ts$/,
+        loader: require.resolve('ts-loader'),
+        options: { transpileOnly: true },
+        include: path.resolve(__dirname, 'src'),
+      },
       { test: /\.node$/, use: require.resolve('node-loader') },
       { test: /\.mjs$/, include: /node_modules/, type: 'javascript/auto' },
     ],

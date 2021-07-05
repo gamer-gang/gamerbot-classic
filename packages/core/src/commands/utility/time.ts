@@ -1,3 +1,4 @@
+import didYouMean from 'didyoumean';
 import { Message, MessageReaction, User } from 'discord.js';
 import { DateTime } from 'luxon';
 import { zones } from 'tzdata';
@@ -38,16 +39,23 @@ export class CommandTime implements Command {
     return embed;
   }
 
-  ianaList = luxonValidTimezones.filter(tz => tz.includes('/'));
+  ianaList = luxonValidTimezones.filter(tz => tz.includes('/')).sort();
 
   async execute(context: Context): Promise<void | Message> {
     const { msg, args } = context;
 
     if (args.list) {
-      const pages = this.ianaList
-        .join('\n')
-        .match(/(?:.|\n){1,1000}\n/g)!
-        .map(str => str);
+      const regions: { [region: string]: string[] } = {};
+      this.ianaList.forEach(tz => {
+        const [region, ...city] = tz.split('/');
+        regions[region] ??= [];
+        regions[region].push(city.join('/'));
+      });
+
+      const pages = Object.entries(regions)
+        .map(([region, cities]) => `${region}\n===========\n${cities.sort().join(', ')}`)
+        .join('\n\n')
+        .match(/(?:.|\n){1,1000}([\n, ]|$)/g)!;
 
       const parsedPageNumber = parseInt(args._[0]);
       const parsedValid =
@@ -81,20 +89,33 @@ export class CommandTime implements Command {
           })
           .on('end', () => message.reactions.removeAll());
       }
+
+      return;
     }
 
     if (args._[0]) {
       let zone: string;
+      let supplied = args._.join('_');
 
-      if (/^(?:(?:UTC)?[+-]\d+|UTC)$/i.test(args._[0])) {
-        if (/^[+-]\d+$/.test(args._[0])) args._[0] = 'UTC' + args._[0];
-        zone = args._[0].toUpperCase();
+      if (/^(?:(?:UTC)?[+-][\d]+(?:\.\d+)?|UTC)$/i.test(supplied)) {
+        if (/^[+-]\d+$/.test(supplied)) supplied = 'UTC' + args._[0];
+        zone = supplied.toUpperCase();
       } else {
         const matched = this.ianaList.find(
-          tz => tz.toLowerCase() === args._[0].toString().toLowerCase()
+          tz =>
+            supplied.toLowerCase() === tz.toString().toLowerCase() ||
+            supplied.replace(/_/, '/').toLowerCase() === tz.toString().toLowerCase()
         );
 
-        if (!matched) return msg.channel.send(Embed.error('Invalid time zone'));
+        if (!matched) {
+          const possibleMatch = didYouMean(supplied, this.ianaList);
+          return msg.channel.send(
+            Embed.error(
+              'Invalid time zone',
+              possibleMatch ? `Did you mean \`${possibleMatch}\`?` : undefined
+            )
+          );
+        }
 
         zone = matched;
       }
@@ -122,9 +143,10 @@ export class CommandTime implements Command {
       'America/Chicago',
       'America/New_York',
       'Europe/London',
-      'Europe/Paris',
+      'Europe/Berlin',
       'Asia/Shanghai',
       'Asia/Tokyo',
+      'Australia/Sydney',
     ];
 
     const dates = commonZones.map(tz => DateTime.now().setZone(tz));
@@ -132,7 +154,7 @@ export class CommandTime implements Command {
     const embed = new Embed({ title: 'World Clock' });
 
     dates.forEach(date =>
-      embed.addField(date.zoneName, date.toLocaleString(DateTime.DATETIME_MED))
+      embed.addField(date.zoneName, date.toLocaleString(DateTime.DATETIME_MED), true)
     );
 
     msg.channel.send(embed);

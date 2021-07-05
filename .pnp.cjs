@@ -187,6 +187,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@mikro-orm/postgresql", "virtual:0dc3f441387d4b3cf4217c5c8d520e82d74332c0a560a4d426b78c9defa000d30382b4d7978307d98afc6d18a559b14a900d05e7ad30e6fc2b9ac41c76bbc4c6#npm:4.5.7"],
             ["@mikro-orm/sql-highlighter", "npm:1.0.1"],
             ["@types/cheerio", "npm:0.22.29"],
+            ["@types/didyoumean", "npm:1.2.0"],
             ["@types/fs-extra", "npm:9.0.11"],
             ["@types/he", "npm:1.1.1"],
             ["@types/js-yaml", "npm:4.0.1"],
@@ -215,6 +216,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["cheerio", "npm:1.0.0-rc.10"],
             ["concurrently", "npm:6.2.0"],
             ["cross-env", "npm:7.0.3"],
+            ["didyoumean", "npm:1.2.2"],
             ["discord.js", "npm:12.5.3"],
             ["dotenv", "npm:10.0.0"],
             ["emoji-regex", "npm:9.2.2"],
@@ -1368,6 +1370,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/@types-debug-npm-4.1.5-3464d6c971-36bdb74909.zip/node_modules/@types/debug/",
           "packageDependencies": [
             ["@types/debug", "npm:4.1.5"]
+          ],
+          "linkType": "HARD",
+        }]
+      ]],
+      ["@types/didyoumean", [
+        ["npm:1.2.0", {
+          "packageLocation": "./.yarn/cache/@types-didyoumean-npm-1.2.0-bf5bff1219-aa01420a3c.zip/node_modules/@types/didyoumean/",
+          "packageDependencies": [
+            ["@types/didyoumean", "npm:1.2.0"]
           ],
           "linkType": "HARD",
         }]
@@ -4198,6 +4209,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageLocation": "./.yarn/cache/detect-libc-npm-1.0.3-c30ac344d4-daaaed925f.zip/node_modules/detect-libc/",
           "packageDependencies": [
             ["detect-libc", "npm:1.0.3"]
+          ],
+          "linkType": "HARD",
+        }]
+      ]],
+      ["didyoumean", [
+        ["npm:1.2.2", {
+          "packageLocation": "./.yarn/cache/didyoumean-npm-1.2.2-fd568ec571-d5d98719d5.zip/node_modules/didyoumean/",
+          "packageDependencies": [
+            ["didyoumean", "npm:1.2.2"]
           ],
           "linkType": "HARD",
         }]

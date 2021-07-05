@@ -123,6 +123,7 @@ __metadata:
     "@mikro-orm/postgresql": ^4.5.7
     "@mikro-orm/sql-highlighter": ^1.0.1
     "@types/cheerio": ^0.22.29
+    "@types/didyoumean": ^1
     "@types/fs-extra": ^9.0.11
     "@types/he": ^1.1.1
     "@types/js-yaml": ^4.0.1
@@ -151,6 +152,7 @@ __metadata:
     cheerio: 1.0.0-rc.10
     concurrently: ^6.2.0
     cross-env: ^7.0.3
+    didyoumean: ^1.2.2
     discord.js: ^12.5.3
     dotenv: ^10.0.0
     emoji-regex: ^9.2.2
@@ -538,6 +540,13 @@ __metadata:
   version: 4.1.5
   resolution: "@types/debug@npm:4.1.5"
   checksum: 36bdb74909be193aeeb8c9bb64ef45d691f35181dcf75285728ec1e07103cb91042be2e8294f0624fc5922d9b4f68482faf5ea3068288577ebdccee76cd7870c
+  languageName: node
+  linkType: hard
+
+"@types/didyoumean@npm:^1":
+  version: 1.2.0
+  resolution: "@types/didyoumean@npm:1.2.0"
+  checksum: aa01420a3c41c95f43f1d77de0dbdf2920557a14dc3c1aca36ba89ef9fdf6bbbcfac1d08758af06eb540772669ecc88b241677ff9766fe088d4cda75d8e9f9b8
   languageName: node
   linkType: hard
 
@@ -2928,6 +2937,13 @@ __metadata:
   bin:
     detect-libc: ./bin/detect-libc.js
   checksum: daaaed925ffa7889bd91d56e9624e6c8033911bb60f3a50a74a87500680652969dbaab9526d1e200a4c94acf80fc862a22131841145a0a8482d60a99c24f4a3e
+  languageName: node
+  linkType: hard
+
+"didyoumean@npm:^1.2.2":
+  version: 1.2.2
+  resolution: "didyoumean@npm:1.2.2"
+  checksum: d5d98719d58b3c2fa59663c4c42ba9716f1fd01245c31d5fce31915bd3aa26e6aac149788e007358f778ebbd68a2256eb5973e8ca6f221df221ba060115acf2e
   languageName: node
   linkType: hard
 
