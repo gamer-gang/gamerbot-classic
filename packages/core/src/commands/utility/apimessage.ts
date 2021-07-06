@@ -19,7 +19,7 @@ export class CommandApiMessage implements Command {
       await msg.channel.send(parseDiscohookJSON(args._.join(' ')));
       msg.deletable && msg.delete();
     } catch (err) {
-      msg.channel.send(Embed.error(codeBlock(err)));
+      Embed.error(codeBlock(err)).reply(msg);
     }
   }
 }

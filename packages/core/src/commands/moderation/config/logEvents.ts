@@ -19,25 +19,21 @@ export const logEvents = async (
   if (!value) {
     // do not touch, it works
     if (BigInt(config.logSubscribedEvents) + 1n - 1n === 0n)
-      return msg.channel.send(Embed.info('no subscribed events'));
+      return Embed.info('no subscribed events').reply(msg);
 
     const events = intToLogEvents(config.logSubscribedEvents);
 
-    return msg.channel.send(
-      Embed.info(
-        `current logged events (**${config.logSubscribedEvents}**)`,
-        `use \`${config.prefix}config logChannel 0\` to stop receiving logs\n${codeBlock(
-          events.join('\n')
-        )}`
-      )
-    );
+    return Embed.info(
+      `current logged events (**${config.logSubscribedEvents}**)`,
+      `use \`${config.prefix}config logChannel 0\` to stop receiving logs\n${codeBlock(
+        events.join('\n')
+      )}`
+    ).reply(msg);
   }
 
   if (value === '0') {
     config.logSubscribedEvents = 0n;
-    return msg.channel.send(
-      Embed.warning('unset subscribed events', 'logs will no longer be sent')
-    );
+    return Embed.warning('unset subscribed events', 'logs will no longer be sent').reply(msg);
   }
 
   const int = value.startsWith('0b')
@@ -58,24 +54,21 @@ export const logEvents = async (
     : NaN;
 
   if (isNaN(int) || !isFinite(int) || int < 1 || int > maxLogInteger)
-    return msg.channel.send(
-      Embed.error('invalid permissions', `valid permissions${codeBlock(logEventNames.join('\n'))}`)
-    );
+    return Embed.error(
+      'invalid permissions',
+      `valid permissions${codeBlock(logEventNames.join('\n'))}`
+    ).reply(msg);
 
   config.logSubscribedEvents = BigInt(int);
 
   if (config.logChannelId)
-    return msg.channel.send(
-      Embed.success(
-        `successfully subscribed to the following events (**${int}**):`,
-        codeBlock(intToLogEvents(int).join('\n'))
-      )
-    );
+    return Embed.success(
+      `successfully subscribed to the following events (**${int}**):`,
+      codeBlock(intToLogEvents(int).join('\n'))
+    ).reply(msg);
   else
-    return msg.channel.send(
-      Embed.success(
-        `successfully subscribed to the following events (**${int}**).\ndon't forget to set a log channel (\`$config logChannel <channel>\`)!`,
-        codeBlock(intToLogEvents(int).join('\n'))
-      )
-    );
+    return Embed.success(
+      `successfully subscribed to the following events (**${int}**).\ndon't forget to set a log channel (\`$config logChannel <channel>\`)!`,
+      codeBlock(intToLogEvents(int).join('\n'))
+    ).reply(msg);
 };

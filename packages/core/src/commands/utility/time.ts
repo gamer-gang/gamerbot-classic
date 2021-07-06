@@ -63,17 +63,17 @@ export class CommandTime implements Command {
 
       let pageNumber = parsedValid ? parsedPageNumber - 1 : 0;
 
-      const message = await msg.channel.send(this.makeListEmbed(pages, pageNumber));
+      const message = await this.makeListEmbed(pages, pageNumber).reply(msg);
 
       if (pages.length > 1) {
         await message.react('◀️');
         await message.react('▶️');
         message
-          .createReactionCollector(
-            (reaction: MessageReaction, user: User) =>
-              ['◀️', '▶️'].includes(reaction.emoji.name) && user.id === msg.author?.id,
-            { idle: 60000 }
-          )
+          .createReactionCollector({
+            filter: (reaction: MessageReaction, user: User) =>
+              ['◀️', '▶️'].includes(reaction.emoji.name!) && user.id === msg.author?.id,
+            idle: 60000,
+          })
           .on('collect', (reaction, user) => {
             if (reaction.emoji.name === '▶️') {
               pageNumber++;
@@ -83,7 +83,7 @@ export class CommandTime implements Command {
               if (pageNumber === -1) pageNumber = pages.length - 1;
             }
 
-            message.edit(this.makeListEmbed(pages, pageNumber));
+            message.edit({ embeds: [this.makeListEmbed(pages, pageNumber)] });
 
             reaction.users.remove(user.id);
           })
@@ -111,12 +111,10 @@ export class CommandTime implements Command {
 
         if (matched.length !== 1) {
           const possibleMatch = didYouMean(supplied, this.ianaList);
-          return msg.channel.send(
-            Embed.error(
-              'Invalid time zone',
-              possibleMatch ? `Did you mean \`${possibleMatch}\`?` : undefined
-            )
-          );
+          return Embed.error(
+            'Invalid time zone',
+            possibleMatch ? `Did you mean \`${possibleMatch}\`?` : undefined
+          ).reply(msg);
         }
 
         zone = matched[0];
@@ -125,11 +123,12 @@ export class CommandTime implements Command {
       const date = DateTime.now().setZone(zone);
 
       if (!date.isValid)
-        return msg.channel.send(
-          Embed.error('Error: ' + date.invalidReason, date.invalidExplanation || undefined)
-        );
+        return Embed.error(
+          'Error: ' + date.invalidReason,
+          date.invalidExplanation || undefined
+        ).reply(msg);
 
-      // TODO figure out how to display the short code for every zone in the correct locale
+      // TODO: figure out how to display the short code for every zone in the correct locale
       // i.e. Europe/London in en-US is GMT+1, while in en-GB it is BST
       const shortCode = date.offsetNameShort;
 
@@ -143,7 +142,7 @@ export class CommandTime implements Command {
         },
       });
 
-      return msg.channel.send(embed);
+      return embed.reply(msg);
     }
 
     const commonZones: (keyof typeof zones)[] = [
@@ -159,12 +158,12 @@ export class CommandTime implements Command {
 
     const dates = commonZones.map(tz => DateTime.now().setZone(tz));
 
-    const embed = new Embed({ title: 'World Clock' });
+    const embed = new Embed({ title: 'World clock' });
 
     dates.forEach(date =>
       embed.addField(date.zoneName, date.toLocaleString(DateTime.DATETIME_MED), true)
     );
 
-    msg.channel.send(embed);
+    embed.reply(msg);
   }
 }

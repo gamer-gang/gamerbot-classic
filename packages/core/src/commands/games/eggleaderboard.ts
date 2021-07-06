@@ -36,10 +36,9 @@ export class CommandEggLeaderboard implements Command {
   async execute(context: Context): Promise<void | Message> {
     const { msg, args } = context;
 
-    const eggers: Pick<
-      EggLeaderboard,
-      'eggs' | 'userTag' | 'userId'
-    >[] = await (orm.em as EntityManager)
+    const eggers: Pick<EggLeaderboard, 'eggs' | 'userTag' | 'userId'>[] = await (
+      orm.em as EntityManager
+    )
       .createQueryBuilder(EggLeaderboard)
       .select(['eggs', 'userTag', 'userId'])
       .execute();
@@ -50,51 +49,46 @@ export class CommandEggLeaderboard implements Command {
       const identifier = args.me ? msg.author?.id : args._.join(' ').trim();
 
       if (!identifier || !/^\d{18}|<@!?\d{18}>|.+#\d{4}$/.test(identifier)) {
-        return msg.channel.send(Embed.error('invalid user'));
+        return Embed.error('invalid user').reply(msg);
       }
 
       if ([client.user?.tag, client.user?.id].some(v => v && identifier.includes(v)))
-        return msg.channel.send(Embed.error('thats me you bafoon'));
+        return Embed.error('thats me you bafoon').reply(msg);
 
       const ranking = /\d{18}/.test(identifier)
         ? eggers.findIndex(lb => lb.userId == identifier.replace(/[<@!>]/g, ''))
         : eggers.findIndex(lb => lb.userTag == identifier);
 
-      if (ranking === -1)
-        return msg.channel.send(Embed.error('no data/invalid user', 'get egging!!'));
+      if (ranking === -1) return Embed.error('no data/invalid user', 'get egging!!').reply(msg);
 
       const eggs = eggers[ranking].eggs;
 
-      return msg.channel.send(
-        Embed.info(
-          `**${eggers[ranking].userTag}** is ranked **#${
-            ranking + 1
-          }** out of **${eggers.length.toLocaleString()}** in the world with **${eggs.toLocaleString()}** egg${
-            eggs > 1 ? 's' : ''
-          }`
-        )
-      );
+      return Embed.info(
+        `**${eggers[ranking].userTag}** is ranked **#${
+          ranking + 1
+        }** out of **${eggers.length.toLocaleString()}** in the world with **${eggs.toLocaleString()}** egg${
+          eggs > 1 ? 's' : ''
+        }`
+      ).reply(msg);
     }
 
     const top = eggers.slice(0, Math.min(eggers.length, 25));
 
-    return msg.channel.send(
-      Embed.info(
-        '🥚 top eggers',
-        top.length
-          ? `total eggers: **${eggers.length.toLocaleString()}**\ntotal eggs: **${eggers
-              .reduce((a, b) => ({ eggs: a.eggs + b.eggs }), { eggs: 0 })
-              .eggs.toLocaleString()}**\n` +
-              top
-                .map(
-                  (lb, index) =>
-                    `${index + 1}. **${lb.userTag}** with **${lb.eggs.toLocaleString()}** egg${
-                      lb.eggs > 1 ? 's' : ''
-                    }`
-                )
-                .join('\n')
-          : 'no eggers! get egging!!!'
-      )
-    );
+    return Embed.info(
+      '🥚 top eggers',
+      top.length
+        ? `total eggers: **${eggers.length.toLocaleString()}**\ntotal eggs: **${eggers
+            .reduce((a, b) => ({ eggs: a.eggs + b.eggs }), { eggs: 0 })
+            .eggs.toLocaleString()}**\n` +
+            top
+              .map(
+                (lb, index) =>
+                  `${index + 1}. **${lb.userTag}** with **${lb.eggs.toLocaleString()}** egg${
+                    lb.eggs > 1 ? 's' : ''
+                  }`
+              )
+              .join('\n')
+        : 'no eggers! get egging!!!'
+    ).reply(msg);
   }
 }

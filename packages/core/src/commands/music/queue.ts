@@ -40,15 +40,15 @@ export class CommandQueue implements Command {
     const queue = client.queues.get(msg.guild.id);
 
     if (args.reset) {
-      if (queue.playing) return msg.channel.send(Embed.error('Currently playing'));
-      client.queues.set(msg.guild.id, new Queue(msg.guild.id));
-      return msg.channel.send(Embed.success('Queue reset'));
+      if (queue.playing) return Embed.error('Currently playing').reply(msg);
+      queue.reset();
+      return Embed.success('Queue reset').reply(msg);
     }
 
     if (args.clear) {
-      if (!queue.tracks.length) return msg.channel.send(Embed.error('Nothing playing'));
+      if (!queue.tracks.length) return Embed.error('Nothing playing').reply(msg);
       queue.tracks = queue.playing ? [queue.tracks[queue.index]] : [];
-      return msg.channel.send(Embed.success('Queue cleared'));
+      return Embed.success('Queue cleared').reply(msg);
     }
 
     if (args.remove != null) {
@@ -60,10 +60,10 @@ export class CommandQueue implements Command {
           [start, end].some(v => isNaN(v) || !v || v <= 0 || v > queue.tracks.length - 1) ||
           end < start
         )
-          return msg.channel.send(Embed.error('Invalid removal range'));
+          return Embed.error('Invalid removal range').reply(msg);
 
         if (start <= queue.index + 1 && end >= queue.index + 1)
-          return msg.channel.send(Embed.error("Can't remove current track"));
+          return Embed.error("Can't remove current track").reply(msg);
 
         const removed = queue.tracks.splice(start - 1, end - start + 1);
 
@@ -72,27 +72,26 @@ export class CommandQueue implements Command {
         // update current index
         queue.index = queue.tracks.indexOf(current);
 
-        return msg.channel.send(Embed.success(`Removed ${listify(trackMarkup)} from the queue`));
+        return Embed.success(`Removed ${listify(trackMarkup)} from the queue`).reply(msg);
       } else {
         const index = parseInt(args.remove, 10);
 
         if (isNaN(index) || !index || index <= 0 || index > queue.tracks.length - 1)
-          return msg.channel.send(Embed.error('Invalid removal index'));
+          return Embed.error('Invalid removal index').reply(msg);
 
-        if (index === queue.index + 1)
-          return msg.channel.send(Embed.error("Can't remove current track"));
+        if (index === queue.index + 1) return Embed.error("Can't remove current track").reply(msg);
 
         const removed = queue.tracks.splice(index - 1, 1)[0];
 
         // update current index
         queue.index = queue.tracks.indexOf(current);
 
-        return msg.channel.send(Embed.success(`Removed **${removed.titleMarkup}** from the queue`));
+        return Embed.success(`Removed **${removed.titleMarkup}** from the queue`).reply(msg);
       }
     }
 
     const tracks = _.cloneDeep(queue.tracks);
-    if (!tracks.length) return msg.channel.send(Embed.info('Nothing in queue'));
+    if (!tracks.length) return Embed.info('Nothing in queue').reply(msg);
 
     const queueLines = tracks.map(
       (track, i) =>
@@ -107,19 +106,17 @@ export class CommandQueue implements Command {
     // start on page with current track
     let pageNumber = Math.floor(queue.index / 10);
 
-    const queueMessage = await msg.channel.send(
-      this.makeEmbed({ queueSegments, pageNumber, queue })
-    );
+    const queueMessage = await this.makeEmbed({ queueSegments, pageNumber, queue }).reply(msg);
 
     if (queueSegments.length > 1) {
       await queueMessage.react('◀️');
       await queueMessage.react('▶️');
       queueMessage
-        .createReactionCollector(
-          (reaction: MessageReaction, user: User) =>
-            ['◀️', '▶️'].includes(reaction.emoji.name) && user.id === msg.author?.id,
-          { idle: 60000 }
-        )
+        .createReactionCollector({
+          idle: 60000,
+          filter: (reaction: MessageReaction, user: User) =>
+            ['◀️', '▶️'].includes(reaction.emoji.name!) && user.id === msg.author?.id,
+        })
         .on('collect', (reaction, user) => {
           if (reaction.emoji.name === '▶️') {
             pageNumber++;
@@ -128,7 +125,7 @@ export class CommandQueue implements Command {
             pageNumber--;
             if (pageNumber === -1) pageNumber = queueSegments.length - 1;
           }
-          queueMessage.edit(this.makeEmbed({ queueSegments, pageNumber, queue }));
+          queueMessage.edit({ embeds: [this.makeEmbed({ queueSegments, pageNumber, queue })] });
 
           reaction.users.remove(user.id);
         })
@@ -136,7 +133,7 @@ export class CommandQueue implements Command {
     }
   }
 
-  // TODO move into queue class
+  // TODO: move into queue class
 
   makeEmbed({
     pageNumber,
@@ -148,7 +145,7 @@ export class CommandQueue implements Command {
     queue: Queue;
   }): Embed {
     const embed = new Embed({
-      author: { name: 'Queue' },
+      title: 'Queue ' + queue.loopSymbol,
       description:
         `**Tracks:** ${queue.tracks.length}\n` +
         `**Total length:** ${queue.length}\n` +

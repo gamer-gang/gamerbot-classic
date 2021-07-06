@@ -14,7 +14,7 @@ export const roleHandlers: LogHandlers = {
   onRoleCreate: (guild: Guild, logChannel: TextChannel) => async (role: Role) => {
     const auditEvent = await getLatestAuditEvent(guild);
 
-    const executor = guild.members.resolve(auditEvent.executor)!;
+    const executor = auditEvent.executor && guild.members.resolve(auditEvent.executor)!;
 
     let icon = guild.iconURL({ dynamic: true, size: 4096 });
     if (icon?.includes('.webp')) icon = guild.iconURL({ format: 'png', size: 4096 });
@@ -30,15 +30,16 @@ export const roleHandlers: LogHandlers = {
     })
       .addField('ID', role.id)
       .addField('Color', role.hexColor)
-      .addField('Created by', executor)
       .setTimestamp();
 
-    logChannel.send(embed);
+    executor && embed.addField('Created by', executor.toString());
+
+    embed.send(logChannel);
   },
   onRoleDelete: (guild: Guild, logChannel: TextChannel) => async (role: Role) => {
     const auditEvent = await getLatestAuditEvent(guild);
 
-    const executor = guild.members.resolve(auditEvent.executor)!;
+    const executor = auditEvent.executor && guild.members.resolve(auditEvent.executor)!;
 
     let icon = guild.iconURL({ dynamic: true, size: 512 });
     if (icon?.includes('.webp')) icon = guild.iconURL({ format: 'png', size: 4096 });
@@ -65,9 +66,9 @@ export const roleHandlers: LogHandlers = {
           .join(' ')
       );
 
-    embed.addField('Deleted by', executor);
+    executor && embed.addField('Deleted by', executor.toString());
 
-    logChannel.send(embed);
+    embed.send(logChannel);
   },
   onRoleUpdate: (guild: Guild, logChannel: TextChannel) => async (prev: Role, next: Role) => {
     let icon = guild.iconURL({ dynamic: true, size: 512 });
@@ -124,7 +125,8 @@ export const roleHandlers: LogHandlers = {
         }
       });
 
-      permissionCheckNeeded || embed.addField('Updated by', auditEvent.executor);
+      permissionCheckNeeded ||
+        (auditEvent.executor && embed.addField('Updated by', auditEvent.executor.toString()));
     }
 
     if (permissionCheckNeeded) {
@@ -137,12 +139,12 @@ export const roleHandlers: LogHandlers = {
       added.length && embed.addField('Added permissions', added.join(', '));
       removed.length && embed.addField('Removed permissions', removed.join(', '));
 
-      embed.addField('Updated by', auditEvent.executor);
+      auditEvent.executor && embed.addField('Updated by', auditEvent.executor.toString());
     }
 
     // if (prev.position !== next.position) add('Position', prev.position, next.position);
     // if (prev.rawPosition !== next.rawPosition) add('Position', prev.rawPosition, next.rawPosition);
 
-    embed.fields.length > +permissionCheckNeeded && logChannel.send(embed);
+    embed.fields.length > +permissionCheckNeeded && embed.send(logChannel);
   },
 };

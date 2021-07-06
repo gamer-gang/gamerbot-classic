@@ -1,4 +1,4 @@
-import { Guild, Message, TextChannel } from 'discord.js';
+import { Message, TextChannel } from 'discord.js';
 import _ from 'lodash';
 import yargsParser from 'yargs-parser';
 import { Command } from '../commands';
@@ -28,14 +28,12 @@ const verifyPermissions = (context: Context, command: Command): boolean => {
     const missingPermissions = command.userPermissions.filter(perm => !userPermissions?.has(perm));
 
     if (missingPermissions.length) {
-      msg.channel.send(
-        Embed.error(
-          `Missing permissions for ${config.prefix}${cmd}`,
-          `${config.prefix}${cmd} requires ${listify(
-            command.userPermissions.map(v => `\`${v}\``)
-          )}, but you are missing ${listify(missingPermissions.map(v => `\`${v}\``))}`
-        )
-      );
+      Embed.error(
+        `Missing permissions for ${config.prefix}${cmd}`,
+        `${config.prefix}${cmd} requires ${listify(
+          command.userPermissions.map(v => `\`${v}\``)
+        )}, but you are missing ${listify(missingPermissions.map(v => `\`${v}\``))}`
+      ).reply(msg);
       return false;
     }
   }
@@ -44,16 +42,14 @@ const verifyPermissions = (context: Context, command: Command): boolean => {
     const missingPermissions = command.botPermissions.filter(perm => !botPermissions?.has(perm));
 
     if (missingPermissions.length) {
-      msg.channel.send(
-        Embed.error(
-          `gamerbot missing permissions for ${config.prefix}${cmd}`,
-          `${config.prefix}${cmd} requires ${listify(
-            command.botPermissions.map(v => `\`${v}\``)
-          )}, but gamerbot does not have access to ${listify(
-            missingPermissions.map(v => `\`${v}\``)
-          )}`
-        )
-      );
+      Embed.error(
+        `gamerbot missing permissions for ${config.prefix}${cmd}`,
+        `${config.prefix}${cmd} requires ${listify(
+          command.botPermissions.map(v => `\`${v}\``)
+        )}, but gamerbot does not have access to ${listify(
+          missingPermissions.map(v => `\`${v}\``)
+        )}`
+      ).reply(msg);
       return false;
     }
   }
@@ -74,7 +70,9 @@ const logCommandEvents = (context: Context, command: Command) => {
   const logger = getLogger(`GUILD ${msg.guild.id} EVENT ${event}`);
 
   if (!logHandler) {
-    logger.warn(`no handler for ${handlerName}, ignoring event`);
+    if (handlerName.includes('onGamerbot'))
+      logger.debug(`no handler for ${handlerName}, ignoring event`);
+    else logger.warn(`no handler for ${handlerName}, ignoring event`);
     return;
   }
 
@@ -99,7 +97,7 @@ const logCommandEvents = (context: Context, command: Command) => {
   logHandler(msg.guild, logChannel)(context);
 };
 
-export const onMessage = async (msg: Message): Promise<void | Message> => {
+export const onMessageCreate = async (msg: Context['msg']): Promise<void | Message> => {
   const start = process.hrtime();
 
   const logger = getLogger(`MESSAGE ${msg.id}`);
@@ -110,7 +108,7 @@ export const onMessage = async (msg: Message): Promise<void | Message> => {
 
   client.queues.setIfUnset(msg.guild.id, new Queue(msg.guild.id));
 
-  const config = await (async (msg: Message) => {
+  const config = await (async (msg: Context['msg']) => {
     const existing = await orm.em.findOne(Config, { guildId: msg.guild?.id });
     if (existing) return existing;
 
@@ -126,12 +124,13 @@ export const onMessage = async (msg: Message): Promise<void | Message> => {
   if (!msg.author.bot || msg.author?.tag.endsWith('#0000')) eggs.onMessage(msg, config);
 
   if (new RegExp(`^<@!?${client.user.id}>$`).test(msg.content)) {
-    msg.channel.send(
-      Embed.info(
-        `Prefix is set to \`${config.prefix}\`\n` +
-          `See \`${config.prefix}help\` or https://gamerbot-dev.web.app for more information`
-      ).setDefaultAuthor()
-    );
+    Embed.info(
+      `Prefix is set to \`${config.prefix}\`\n` +
+        `See \`${config.prefix}help\` or https://gamerbot-dev.web.app for more information`
+    )
+      .setDefaultAuthor()
+      .reply(msg);
+
     return;
   }
 
@@ -158,14 +157,14 @@ export const onMessage = async (msg: Message): Promise<void | Message> => {
   const args = yargsParser.detailed(argv, yargsConfig);
 
   const context: Context = {
-    msg: msg as Message & { guild: Guild },
+    msg: msg as Context['msg'],
     cmd,
     args: args.argv,
     config,
     startTime: start,
   };
 
-  if (args.error) msg.channel.send(Embed.warning(codeBlock(args.error)));
+  if (args.error) Embed.warning(codeBlock(args.error)).reply(msg);
   if (context.args.help) {
     logger.debug('help flag set, modifying args and cmd');
     context.args._ = [cmd];
@@ -183,6 +182,6 @@ export const onMessage = async (msg: Message): Promise<void | Message> => {
   } catch (err) {
     msg.channel.stopTyping(true);
     logger.error(err);
-    msg.channel.send(Embed.error(codeBlock(err)));
+    Embed.error(codeBlock(err)).reply(msg);
   }
 };

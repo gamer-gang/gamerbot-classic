@@ -1,4 +1,11 @@
-import { Message, StreamOptions, TextChannel, VoiceChannel } from 'discord.js';
+import {
+  AudioPlayerStatus,
+  createAudioResource,
+  DiscordGatewayAdapterCreator,
+  getVoiceConnection,
+  joinVoiceChannel,
+} from '@discordjs/voice';
+import { Message, TextChannel, VoiceChannel } from 'discord.js';
 import _ from 'lodash';
 import { Duration } from 'luxon';
 import miniget from 'miniget';
@@ -55,16 +62,15 @@ export class CommandPlay implements Command {
     const { msg, args } = context;
 
     const voice = msg.member?.voice;
-    if (!voice?.channel) return msg.channel.send(Embed.error('You are not in a voice channel'));
-    if (msg.guild.me?.voice.channelID && msg.guild.me.voice.channelID !== voice.channelID)
-      return msg.channel.send(Embed.error('You are not in the channel'));
+    if (!voice?.channel) return Embed.error('You are not in a voice channel').reply(msg);
+    if (msg.guild.me?.voice.channelId && msg.guild.me.voice.channelId !== voice.channelId)
+      return Embed.error('You are not in the channel').reply(msg);
 
     const queue = client.queues.get(msg.guild.id);
 
-    const permissions = voice.channel.permissionsFor(client.user?.id as string);
-    if (!permissions?.has('CONNECT'))
-      return msg.channel.send(Embed.error("Can't connect to channel"));
-    if (!permissions?.has('SPEAK')) return msg.channel.send(Embed.error("Can't speak in channel"));
+    const permissions = voice.channel.permissionsFor(client.user.id);
+    if (!permissions?.has('CONNECT')) return Embed.error("Can't connect to channel").reply(msg);
+    if (!permissions?.has('SPEAK')) return Embed.error("Can't speak in channel").reply(msg);
 
     if (!args._[0]) {
       // check for uploaded files
@@ -84,11 +90,11 @@ export class CommandPlay implements Command {
         return;
       }
 
-      if (queue?.voiceConnection?.dispatcher?.paused) {
-        queue.voiceConnection?.dispatcher.resume();
-        queue.paused = false;
+      if (queue.paused) {
+        queue.audioPlayer.unpause();
         queue.updateNowPlaying();
-        return msg.channel.send(Embed.success('Resumed'));
+        msg.react('▶️');
+        return;
       }
 
       if (!queue.playing && queue.tracks.length) {
@@ -96,7 +102,7 @@ export class CommandPlay implements Command {
         return this.playNext(context);
       }
 
-      return msg.channel.send(Embed.error('Expected at least one arg'));
+      return Embed.error('Expected at least one arg').reply(msg);
     }
 
     if (args.sort !== undefined) {
@@ -105,10 +111,8 @@ export class CommandPlay implements Command {
         sortAliases[k].find(keyword => sort === keyword || keyword.includes(sort))
       );
 
-      if (!normalizedSort)
-        return msg.channel.send(
-          Embed.error('Invalid sort type (valid: newest, oldest, views, random)')
-        );
+      if (!normalizedSort) return;
+      Embed.error('Invalid sort type (valid: newest, oldest, views, random)').reply(msg);
 
       args.sort = normalizedSort;
     }
@@ -127,7 +131,7 @@ export class CommandPlay implements Command {
     }
 
     if (handled) return;
-    if (regExps.url.test(args._[0])) msg.channel.send(Embed.error('Invalid URL'));
+    if (regExps.url.test(args._[0])) Embed.error('Invalid URL').reply(msg);
 
     getLogger(`MESSAGE ${msg.id}`).debug(`handling "${args._.join(' ')}" as search`);
     await searchYoutube(context, this);
@@ -148,16 +152,17 @@ export class CommandPlay implements Command {
       queue.index = queue.tracks.length - 1;
       this.playNext(options.context);
     } else if (!(options?.silent ?? false)) {
-      msg.channel.send(
-        Embed.success(
-          `**${track.titleMarkup}** queued (#${queue.tracks.length - 1} in queue)`,
-          queue.paused ? 'music is paused btw' : undefined
-        )
-      );
+      Embed.success(
+        `**${track.titleMarkup}** queued (#${queue.tracks.length - 1} in queue)`,
+        queue.paused ? 'music is paused btw' : undefined
+      ).reply(msg);
     }
   }
 
-  async playNext(context: Context): Promise<void | Message> {
+  // TODO: run voice connections and audio players in a separate process for better performance
+  // as of now, the audio player may freeze/lag for a bit when running other intensive bot commands
+
+  async playNext(context: Context): Promise<void> {
     const { msg } = context;
 
     const logger = getLogger(`GUILD ${msg.guild.id}`);
@@ -171,12 +176,19 @@ export class CommandPlay implements Command {
     }
 
     if (!queue.playing) {
-      logger.debug(`playNext called but queue.playing = false, changiing to true`);
+      logger.debug(`playNext called but queue.playing = false, connecting to channel`);
       queue.voiceChannel = msg.member?.voice?.channel as VoiceChannel;
-      queue.voiceConnection = await queue.voiceChannel.join();
-      await queue.voiceConnection?.voice?.setSelfDeaf(true);
-      queue.playing = true;
+
+      const connection = joinVoiceChannel({
+        guildId: msg.guild.id,
+        channelId: queue.voiceChannel.id,
+        adapterCreator: msg.guild.voiceAdapterCreator as unknown as DiscordGatewayAdapterCreator,
+        selfDeaf: true,
+      });
+      connection.subscribe(queue.audioPlayer);
     }
+
+    const connection = getVoiceConnection(msg.guild.id);
 
     logger.debug(`playNext called, playing track "${track.title}"`);
 
@@ -184,7 +196,7 @@ export class CommandPlay implements Command {
 
     let called = false;
 
-    const callback = async (info: unknown) => {
+    const callback = async () => {
       try {
         if (called) {
           logger.debug('aborting callback because already called');
@@ -194,16 +206,16 @@ export class CommandPlay implements Command {
 
         const queue = client.queues.get(msg.guild.id);
 
-        logger.debug(`track "${track.title}" ended with info "${info}"`);
+        logger.debug(`callback called in ${msg.guild.name}`);
 
         queue.embed?.delete();
         delete queue.embed;
 
-        if (!queue.playing) {
-          logger.debug(`queue.playing = false, disconnecting`);
-          queue.voiceConnection?.disconnect();
-          return;
-        }
+        // if (!queue.playing) {
+        //   logger.debug(`queue.playing = false, disconnecting`);
+        //   connection?.destroy();
+        //   return;
+        // }
 
         if (queue.loop === 'one') {
           logger.debug('looping one');
@@ -220,9 +232,8 @@ export class CommandPlay implements Command {
           } else {
             // no more in queue and not looping
             logger.debug('not looping all, disconnecting');
-            queue.playing = false;
             queue.index++;
-            queue.voiceConnection?.disconnect();
+            connection?.destroy();
             return;
           }
         } else {
@@ -233,33 +244,29 @@ export class CommandPlay implements Command {
       } catch (err) {
         logger.error('error encountered in callback');
         logger.error(err);
-        msg.channel.send(Embed.error(codeBlock(err)));
+        Embed.error(codeBlock(err)).send(queue.textChannel ?? msg.channel);
       }
     };
 
-    const options: StreamOptions = {
-      highWaterMark: 1 << 32,
-      volume: false,
-    };
+    // const options: StreamOptions = {
+    //   highWaterMark: 1 << 32,
+    //   volume: false,
+    // };
 
     try {
       logger.debug('playing track to dispatcher');
 
-      queue.voiceConnection
-        ?.play(await track.getPlayable(), options)
+      const resource = createAudioResource(await track.getPlayable());
+
+      queue.audioPlayer.play(resource);
+
+      queue.audioPlayer
         .on('error', err => logger.error(err))
-        .once('close', (info: string) => {
-          logger.debug(`close emitted for "${track.title}", calling callback`);
-          callback(info);
-        })
-        .once('finish', (info: string) => {
-          logger.debug(`finish emitted for "${track.title}", calling callback`);
-          callback(info);
-        });
+        .once(AudioPlayerStatus.Idle, callback);
     } catch (err) {
       logger.error(err);
-      queue.textChannel?.send(Embed.error(err.message));
-      return callback('error');
+      Embed.error(err.message).send(queue.textChannel ?? msg.channel);
+      return callback();
     }
   }
 }

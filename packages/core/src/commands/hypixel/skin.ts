@@ -44,26 +44,24 @@ export class CommandSkin implements Command {
 
     if (args._.length !== 1) {
       const entity = await orm.em.findOne(HypixelPlayer, { userId: msg.author.id });
-      if (!entity) return msg.channel.send(Embed.error('Expected a username or UUID'));
+      if (!entity) return Embed.error('Expected a username or UUID').reply(msg);
       args._[0] = entity.hypixelUsername;
     }
 
     if (args._[0] === '-') {
       const entity = await orm.em.findOne(HypixelPlayer, { userId: msg.author.id });
       if (!entity)
-        return msg.channel.send(
-          Embed.error(
-            "You don't have a username set!",
-            'set with `$stats --set-user <username|uuid>`'
-          )
-        );
+        return Embed.error(
+          "You don't have a username set!",
+          'set with `$stats --set-user <username|uuid>`'
+        ).reply(msg);
 
       args._[0] = entity.hypixelUsername;
     }
 
     if (args.type !== undefined) {
       if (!args.type)
-        return msg.channel.send(Embed.info('Valid types', codeBlock('body\nhead\nface\nskin')));
+        return Embed.info('Valid types', codeBlock('body\nhead\nface\nskin')).reply(msg);
 
       const type = args.type.toLowerCase();
       const normalizedType = Object.keys(skinTypeAliases).find(k =>
@@ -71,14 +69,14 @@ export class CommandSkin implements Command {
       );
 
       if (!normalizedType)
-        return msg.channel.send(Embed.error('Invalid type (valid: body, head, face, skin)'));
+        return Embed.error('Invalid type (valid: body, head, face, skin)').reply(msg);
 
       args.type = normalizedType;
     }
 
     if (args.scale !== undefined) {
       if (args.scale < 1 || args.scale > 10)
-        return msg.channel.send(Embed.error('Invalid scale (valid: 1-10)'));
+        return Embed.error('Invalid scale (valid: 1-10)').reply(msg);
     }
 
     const warnings: string[] = [];
@@ -133,10 +131,9 @@ export class CommandSkin implements Command {
       footer: debug ? { text: debugInfo } : undefined,
     });
 
-    embed.attachFiles([{ name: 'skin.png', attachment: skin.data }]);
     embed.setImage('attachment://skin.png');
 
-    msg.channel.send(embed);
+    embed.reply(msg);
     msg.channel.stopTyping(true);
   }
 }

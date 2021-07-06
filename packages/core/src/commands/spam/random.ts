@@ -23,7 +23,7 @@ export class CommandRandom implements Command {
       config: { allowSpam },
     } = context;
 
-    if (!allowSpam) return msg.channel.send(Embed.error('spam commands are off'));
+    if (!allowSpam) return Embed.error('spam commands are off').reply(msg);
 
     const messages: string[] = [];
     const amount = args.messages;
@@ -34,7 +34,7 @@ export class CommandRandom implements Command {
     if (isNaN(amount) || amount < 1) errors.push('invalid message amount');
     if (amount > 10) errors.push('too many messages, max 10');
     if (errors.length) {
-      msg.channel.send(Embed.error('errors', errors.join('\n')));
+      Embed.error('errors', errors.join('\n')).reply(msg);
       msg.channel.stopTyping(true);
       return;
     }

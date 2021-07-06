@@ -1,4 +1,5 @@
 import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { Snowflake } from 'discord.js';
 
 @Entity()
 export class HypixelPlayer {
@@ -12,7 +13,7 @@ export class HypixelPlayer {
   updatedAt = new Date();
 
   @Property({ type: 'string' })
-  userId!: string;
+  userId!: Snowflake;
 
   @Property({ type: 'string' })
   hypixelUsername!: string;

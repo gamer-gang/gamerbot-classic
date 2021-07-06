@@ -1,4 +1,12 @@
-import { Guild, GuildMember, Invite, PartialRoleData, TextChannel, User } from 'discord.js';
+import {
+  Guild,
+  GuildMember,
+  Invite,
+  PartialRoleData,
+  Snowflake,
+  TextChannel,
+  User,
+} from 'discord.js';
 import fse from 'fs-extra';
 import { DateTime } from 'luxon';
 import { LogHandlers } from '.';
@@ -74,7 +82,7 @@ export const guildMemberHandlers: LogHandlers = {
             'can check the surrounding log events to find which invite was used.'
         );
 
-      logChannel.send(embed);
+      embed.send(logChannel);
     },
   onGuildMemberRemove: (guild: Guild, logChannel: TextChannel) => async (member: GuildMember) => {
     const auditEvent = await getLatestAuditEvent(guild);
@@ -98,14 +106,16 @@ export const guildMemberHandlers: LogHandlers = {
       // kicked
       if (kicks.has(auditEvent.id)) return;
       saveKick(auditEvent.id);
-      embed.setTitle('User kicked').addField('Kicked by', auditEvent.executor);
+      embed.setTitle('User kicked');
+
+      auditEvent.executor && embed.addField('Kicked by', auditEvent.executor.toString());
       auditEvent.reason && embed.addField('Reason', `"${auditEvent.reason}"`);
     } else {
       // leave
       embed.setTitle('User left');
     }
 
-    logChannel.send(embed);
+    embed.send(logChannel);
   },
   onGuildMemberUpdate:
     (guild: Guild, logChannel: TextChannel) => async (prev: GuildMember, next: GuildMember) => {
@@ -152,7 +162,7 @@ export const guildMemberHandlers: LogHandlers = {
               change.key === 'nick' && change.new == next.nickname && change.old == prev.nickname
           )
         )
-          embed.addField('Changed by', auditEvent.executor);
+          auditEvent.executor && embed.addField('Changed by', auditEvent.executor.toString());
       }
 
       if (
@@ -162,16 +172,18 @@ export const guildMemberHandlers: LogHandlers = {
       ) {
         auditEvent.changes?.forEach(change => {
           embed.addField(
-            `Roles ${change.key === '$add' ? 'added' : 'removed'} (${change.new.length})`,
+            `Roles ${change.key === '$add' ? 'added' : 'removed'} (${
+              (change.new as PartialRoleData[]).length
+            })`,
             (change.new as PartialRoleData[])
-              .map(role => guild.roles.resolve(role.id!.toString()))
+              .map(role => guild.roles.resolve(role.id!.toString() as Snowflake))
               .join(' ')
           );
         });
 
-        embed.addField('Changed by', auditEvent.executor);
+        auditEvent.executor && embed.addField('Changed by', auditEvent.executor.toString());
       }
 
-      embed.fields.length && logChannel.send(embed);
+      embed.fields.length && embed.send(logChannel);
     },
 };

@@ -1,4 +1,5 @@
 import { BigIntType, Entity, PrimaryKey, Property, Unique } from '@mikro-orm/core';
+import { Snowflake } from 'discord.js';
 
 @Entity()
 export class Config {
@@ -13,7 +14,7 @@ export class Config {
 
   @Property({ type: 'text' })
   @Unique()
-  guildId!: string;
+  guildId!: Snowflake;
 
   @Property({ type: 'text', default: '$' })
   prefix!: string;
@@ -28,11 +29,11 @@ export class Config {
   welcomeJson?: string;
 
   @Property({ type: 'text', nullable: true })
-  welcomeChannelId?: string;
+  welcomeChannelId?: Snowflake;
 
   @Property({ type: BigIntType, default: 0 })
   logSubscribedEvents!: bigint;
 
   @Property({ type: 'text', nullable: true })
-  logChannelId?: string;
+  logChannelId?: Snowflake;
 }

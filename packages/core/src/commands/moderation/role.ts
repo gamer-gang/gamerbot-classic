@@ -1,9 +1,9 @@
-import { GuildEmoji, Message, PermissionString, User } from 'discord.js';
+import { GuildEmoji, Message, PermissionString, Snowflake, User } from 'discord.js';
 import emojiRegex from 'emoji-regex';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { ReactionRole, RoleEmoji } from '../../entities/ReactionRole';
-import { orm } from '../../providers';
+import { client, orm } from '../../providers';
 import { Context } from '../../types';
 import { codeBlock, Embed } from '../../util';
 
@@ -35,14 +35,15 @@ export class CommandRole implements Command {
   async execute(context: Context): Promise<void | Message> {
     const { msg, args } = context;
 
-    if (!msg.guild?.members.resolve(msg.author as User)?.hasPermission('MANAGE_ROLES'))
-      return msg.channel.send(Embed.error('you are missing the `MANAGE_ROLES` permission'));
+    if (!msg.guild?.members.resolve(msg.author as User)?.permissions.has('MANAGE_ROLES'))
+      return Embed.error('you are missing the `MANAGE_ROLES` permission').reply(msg);
 
-    if (!msg.guild?.members.resolve(msg.client.user?.id as string)?.hasPermission('MANAGE_ROLES'))
-      return msg.channel.send(Embed.error('bot is missing `MANAGE_ROLES` permission'));
+    if (!msg.guild?.members.resolve(client.user.id)?.permissions.has('MANAGE_ROLES'))
+      return Embed.error('bot is missing `MANAGE_ROLES` permission').reply(msg);
 
     if (args.list) {
-      const manager = await msg.guild.roles.fetch();
+      await msg.guild.roles.fetch();
+      const manager = msg.guild.roles;
       const roles = manager.cache.filter(r => r.id !== manager.everyone.id);
 
       const ids = roles.map(r => r.id);
@@ -74,24 +75,22 @@ export class CommandRole implements Command {
     args._.forEach((arg, i) => {
       const parts = arg.split(',');
       if (parts.length !== 2)
-        return msg.channel.send(
-          Embed.error(
-            `syntax error in argument #${i}`,
-            'format should be `roleId,:emoji:` (no spaces before/after comma)'
-          )
-        );
-      const roleId = parts[0].trim();
+        return Embed.error(
+          `syntax error in argument #${i}`,
+          'format should be `roleId,:emoji:` (no spaces before/after comma)'
+        ).reply(msg);
+
+      const roleId = parts[0].trim() as Snowflake;
       let emoji: string | GuildEmoji = parts[1].trim();
 
       const role = msg.guild?.roles.resolve(roleId);
-      if (!role) return msg.channel.send(Embed.error('could not resolve role ' + roleId));
+      if (!role) return Embed.error('could not resolve role ' + roleId).reply(msg);
 
-      const authorHighestRole = msg.guild?.members.resolve(msg.author?.id as string)?.roles.highest;
-      if (!authorHighestRole)
-        return msg.channel.send(Embed.error('you need a role to use this command'));
+      const authorHighestRole = msg.guild?.members.resolve(msg.author.id)?.roles.highest;
+      if (!authorHighestRole) return Embed.error('you need a role to use this command').reply(msg);
 
       if (role.comparePositionTo(authorHighestRole) >= 0)
-        return msg.channel.send(Embed.error(`role ${role} is higher than your highest role`));
+        return Embed.error(`role ${role} is higher than your highest role`).reply(msg);
 
       if (/^<:.+:\d{18}>$/.test(emoji.toString())) {
         // custom emoji
@@ -100,8 +99,7 @@ export class CommandRole implements Command {
       } else {
         const exec = emojiRegex().exec(emoji.toString());
         // invalid emoji
-        if (!exec || exec[0] !== emoji)
-          return msg.channel.send(Embed.error('invalid emoji: ' + emoji));
+        if (!exec || exec[0] !== emoji) return Embed.error('invalid emoji: ' + emoji).reply(msg);
         // valid emoji, nothing to do
       }
 
@@ -114,11 +112,11 @@ export class CommandRole implements Command {
       );
     });
 
-    if (roles.length === 0) return msg.channel.send(Embed.warning('nothing to do'));
+    if (roles.length === 0) return Embed.warning('nothing to do').reply(msg);
 
     embed.setDescription(description);
 
-    const embedMessage = await msg.channel.send(embed);
+    const embedMessage = await embed.send(msg.channel);
 
     // save message to db
     const collector = orm.em.create(ReactionRole, {

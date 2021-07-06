@@ -1,4 +1,4 @@
-import { Message, User } from 'discord.js';
+import { Message, Snowflake, User } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context } from '../../types';
@@ -17,19 +17,17 @@ export class CommandAvatar implements Command {
 
     if (args._[0]) {
       user =
-        client.users.resolve(args._.join('')) ??
-        (client.users.resolve(args._[0].replace(/<@!?(\d+)>/g, '$1')) as User);
+        client.users.resolve(args._.join('') as Snowflake) ??
+        (client.users.resolve(args._[0].replace(/<@!?(\d+)>/g, '$1') as Snowflake) as User);
       if (!user)
-        return msg.channel.send(
-          Embed.error(
-            'Could not resolve user',
-            'Check if the user is valid and that gamerbot shares a server with the user.'
-          )
-        );
+        return Embed.error(
+          'Could not resolve user',
+          'Check if the user is valid and that gamerbot shares a server with the user.'
+        ).reply(msg);
     }
 
     const icon = getProfileImageUrl(user);
-    if (!icon) return msg.channel.send(Embed.error('Could not get avatar for ' + user));
+    if (!icon) return Embed.error('Could not get avatar for ' + user).reply(msg);
 
     const embed = new Embed({
       author: {
@@ -40,6 +38,6 @@ export class CommandAvatar implements Command {
       image: { url: icon },
     });
 
-    msg.channel.send(embed);
+    embed.reply(msg);
   }
 }

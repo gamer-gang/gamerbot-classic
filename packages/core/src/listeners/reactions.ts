@@ -16,13 +16,11 @@ const verifyReaction = async (
     getLogger(`REACTION ON ${reaction.message.id}`).error('fetch error message: ', err);
 
     const dm = await user.createDM();
-    dm.send(
-      Embed.error(
-        'error modifying roles in ' + reaction.message.guild?.name,
-        `\`\`\`\n${err}\n\`\`\`\n` +
-          'please contact wiisportsresorts#9388 or a server admin for help.'
-      )
-    );
+    Embed.error(
+      'error modifying roles in ' + reaction.message.guild?.name,
+      `\`\`\`\n${err}\n\`\`\`\n` +
+        'please contact wiisportsresorts#2444 or a server admin for help.'
+    ).send(dm);
 
     return false;
   }
@@ -37,14 +35,11 @@ const roleError = async ({
   user: User | PartialUser;
   collector: RoleEmoji;
 }) => {
-  const dm = await user.createDM();
-  dm.send(
-    Embed.error(
-      'error modifying roles in ' + reaction.message.guild?.name,
-      `\`\`\`\nrole id of ${collector.roleId} could not be resolved\n\`\`\`\n` +
-        'please contact wiisportsresorts#9388 or a server admin for help.'
-    )
-  );
+  Embed.error(
+    'error modifying roles in ' + reaction.message.guild?.name,
+    `\`\`\`\nrole id of ${collector.roleId} could not be resolved\n\`\`\`\n` +
+      'please contact wiisportsresorts#9388 or a server admin for help.'
+  ).send(await user.createDM());
 };
 
 const getCollector = async ({
@@ -61,22 +56,20 @@ const getCollector = async ({
   return items.find(e => e.emoji === reaction.emoji.toString() || e.emoji === reaction.emoji.id);
 };
 
-const missingPermissions = ({
+const missingPermissions = async ({
   msg,
   user,
 }: {
   msg: Message | PartialMessage;
   user: User | PartialUser;
 }) => {
-  if (msg.guild?.me?.hasPermission('MANAGE_ROLES')) return true;
+  if (msg.guild?.me?.permissions.has('MANAGE_ROLES')) return true;
 
-  msg.channel.send(
-    Embed.error(
-      user +
-        ": i can't modify your roles because the bot is missing the `MANAGE_ROLES` " +
-        'permission. please contact a server admin for help.'
-    )
-  );
+  Embed.error(
+    user +
+      ": i can't modify your roles because the bot is missing the `MANAGE_ROLES` " +
+      'permission. please contact a server admin for help.'
+  ).send(await user.createDM());
   return false;
 };
 
@@ -98,13 +91,10 @@ export const onMessageReactionAdd = async (
 
   await msg.guild?.members.resolve(user.id)?.roles.add(role);
 
-  const dm = await user.createDM();
-  dm.send(
-    Embed.success(
-      `received role \`${role.name}\` in ${msg.guild?.name}!`,
-      'remove the reaction from the message to remove this role.'
-    )
-  );
+  Embed.success(
+    `received role \`${role.name}\` in ${msg.guild?.name}!`,
+    'remove the reaction from the message to remove this role.'
+  ).send(await user.createDM());
 };
 
 export const onMessageReactionRemove = async (
@@ -125,11 +115,8 @@ export const onMessageReactionRemove = async (
 
   await msg.guild?.members.resolve(user.id)?.roles.remove(role);
 
-  const dm = await user.createDM();
-  dm.send(
-    Embed.success(
-      `removed role \`${role.name}\` in ${msg.guild?.name}!`,
-      'react to the message again to get the role back.'
-    )
-  );
+  Embed.success(
+    `removed role \`${role.name}\` in ${msg.guild?.name}!`,
+    'react to the message again to get the role back.'
+  ).send(await user.createDM());
 };

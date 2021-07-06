@@ -10,7 +10,7 @@ export const allowSpam = async (
 ): Promise<void | Message> => {
   const { msg } = context;
 
-  if (!value) return msg.channel.send(Embed.info(`spam is ${config.allowSpam ? 'on' : 'off'}`));
+  if (!value) return Embed.info(`spam is ${config.allowSpam ? 'on' : 'off'}`).reply(msg);
 
   switch (value) {
     case 'yes':
@@ -26,10 +26,10 @@ export const allowSpam = async (
       config.allowSpam = false;
       break;
     default:
-      return msg.channel.send(
-        Embed.error('bad value', 'value must be one of `yes|y|true|on|no|n|false|off`')
+      return Embed.error('bad value', 'value must be one of `yes|y|true|on|no|n|false|off`').reply(
+        msg
       );
   }
 
-  await msg.channel.send(Embed.success(`spam commands are now ${config.allowSpam ? 'on' : 'off'}`));
+  await Embed.success(`spam commands are now ${config.allowSpam ? 'on' : 'off'}`).reply(msg);
 };

@@ -13,13 +13,10 @@ export class CommandTimestamp implements Command {
     const { msg, args } = context;
 
     const snowflake = args._[0];
-    if (!/^\d{18}$/.test(snowflake)) return msg.channel.send(Embed.error('Invalid snowflake'));
+    if (!/^\d{18}$/.test(snowflake)) return Embed.error('Invalid snowflake').reply(msg);
 
-    return msg.channel.send(
-      Embed.info(
-        'Timestamp of ' + snowflake,
-        getDateStringFromSnowflake(snowflake).join('; ')
-      ).setFooter(getDateFromSnowflake(snowflake))
-    );
+    return Embed.info('Timestamp of ' + snowflake, getDateStringFromSnowflake(snowflake).join('; '))
+      .setFooter(getDateFromSnowflake(snowflake).toString())
+      .reply(msg);
   }
 }

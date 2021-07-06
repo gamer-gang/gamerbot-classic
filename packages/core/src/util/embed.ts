@@ -1,5 +1,18 @@
-import { GuildEmoji, MessageEmbed, MessageEmbedOptions } from 'discord.js';
+import {
+  DMChannel,
+  FileOptions,
+  GuildEmoji,
+  Message,
+  MessageEmbed,
+  MessageEmbedOptions,
+  MessageOptions,
+  MessagePayload,
+  PartialMessage,
+  ReplyMessageOptions,
+} from 'discord.js';
+import _ from 'lodash/fp';
 import { client } from '../providers';
+import { Context } from '../types';
 import { color } from './color';
 import { getProfilePicture } from './message';
 
@@ -56,6 +69,8 @@ export class Embed extends MessageEmbed {
     return new Embed({ intent: 'info', description: intentText(message, description) });
   }
 
+  files: FileOptions[] = [];
+
   constructor(options?: (MessageEmbed | MessageEmbedOptions) & EmbedOptions) {
     super(options);
 
@@ -84,7 +99,7 @@ export class Embed extends MessageEmbed {
 
   setDefaultAuthor(): this {
     this.setAuthor('gamerbot', 'attachment://hexagon.png');
-    this.attachFiles([getProfilePicture()]);
+    this.attachFiles(getProfilePicture());
     return this;
   }
 
@@ -99,5 +114,24 @@ export class Embed extends MessageEmbed {
   addBlankField(): this {
     this.addField('\u200b', '\u200b');
     return this;
+  }
+
+  attachFiles(...files: FileOptions[]): this {
+    this.files.push(...files);
+    return this;
+  }
+
+  send(
+    channel: Context['msg']['channel'] | DMChannel,
+    options: MessagePayload | MessageOptions = {}
+  ): Promise<Message> {
+    return channel.send(_.merge({ embeds: [this], files: this.files }, options));
+  }
+
+  reply(
+    message: Message | PartialMessage,
+    options: MessagePayload | ReplyMessageOptions = {}
+  ): Promise<Message> {
+    return message.reply(_.merge({ embeds: [this], files: this.files }, options));
   }
 }

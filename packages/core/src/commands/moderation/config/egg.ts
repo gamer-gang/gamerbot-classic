@@ -10,7 +10,7 @@ export const egg = async (
 ): Promise<void | Message> => {
   const { msg } = context;
 
-  if (!value) return msg.channel.send(Embed.info(`egg is ${config.allowSpam ? 'on' : 'off'}`));
+  if (!value) return Embed.info(`egg is ${config.allowSpam ? 'on' : 'off'}`).reply(msg);
   switch (value) {
     case 'yes':
     case 'y':
@@ -25,8 +25,8 @@ export const egg = async (
       config.egg = false;
       break;
     default:
-      return msg.channel.send(Embed.error('value must be one of `yes|y|true|on|no|n|false|off`'));
+      return Embed.error('Value must be one of `yes|y|true|on|no|n|false|off`').reply(msg);
   }
 
-  return msg.channel.send(Embed.success(`egg ${config.egg ? 'activated' : 'off (but why???)'}`));
+  return Embed.success(`egg ${config.egg ? 'activated' : 'off (but why???)'}`).reply(msg);
 };

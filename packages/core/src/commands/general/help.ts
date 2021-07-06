@@ -26,8 +26,8 @@ export class CommandHelp implements Command {
         const [name, desc] = this.makeField(prefix, command);
         const embed = new Embed({ title: 'Help: ' + name, description: desc });
 
-        return msg.channel.send(embed);
-      } else return msg.channel.send(Embed.error('No help found for ' + args._[0]));
+        return embed.reply(msg);
+      } else return Embed.error('No help found for ' + args._[0]).reply(msg);
     } else {
       const embed = new Embed({
         title: 'Help',
@@ -39,10 +39,10 @@ export class CommandHelp implements Command {
 
       try {
         const dm = await msg.author?.createDM();
-        dm?.send(embed);
-        msg.channel.send(Embed.success('Help message sent, check your DMs'));
+        embed.send(dm);
+        Embed.success('Help message sent, check your DMs').reply(msg);
       } catch (err) {
-        msg.channel.send(Embed.error('Error sending DM', codeBlock(err)));
+        Embed.error('Error sending DM', codeBlock(err)).reply(msg);
       }
     }
   }

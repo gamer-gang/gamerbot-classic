@@ -22,7 +22,7 @@ export class CommandUptime implements Command {
       })
     );
 
-    return msg.channel.send(Embed.info('**uptime:** ' + this.makeDurationString(uptime)));
+    return Embed.info('**Uptime:** ' + this.makeDurationString(uptime)).reply(msg);
   }
 
   makeDurationString(duration: Duration): string {

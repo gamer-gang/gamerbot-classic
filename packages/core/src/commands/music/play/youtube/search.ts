@@ -5,7 +5,7 @@ import { DateTime } from 'luxon';
 import yts from 'yt-search';
 import { client } from '../../../../providers';
 import { Context, YoutubeTrack } from '../../../../types';
-import { codeBlock, Embed } from '../../../../util';
+import { codeBlock, delay, Embed } from '../../../../util';
 import { CommandPlay } from '../play';
 
 const parseAgo = (ago: string) => {
@@ -38,7 +38,7 @@ export const searchYoutube = async (
         ? _.shuffle(search.videos)
         : search.videos;
 
-    if (!results.length) return msg.channel.send(Embed.error('No results found'));
+    if (!results.length) return Embed.error('No results found').reply(msg);
 
     const list = await client.youtube.videos.list({
       part: ['statistics', 'contentDetails', 'snippet'],
@@ -52,7 +52,7 @@ export const searchYoutube = async (
       }))
       .map(data => new YoutubeTrack(msg.author.id, data));
 
-    if (!tracks?.length) return msg.channel.send(Embed.error('No results found'));
+    if (!tracks?.length) return Embed.error('No results found').reply(msg);
 
     let selectionIndex = 0;
 
@@ -73,45 +73,45 @@ export const searchYoutube = async (
       queueVideo();
     } else {
       msg.channel.stopTyping(true);
-      const selectionMessage = await msg.channel.send(
-        new Embed({
-          title: 'choose a video',
-          description: tracks
-            .map(
-              (track, index) =>
-                `${index + 1}. **${track.titleMarkup}** by ${track.authorMarkup} (${
-                  track.durationString
-                }) ${
-                  args.sort === 'views'
-                    ? `, ${
-                        parseInt(track.data.statistics?.viewCount ?? '0')?.toLocaleString() ?? '?'
-                      } views`
-                    : args.sort === 'newest' || args.sort === 'oldest'
-                    ? `, ${DateTime.fromISO(
-                        track.data.snippet?.publishedAt as string
-                      ).toRelative()}`
-                    : ''
-                }`
-            )
-            .join('\n'),
-        })
-      );
+      const embed = new Embed({
+        title: 'choose a video',
+        description: tracks
+          .map(
+            (track, index) =>
+              `${index + 1}. **${track.titleMarkup}** by ${track.authorMarkup} (${
+                track.durationString
+              }) ${
+                args.sort === 'views'
+                  ? `, ${
+                      parseInt(track.data.statistics?.viewCount ?? '0')?.toLocaleString() ?? '?'
+                    } views`
+                  : args.sort === 'newest' || args.sort === 'oldest'
+                  ? `, ${DateTime.fromISO(track.data.snippet?.publishedAt as string).toRelative()}`
+                  : ''
+              }`
+          )
+          .join('\n'),
+      });
 
-      const collector = msg.channel.createMessageCollector(
-        (message: Message) => message.author.id === msg.author?.id,
-        { idle: 15000 }
-      );
+      const selectionMessage = await embed.reply(msg);
+
+      const collector = msg.channel.createMessageCollector({
+        idle: 15000,
+        filter: (message: Message) => message.author.id === msg.author?.id,
+      });
 
       collector.on('collect', (collected: Message) => {
-        if (collected.content.startsWith(`${config.prefix}cancel`)) return collector.stop('cancel');
+        if (collected.content.startsWith(`${config.prefix}cancel`))
+          return void collector.stop('cancel');
         if (new RegExp(`^\\${config.prefix}p(lay)?`).test(collected.content))
-          return collector.stop('playcmd');
+          return void collector.stop('playcmd');
 
         const i = parseInt(collected.content);
         if (isNaN(i) || i < 1 || i > tracks.length)
-          return msg.channel
-            .send(Embed.warning('invalid selection, try again'))
-            .then(m => m.delete({ timeout: 5000 }));
+          return void Embed.warning('invalid selection, try again')
+            .send(msg.channel)
+            .then(delay(5000))
+            .then(m => m.delete());
 
         selectionIndex = i;
         collector.stop();
@@ -124,27 +124,34 @@ export const searchYoutube = async (
             selectionMessage.id,
           ]);
 
-        if (reason === 'playcmd') return selectionMessage.delete();
+        if (reason === 'playcmd') return void selectionMessage.delete();
         else if (reason === 'cancel') {
-          msg.channel.send(Embed.info('cancelled')).then(m => m.delete({ timeout: 5000 }));
-          return clean();
+          Embed.info('cancelled')
+            .send(msg.channel)
+            .then(delay(5000))
+            .then(m => m.delete());
+          clean();
+          return;
         } else if (
           !selectionIndex ||
           Number.isNaN(selectionIndex) ||
           selectionIndex < 1 ||
           selectionIndex > tracks.length
         ) {
-          msg.channel
-            .send(Embed.error("invalid selection, time's up"))
-            .then(m => m.delete({ timeout: 5000 }));
-          return clean();
+          Embed.error("invalid selection, time's up")
+            .send(msg.channel)
+            .then(delay(5000))
+            .then(m => m.delete());
+          clean();
+          return;
         }
 
+        clean();
         queueVideo();
       });
     }
   } catch (err) {
     getLogger(`MESSAGE ${msg.id}`).error(err);
-    return msg.channel.send(codeBlock(err));
+    return Embed.error(codeBlock(err)).reply(msg);
   }
 };

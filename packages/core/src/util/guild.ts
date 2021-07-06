@@ -10,6 +10,7 @@ import {
   Role,
   VoiceState,
 } from 'discord.js';
+import { ChannelType } from 'discord.js/typings/enums';
 import { LogClientEventName } from '../listeners/log';
 import { client, inviteCache } from '../providers';
 
@@ -22,7 +23,7 @@ const guildChannelTypes: (keyof typeof ChannelType)[] = [
   'unknown',
 ];
 
-export type GuildHandle = ClientEvents[LogClientEventName][0];
+export type GuildHandle = ClientEvents[LogClientEventName][0] | Channel;
 
 const isGuild = (value: GuildHandle): value is Guild =>
   !!client.guilds.cache.get((value as Guild).id);

@@ -1,4 +1,4 @@
-import { Message, PermissionString } from 'discord.js';
+import { Message, PermissionString, Snowflake } from 'discord.js';
 import { Command } from '..';
 import { Context } from '../../types';
 import { codeBlock, Embed } from '../../util';
@@ -14,16 +14,15 @@ export class CommandUnban implements Command {
   async execute(context: Context): Promise<void | Message> {
     const { msg, args } = context;
 
-    if (!args._.length)
-      return msg.channel.send(Embed.error('Expected a user (and optionally reason)'));
+    if (!args._.length) return Embed.error('Expected a user (and optionally reason)').reply(msg);
 
     const reason = args._.slice(1).join(' ') || undefined;
 
     try {
-      await msg.guild.members.unban(args._[0].replace(/[<@!>]/g, ''), reason);
-      msg.channel.send(Embed.success('User was unbanned'));
+      await msg.guild.members.unban(args._[0].replace(/[<@!>]/g, '') as Snowflake, reason);
+      Embed.success('User was unbanned').reply(msg);
     } catch (err) {
-      msg.channel.send(Embed.error(codeBlock(err)));
+      Embed.error(codeBlock(err)).reply(msg);
     }
   }
 }

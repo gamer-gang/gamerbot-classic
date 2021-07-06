@@ -13,12 +13,12 @@ export const getSpotifyAlbum = async (
 ): Promise<void | Message> => {
   const { msg, args } = context;
   const albumId = regExps.spotify.album.exec(args._[0]);
-  if (!albumId) return msg.channel.send(Embed.error('Invalid album'));
+  if (!albumId) return Embed.error('Invalid album').reply(msg);
 
   if (!checkSpotify(msg)) return;
 
   const album = await client.spotify.getAlbum(albumId[1]);
-  if (!album) return msg.channel.send(Embed.error('Invalid album'));
+  if (!album) return Embed.error('Invalid album').reply(msg);
 
   let tracks = album.body.tracks.items;
 
@@ -26,12 +26,10 @@ export const getSpotifyAlbum = async (
     case 'newest':
     case 'oldest':
     case 'views':
-      msg.channel.send(
-        Embed.warning(
-          'Sorting by date or popularity is not supported for Spotify albums',
-          'Using original album order'
-        )
-      );
+      Embed.warning(
+        'Sorting by date or popularity is not supported for Spotify albums',
+        'Using original album order'
+      ).reply(msg);
       break;
     case 'random':
       tracks = _.shuffle(tracks);
@@ -52,13 +50,12 @@ export const getSpotifyAlbum = async (
   }
 
   const queue = client.queues.get(msg.guild.id);
-  msg.channel.send(
-    Embed.success(
-      `Queued ${album.body.tracks.items.length} tracks from ` +
-        `**[${album.body.name}](https://open.spotify.com/album/${album.body.id})**`,
-      queue.paused ? 'music is paused btw' : undefined
-    )
-  );
+
+  Embed.success(
+    `Queued ${album.body.tracks.items.length} tracks from ` +
+      `**[${album.body.name}](https://open.spotify.com/album/${album.body.id})**`,
+    queue.paused ? 'music is paused btw' : undefined
+  ).reply(msg);
 
   if (!queue.playing) caller.playNext(context);
 };

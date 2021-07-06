@@ -53,22 +53,18 @@ export const getYoutubePlaylist = async (
       });
     });
 
-    msg.channel.send(
-      Embed.success(
-        `Queued ${videos.length.toString()} videos from ` +
-          `**[${playlist.snippet?.title}](https://youtube.com/playlist?list=${playlist.id})**`
-      )
-    );
+    Embed.success(
+      `Queued ${videos.length.toString()} videos from ` +
+        `**[${playlist.snippet?.title}](https://youtube.com/playlist?list=${playlist.id})**`
+    ).reply(msg);
 
     const queue = client.queues.get(msg.guild.id);
     if (!queue.playing) caller.playNext(context);
   } catch (err) {
     getLogger(`MESSAGE ${msg.id}`).error(err);
     if (err.toString() === 'Error: resource youtube#playlistListResponse not found')
-      return msg.channel.send(
-        Embed.error("Playlist not found (either it doesn't exist or it's private)")
-      );
+      return Embed.error("Playlist not found (either it doesn't exist or it's private)").reply(msg);
 
-    return msg.channel.send(Embed.error(codeBlock(err)));
+    return Embed.error(codeBlock(err)).reply(msg);
   }
 };

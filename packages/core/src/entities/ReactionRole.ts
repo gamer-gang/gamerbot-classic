@@ -1,4 +1,5 @@
 import { Collection, Entity, ManyToOne, OneToMany, PrimaryKey, Property } from '@mikro-orm/core';
+import { Snowflake } from 'discord.js';
 
 @Entity()
 export class ReactionRole {
@@ -12,10 +13,10 @@ export class ReactionRole {
   updatedAt = new Date();
 
   @Property({ type: 'text', unique: false })
-  guildId!: string;
+  guildId!: Snowflake;
 
   @Property({ type: 'text' })
-  messageId!: string;
+  messageId!: Snowflake;
 
   @OneToMany(() => RoleEmoji, roleEmoji => roleEmoji.message)
   roles = new Collection<RoleEmoji>(this);
@@ -36,7 +37,7 @@ export class RoleEmoji {
   message!: ReactionRole;
 
   @Property({ type: 'text' })
-  roleId!: string;
+  roleId!: Snowflake;
 
   @Property({ type: 'text' })
   emoji!: string;

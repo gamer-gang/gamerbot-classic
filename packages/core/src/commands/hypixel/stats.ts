@@ -65,24 +65,23 @@ export class CommandStats implements Command {
     const timeStart = process.hrtime();
 
     if (!process.env.HYPIXEL_API_KEY) {
-      return msg.channel.send(
-        Embed.error('Hypixel stats disabled', 'No API key specified in environment')
+      return Embed.error('Hypixel stats disabled', 'No API key specified in environment').reply(
+        msg
       );
     }
 
     if (args.clearUser) {
       const entity = await orm.em.findOne(HypixelPlayer, { userId: msg.author.id });
-      if (!entity) return msg.channel.send(Embed.error(`No username/UUID set`));
+      if (!entity) return Embed.error(`No username/UUID set`).reply(msg);
 
       orm.em.removeAndFlush(entity);
 
-      return msg.channel.send(Embed.success(`Cleared username/UUID **${entity.hypixelUsername}**`));
+      return Embed.success(`Cleared username/UUID **${entity.hypixelUsername}**`).reply(msg);
     }
 
     if (args.setUser != null) {
-      if (args.setUser === '') return msg.channel.send(Embed.error('No username/UUID provided'));
-      if (!userRegex.test(args.setUser))
-        return msg.channel.send(Embed.error('Invalid username/UUID'));
+      if (args.setUser === '') return Embed.error('No username/UUID provided').reply(msg);
+      if (!userRegex.test(args.setUser)) return Embed.error('Invalid username/UUID').reply(msg);
 
       const entity = await orm.em.findOne(HypixelPlayer, { userId: msg.author.id });
       if (!entity) {
@@ -92,19 +91,15 @@ export class CommandStats implements Command {
             hypixelUsername: args.setUser,
           })
         );
-        return msg.channel.send(
-          Embed.success(`Set your minecraft username/UUID to **${args.setUser}**`)
-        );
+        return Embed.success(`Set your minecraft username/UUID to **${args.setUser}**`).reply(msg);
       } else {
         const existingUsername = entity.hypixelUsername;
         entity.hypixelUsername = args.setUser;
         orm.em.flush();
-        return msg.channel.send(
-          Embed.success(
-            `Set your minecraft username/UUID to **${args.setUser}**`,
-            `Overwrote previous username/UUID of **${existingUsername}**`
-          )
-        );
+        return Embed.success(
+          `Set your minecraft username/UUID to **${args.setUser}**`,
+          `Overwrote previous username/UUID of **${existingUsername}**`
+        ).reply(msg);
       }
     }
 
@@ -118,33 +113,29 @@ export class CommandStats implements Command {
 
       const entity = await orm.em.findOne(HypixelPlayer, { userId });
       if (!entity)
-        return msg.channel.send(
-          Embed.warning(
-            `No username/UUID set for **${displayName}**`,
-            'Set with `$stats --set-user <username|uuid>`'
-          )
-        );
+        return Embed.warning(
+          `No username/UUID set for **${displayName}**`,
+          'Set with `$stats --set-user <username|uuid>`'
+        ).reply(msg);
 
-      return msg.channel.send(
-        Embed.info(`Username/UUID for ${displayName} is set to **${entity.hypixelUsername}**`)
-      );
+      return Embed.info(
+        `Username/UUID for ${displayName} is set to **${entity.hypixelUsername}**`
+      ).reply(msg);
     }
 
     if (args._.length !== 1 && args._.length !== 2) {
       const entity = await orm.em.findOne(HypixelPlayer, { userId: msg.author.id });
-      if (!entity) return msg.channel.send(Embed.error('expected 1 or 2 args'));
+      if (!entity) return Embed.error('expected 1 or 2 args').reply(msg);
       args._[0] = entity.hypixelUsername;
     }
 
     if (args._[0] === '-') {
       const entity = await orm.em.findOne(HypixelPlayer, { userId: msg.author.id });
       if (!entity)
-        return msg.channel.send(
-          Embed.error(
-            "You don't have a username set!",
-            'set with `$stats --set-user <username|uuid>`'
-          )
-        );
+        return Embed.error(
+          "You don't have a username set!",
+          'set with `$stats --set-user <username|uuid>`'
+        ).reply(msg);
 
       args._[0] = entity.hypixelUsername;
     } else if (/^(<@!?)?\d{18}>?$/.test(args._[0])) {
@@ -152,9 +143,7 @@ export class CommandStats implements Command {
 
       const entity = await orm.em.findOne(HypixelPlayer, { userId: exec && exec[1] });
       if (!entity)
-        return msg.channel.send(
-          Embed.error(`User ${sanitize(args._[0])} doesn't have a username set`)
-        );
+        return Embed.error(`User ${sanitize(args._[0])} doesn't have a username set`).reply(msg);
 
       args._[0] = entity.hypixelUsername;
     }
@@ -171,7 +160,7 @@ export class CommandStats implements Command {
       if (!tempPlayer) throw new Error('Player is unexpectedly undefined');
       player = tempPlayer;
     } catch (err) {
-      if (err.message.startsWith('% ')) return msg.channel.send(Embed.error(err.message));
+      if (err.message.startsWith('% ')) return Embed.error(err.message).reply(msg);
       else throw err;
     }
 
@@ -216,7 +205,7 @@ export class CommandStats implements Command {
 
       if (avatar) {
         embed
-          .attachFiles([{ attachment: avatar.data, name: 'avatar.png' }])
+          .attachFiles({ attachment: avatar.data, name: 'avatar.png' })
           .setThumbnail('attachment://avatar.png');
       }
 
@@ -228,7 +217,7 @@ export class CommandStats implements Command {
           ].join('   ')
         );
 
-      msg.channel.send(embed);
+      embed.reply(msg);
       msg.channel.stopTyping(true);
       return;
     }
@@ -239,12 +228,10 @@ export class CommandStats implements Command {
       );
 
       if (!exec && args._[1] !== undefined)
-        return msg.channel.send(
-          Embed.error(
-            'Invalid game type',
-            `Supported types: ${codeBlock(Object.keys(this.gamemodes).join('\n'))}`
-          )
-        );
+        return Embed.error(
+          'Invalid game type',
+          `Supported types: ${codeBlock(Object.keys(this.gamemodes).join('\n'))}`
+        ).reply(msg);
 
       const avatarImage = new Image();
       if (avatar) {
@@ -285,16 +272,15 @@ export class CommandStats implements Command {
 
       const content =
         (warnings.length ? `${warnings.join('\n')}\n` : '') + (debug ? `\`${debugInfo}\`` : '');
-      if (content.length) msg.channel.send({ content, files: [file] });
-      else msg.channel.send(file);
+      msg.reply({ content: content.length ? content : undefined, files: [file] });
 
       msg.channel.stopTyping(true);
     } catch (err) {
       if ((err.toString() as string).includes('no data'))
-        await msg.channel.send(
-          Embed.info(`${player.displayname} has no ${args._[1]?.toLowerCase() ?? 'bedwars'} data`)
-        );
-      else await msg.channel.send(Embed.error(codeBlock(err)));
+        Embed.info(
+          `${player.displayname} has no ${args._[1]?.toLowerCase() ?? 'bedwars'} data`
+        ).reply(msg);
+      else Embed.error(codeBlock(err)).reply(msg);
 
       msg.channel.stopTyping(true);
     }

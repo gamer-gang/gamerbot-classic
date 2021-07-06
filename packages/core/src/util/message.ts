@@ -54,7 +54,7 @@ export const parseDiscohookJSON = (json: string): MessageOptions => {
 
   return {
     content: data.content,
-    embed,
+    embeds: embed ? [embed] : undefined,
   };
 };
 

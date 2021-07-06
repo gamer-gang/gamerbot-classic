@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { Message, Snowflake } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context } from '../../types';
@@ -14,17 +14,15 @@ export class CommandServerInfo implements Command {
     const { msg, args } = context;
 
     if (args._[0]) {
-      const guild = client.guilds.resolve(args._[0]);
+      const guild = client.guilds.resolve(args._[0] as Snowflake);
       if (!guild)
-        return msg.channel.send(
-          Embed.error(
-            'Could not resolve guild ID',
-            "Check if it's valid and that gamerbot is in that server."
-          )
-        );
+        return Embed.error(
+          'Could not resolve guild ID',
+          "Check if it's valid and that gamerbot is in that server."
+        ).reply(msg);
     }
 
-    const guild = client.guilds.resolve(args._[0]) || msg.guild;
+    const guild = client.guilds.resolve(args._[0] as Snowflake) || msg.guild;
 
     const inGuild = guild === msg.guild;
 
@@ -32,7 +30,7 @@ export class CommandServerInfo implements Command {
     let icon = guild.iconURL({ dynamic: true, size: 4096 });
     if (icon?.includes('.webp')) icon = guild.iconURL({ format: 'png', size: 4096 });
 
-    guild.nameAcronym;
+    const owner = await guild.fetchOwner();
     const embed = new Embed({
       author: {
         iconURL: icon ?? undefined,
@@ -42,7 +40,7 @@ export class CommandServerInfo implements Command {
       description: icon ? undefined : 'No icon set',
     })
       .addField('Creation date', getDateStringFromSnowflake(guild.id).join('; '))
-      .addField('Owner', inGuild ? guild.owner : `${guild.owner?.user.tag} (${guild.owner?.id})`)
+      .addField('Owner', inGuild ? owner.toString() : `${owner.user.tag} (${owner.id})`)
       .addField(
         'Members',
         `${guild.memberCount} members (${guild.memberCount - bots} users, ${bots} bots)`
@@ -52,6 +50,6 @@ export class CommandServerInfo implements Command {
 
     icon && embed.setThumbnail(icon);
 
-    msg.channel.send(embed);
+    embed.reply(msg);
   }
 }

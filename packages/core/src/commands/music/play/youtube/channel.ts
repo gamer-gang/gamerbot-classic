@@ -20,12 +20,12 @@ export const getYoutubeChannel = async (
       id: [id],
     });
 
-    if (!response.data.items?.length) return msg.channel.send(Embed.error('Invalid channel'));
+    if (!response.data.items?.length) return Embed.error('Invalid channel').reply(msg);
 
     const channel = response.data.items[0];
 
     const uploadsId = channel?.contentDetails?.relatedPlaylists?.uploads;
-    if (!uploadsId) return msg.channel.send(Embed.error('Channel has no uploads list'));
+    if (!uploadsId) return Embed.error('Channel has no uploads list').reply(msg);
 
     // eslint-disable-next-line prefer-const
     let [uploads, videos] = await getPlaylistVideos(uploadsId);
@@ -64,21 +64,19 @@ export const getYoutubeChannel = async (
       });
     });
 
-    msg.channel.send(
-      Embed.success(
-        `Queued ${videos.length.toString()} videos from ` +
-          `**[${uploads.snippet?.title}](https://youtube.com/playlist?list=${uploads.id})**`
-      )
-    );
+    Embed.success(
+      `Queued ${videos.length.toString()} videos from ` +
+        `**[${uploads.snippet?.title}](https://youtube.com/playlist?list=${uploads.id})**`
+    ).reply(msg);
 
     const queue = client.queues.get(msg.guild.id);
     if (!queue.playing) caller.playNext(context);
   } catch (err) {
     // do not ask
     if (err.message.includes("Cannot read property 'length' of undefined"))
-      return msg.channel.send(Embed.error('Invalid channel'));
+      return Embed.error('Invalid channel').reply(msg);
 
     getLogger(`MESSAGE ${msg.id}`).error(err);
-    return msg.channel.send(Embed.error(codeBlock(err)));
+    return Embed.error(codeBlock(err)).reply(msg);
   }
 };

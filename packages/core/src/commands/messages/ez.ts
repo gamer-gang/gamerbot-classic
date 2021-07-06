@@ -5,9 +5,11 @@ import { Command } from '..';
 import { Context } from '../../types';
 import { resolvePath, sanitize } from '../../util';
 
-const replacements = (yaml.load(fse.readFileSync(resolvePath('assets/ez.yaml')).toString()) as {
-  replacements: string[];
-}).replacements;
+const replacements = (
+  yaml.load(fse.readFileSync(resolvePath('assets/ez.yaml')).toString()) as {
+    replacements: string[];
+  }
+).replacements;
 
 export class CommandEz implements Command {
   cmd = 'ez';
@@ -19,7 +21,7 @@ export class CommandEz implements Command {
     const { msg } = context;
 
     const replacement = replacements[Math.floor(Math.random() * replacements.length)];
-    const guildMember = msg.guild?.members.cache.get(msg.author?.id as string);
+    const guildMember = msg.guild?.members.cache.get(msg.author.id);
 
     msg.delete();
     return msg.channel.send(

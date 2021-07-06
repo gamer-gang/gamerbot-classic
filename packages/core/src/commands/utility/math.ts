@@ -14,14 +14,14 @@ export class CommandMath implements Command {
   execute(context: Context): Promise<void | Message> {
     const { msg, args } = context;
 
-    if (args._.length === 0) return msg.channel.send(Embed.error('No expression provided'));
+    if (args._.length === 0) return Embed.error('No expression provided').reply(msg);
 
     let expression = args._.join(' ');
 
     expression = expression.replace(/^`([^`]+)`$/, '$1').replace(/\\([*_\\])/gi, '$1');
 
     if (/(?:[`\\])/gi.test(expression))
-      return msg.channel.send(Embed.error('Invalid characters in expression'));
+      return Embed.error('Invalid characters in expression').reply(msg);
 
     const scope = {};
     let result: any;
@@ -29,7 +29,7 @@ export class CommandMath implements Command {
     try {
       result = evaluate(expression, scope);
     } catch (err) {
-      return msg.channel.send(Embed.error(err.message));
+      return Embed.error(err.message).reply(msg);
     }
 
     const variables = Object.keys(scope)
@@ -42,6 +42,6 @@ export class CommandMath implements Command {
       }`,
     });
 
-    return msg.channel.send(embed);
+    return embed.reply(msg);
   }
 }

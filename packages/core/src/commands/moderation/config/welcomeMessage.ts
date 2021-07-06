@@ -19,34 +19,34 @@ export const welcomeMessage = async (
   const replace = replacer(msg);
 
   if (!value) {
-    if (!config.welcomeJson) return msg.channel.send(Embed.warning('no welcome message set'));
-    await msg.channel.send(
-      Embed.info(
-        `${msg.guild.name}: current welcome message (\`${config.prefix}config welcomeMessage\` unset to remove)`,
-        codeBlock(JSON.stringify(JSON.parse(config.welcomeJson), null, 2), 'json')
-      )
-    );
+    if (!config.welcomeJson) return Embed.warning('no welcome message set').reply(msg);
+    await Embed.info(
+      `${msg.guild.name}: current welcome message (\`${config.prefix}config welcomeMessage\` unset to remove)`,
+      codeBlock(JSON.stringify(JSON.parse(config.welcomeJson), null, 2), 'json')
+    ).reply(msg);
 
     return msg.channel.send(parseDiscohookJSON(replace(config.welcomeJson)));
   }
 
   if (value === 'unset') {
     delete config.welcomeJson;
-    return msg.channel.send(Embed.warning('unset welcome message'));
+    return Embed.warning('unset welcome message').reply(msg);
   }
 
   try {
     if (config.welcomeJson) {
-      await msg.channel.send('existing welcome message: ');
+      await msg.reply('existing welcome message: ');
       await msg.channel.send(parseDiscohookJSON(replace(config.welcomeJson)));
 
-      const confirmation = await msg.channel.send('replace this welcome message with a new one?');
-
-      const collector = confirmation.createReactionCollector(
-        (reaction: MessageReaction, user: User) =>
-          ['✅', '❌'].includes(reaction.emoji.name) && user.id === msg.author?.id,
-        { idle: 15000 }
+      const confirmation = await msg.channel.send(
+        `${msg.author} replace this welcome message with a new one?`
       );
+
+      const collector = confirmation.createReactionCollector({
+        idle: 15000,
+        filter: (reaction: MessageReaction, user: User) =>
+          ['✅', '❌'].includes(reaction.emoji.name!) && user.id === msg.author?.id,
+      });
 
       collector.on('collect', (reaction, user) => {
         if (reaction.emoji.name === '❌') return msg.channel.send('cancelled');
@@ -61,7 +61,7 @@ export const welcomeMessage = async (
 
     confirmMessage(value, config, context);
   } catch (err) {
-    msg.channel.send(Embed.error(codeBlock(err)));
+    Embed.error(codeBlock(err)).send(msg.channel);
   }
 };
 
@@ -69,16 +69,16 @@ const confirmMessage = async (json: string, config: Config, context: Context) =>
   const { msg } = context;
 
   await msg.channel.send(parseDiscohookJSON(replacer(msg)(json)));
-  const confirmation = await msg.channel.send('set this as the welcome message?');
+  const confirmation = await msg.reply(`${msg.author} set this as the welcome message?`);
 
   await confirmation.react('✅');
   confirmation.react('❌');
 
-  const collector = confirmation.createReactionCollector(
-    (reaction: MessageReaction, user: User) =>
-      ['✅', '❌'].includes(reaction.emoji.name) && user.id === msg.author?.id,
-    { idle: 15000 }
-  );
+  const collector = confirmation.createReactionCollector({
+    idle: 15000,
+    filter: (reaction: MessageReaction, user: User) =>
+      ['✅', '❌'].includes(reaction.emoji.name!) && user.id === msg.author?.id,
+  });
 
   collector.on('collect', reaction => {
     if (reaction.emoji.name === '❌') return msg.channel.send('cancelled');
@@ -86,12 +86,10 @@ const confirmMessage = async (json: string, config: Config, context: Context) =>
     config.welcomeJson = JSON.stringify(JSON.parse(json));
 
     if (!config.welcomeChannelId)
-      msg.channel.send(
-        Embed.warning(
-          'message set successfully',
-          'warning: no welcome channel set, messages will default to system message channel'
-        )
-      );
-    else msg.channel.send(Embed.success('new welcome message set'));
+      Embed.warning(
+        'message set successfully',
+        'warning: no welcome channel set, messages will default to system message channel'
+      ).reply(msg);
+    else Embed.success('new welcome message set').reply(msg);
   });
 };

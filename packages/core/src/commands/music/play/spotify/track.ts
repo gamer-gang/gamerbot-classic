@@ -12,12 +12,12 @@ export const getSpotifyTrack = async (
 ): Promise<void | Message> => {
   const { msg, args } = context;
   const trackId = regExps.spotify.track.exec(args._[0]);
-  if (!trackId) return msg.channel.send(Embed.error('Invalid track'));
+  if (!trackId) return Embed.error('Invalid track').reply(msg);
 
   if (!checkSpotify(msg)) return;
 
   const track = await client.spotify.getTrack(trackId[1]);
-  if (!track) return msg.channel.send(Embed.error('Invalid track'));
+  if (!track) return Embed.error('Invalid track').reply(msg);
 
   caller.queueTrack(
     new SpotifyTrack(msg.author.id, {

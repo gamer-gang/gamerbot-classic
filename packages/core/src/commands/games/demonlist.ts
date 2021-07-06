@@ -63,17 +63,17 @@ export class CommandDemonlist implements Command {
 
     let pageNumber = parsedValid ? parsedPageNumber - 1 : 0;
 
-    const listMessage = await msg.channel.send(this.makeEmbed(pages, pageNumber));
+    const listMessage = await this.makeEmbed(pages, pageNumber).reply(msg);
 
     if (pages.length > 1) {
       await listMessage.react('◀️');
       await listMessage.react('▶️');
       listMessage
-        .createReactionCollector(
-          (reaction: MessageReaction, user: User) =>
-            ['◀️', '▶️'].includes(reaction.emoji.name) && user.id === msg.author?.id,
-          { idle: 60000 }
-        )
+        .createReactionCollector({
+          idle: 60000,
+          filter: (reaction: MessageReaction, user: User) =>
+            ['◀️', '▶️'].includes(reaction.emoji.name!) && user.id === msg.author?.id,
+        })
         .on('collect', (reaction, user) => {
           if (reaction.emoji.name === '▶️') {
             pageNumber++;
@@ -83,7 +83,7 @@ export class CommandDemonlist implements Command {
             if (pageNumber === -1) pageNumber = pages.length - 1;
           }
 
-          listMessage.edit(this.makeEmbed(pages, pageNumber));
+          listMessage.edit({ embeds: [this.makeEmbed(pages, pageNumber)] });
 
           reaction.users.remove(user.id);
         })

@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { Message, Snowflake } from 'discord.js';
 import { Config } from '../../../entities/Config';
 import { Context } from '../../../types';
 import { Embed } from '../../../util';
@@ -12,30 +12,27 @@ export const welcomeChannel = async (
 
   if (!value) {
     if (config.welcomeChannelId)
-      return msg.channel.send(
-        Embed.info(
-          `welcome channel is set to <#${config.welcomeChannelId}>`,
-          `use \`${config.prefix}config welcomeChannel unset\` to remove`
-        )
-      );
-    return msg.channel.send(Embed.warning('no welcome channel set'));
+      return Embed.info(
+        `welcome channel is set to <#${config.welcomeChannelId}>`,
+        `use \`${config.prefix}config welcomeChannel unset\` to remove`
+      ).reply(msg);
+
+    return Embed.warning('no welcome channel set').reply(msg);
   }
 
   if (value === 'unset') {
     delete config.welcomeChannelId;
-    return msg.channel.send(
-      Embed.warning(
-        'unset welcome channel',
-        'welcome messages will go to the system message channel'
-      )
-    );
+    return Embed.warning(
+      'unset welcome channel',
+      'welcome messages will go to the system message channel'
+    ).reply(msg);
   }
 
-  const channelId = value.replace(/[<#>]/g, '');
+  const channelId = value.replace(/[<#>]/g, '') as Snowflake;
   const channel = msg.guild?.channels.cache.get(channelId);
-  if (!channel) return msg.channel.send(Embed.error('invalid channel `' + value + '`'));
-  if (channel.type !== 'text') return msg.channel.send(Embed.error('only text channels allowed'));
+  if (!channel) return Embed.error('invalid channel `' + value + '`').reply(msg);
+  if (channel.type !== 'text') return Embed.error('only text channels allowed').reply(msg);
 
   config.welcomeChannelId = channel.id;
-  return msg.channel.send(Embed.success(`welcome channel set to ${channel}`));
+  return Embed.success(`welcome channel set to ${channel}`).reply(msg);
 };

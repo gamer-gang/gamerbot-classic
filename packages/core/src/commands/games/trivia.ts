@@ -116,16 +116,15 @@ export class CommandTrivia implements Command {
             '(Use the numerical ID when specifying a category)\n' + codeBlock(categoryText),
         });
 
-        msg.channel.send(embed);
+        embed.reply(msg);
         return;
       } else if (args.categories !== undefined) {
-        if (!/^\d+$/.test(args.categories))
-          return msg.channel.send(Embed.error('Invalid category ID'));
+        if (!/^\d+$/.test(args.categories)) return Embed.error('Invalid category ID').reply(msg);
 
         options.category = args.categories;
       }
     } catch (err) {
-      msg.channel.send(Embed.error('Error fetching question', codeBlock(err)));
+      Embed.error('Error fetching question', codeBlock(err)).reply(msg);
     }
 
     if (args.type !== undefined) {
@@ -134,7 +133,7 @@ export class CommandTrivia implements Command {
         triviaTypeAliases[k].find(keyword => type === keyword || keyword.includes(type))
       );
 
-      if (!normalizedType) return msg.channel.send(Embed.error('Invalid type'));
+      if (!normalizedType) return Embed.error('Invalid type').reply(msg);
 
       options.type = normalizedType;
     }
@@ -145,7 +144,7 @@ export class CommandTrivia implements Command {
         triviaDifficultyAliases[k].find(keyword => diff === keyword || keyword.includes(diff))
       );
 
-      if (!normalizedDiff) return msg.channel.send(Embed.error('Invalid difficulty'));
+      if (!normalizedDiff) return Embed.error('Invalid difficulty').reply(msg);
 
       options.difficulty = normalizedDiff;
     }
@@ -156,9 +155,9 @@ export class CommandTrivia implements Command {
       this.sendQuestion(question, context);
     } catch (err) {
       if (err.message.includes('invalid category'))
-        return msg.channel.send(Embed.error('Invalid category'));
+        return Embed.error('Invalid category').reply(msg);
 
-      return msg.channel.send(Embed.error(codeBlock(err)));
+      return Embed.error(codeBlock(err)).reply(msg);
     }
 
     msg.channel.stopTyping(true);
@@ -266,18 +265,20 @@ export class CommandTrivia implements Command {
         `Correct answer: ${answerLetters[correctIndex].toUpperCase()}. ${answers[correctIndex]}`
       );
 
-    const message = await msg.channel.send(msg.author, embed);
+    const message = await embed.reply(msg);
 
-    const collector = message.channel.createMessageCollector(
-      (m: Message) => m.author.id === msg.author.id,
-      { dispose: true, time: 15000 }
-    );
+    const collector = message.channel.createMessageCollector({
+      dispose: true,
+      time: 15000,
+      filter: (m: Message) => m.author.id === msg.author.id,
+    });
 
     collector.on('collect', (message: Message) => {
       const content = message.content.toLowerCase();
 
       if (/^\$.+/.test(content)) {
-        return msg.channel.send(Embed.warning('Finish the question first!'));
+        Embed.error('Finish the question first!').reply(msg);
+        return;
       }
 
       if (data.type === 'boolean' && ['t', 'f'].includes(content)) {
@@ -305,7 +306,7 @@ export class CommandTrivia implements Command {
 
         if (matches.length >= 2) {
           // answer matched multiple strings, too ambiguous
-          message.channel.send(Embed.warning('Too ambiguous, be more specific'));
+          Embed.warning('Too ambiguous, be more specific').reply(message);
         } else if (matches.length === 1) {
           // single match
           const index = answers.indexOf(matches[0]);
@@ -318,23 +319,29 @@ export class CommandTrivia implements Command {
     });
 
     collector.on('end', (__, reason) => {
-      if (reason === 'incorrect')
-        msg.channel.send(
-          msg.author,
-          Embed.error(
-            `Incorrect! The correct answer was **${
-              data.type === 'boolean'
-                ? answers[correctIndex].toLowerCase()
-                : sanitize(answers[correctIndex])
-            }**.`
-          )
+      const last = collector.collected.last();
+      let embed: Embed;
+      if (reason === 'incorrect') {
+        embed = Embed.error(
+          `Incorrect! The correct answer was **${
+            data.type === 'boolean'
+              ? answers[correctIndex].toLowerCase()
+              : sanitize(answers[correctIndex])
+          }**.`
         );
-      else if (reason === 'correct') msg.channel.send(msg.author, Embed.success('Correct!'));
-      else
-        msg.channel.send(
-          msg.author,
-          Embed.error(`Time's up! The correct answer was **${data.correct_answer}**.`)
-        );
+      } else if (reason === 'correct') {
+        embed = Embed.success('Correct!');
+      } else {
+        embed = Embed.error(`Time's up! The correct answer was **${data.correct_answer}**.`);
+      }
+
+      last
+        ? embed.reply(last)
+        : msg.channel.send({
+            embeds: [embed],
+            files: embed.files,
+            content: msg.author.toString(),
+          });
 
       ongoingTriviaQuestions.delete(msg.author.id);
     });

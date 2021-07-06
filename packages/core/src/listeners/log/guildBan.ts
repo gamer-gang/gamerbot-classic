@@ -16,13 +16,13 @@ export const guildBanHandlers: LogHandlers = {
       title: 'User banned',
     })
       .addField('User ID', user.id)
-      .addField('Banned by', auditEvent.executor)
       .setThumbnail(user.displayAvatarURL({ format: 'png' }))
       .setTimestamp();
 
+    auditEvent.executor && embed.addField('Banned by', auditEvent.executor.toString());
     auditEvent.reason && embed.addField('Reason', `"${auditEvent.reason.trim()}"`);
 
-    logChannel.send(embed);
+    embed.send(logChannel);
   },
   onGuildBanRemove: (guild: Guild, logChannel: TextChannel) => async (guild: Guild, user: User) => {
     const auditEvent = await getLatestAuditEvent(guild);
@@ -36,10 +36,11 @@ export const guildBanHandlers: LogHandlers = {
       title: 'User unbanned',
     })
       .addField('User ID', user.id)
-      .addField('Unbanned by', auditEvent.executor)
       .setThumbnail(user.displayAvatarURL({ format: 'png' }))
       .setTimestamp();
 
-    logChannel.send(embed);
+    auditEvent.executor && embed.addField('Unbanned by', auditEvent.executor.toString());
+
+    embed.send(logChannel);
   },
 };

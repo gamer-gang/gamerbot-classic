@@ -42,3 +42,8 @@ export function formatDuration(length: Duration | number): string {
     .filter(part => !!part)
     .join(':');
 }
+
+export const delay =
+  (ms: number) =>
+  <T>(value: T): Promise<T> =>
+    new Promise<T>(resolve => setTimeout(() => resolve(value), ms));

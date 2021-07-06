@@ -13,6 +13,8 @@ export class CommandAbout implements Command {
   };
 
   async execute(context: Context): Promise<void | Message> {
+    const { msg } = context;
+
     const users = _.uniq(
       client.guilds.cache.array().flatMap(guild => guild.members.cache.array().map(u => u.id))
     );
@@ -22,8 +24,8 @@ export class CommandAbout implements Command {
       .addField('Repository', '[GitHub](https://github.com/gamer-gang/gamerbot)')
       .addField('Issues', '[Issues](https://github.com/gamer-gang/gamerbot/issues)')
       .addField('nice pfp', 'pfp made by @qqq#0447')
-      .addField('Guilds', client.guilds.cache.size, true)
-      .addField('Users', users.length, true)
+      .addField('Guilds', client.guilds.cache.size.toString(), true)
+      .addField('Users', users.length.toString(), true)
       .setThumbnail('attachment://hexagon.png');
 
     const hash = process.env.LATEST_COMMIT_HASH;
@@ -33,6 +35,6 @@ export class CommandAbout implements Command {
         `[\`${hash?.slice(0, 7)}\`](https://github.com/gamer-gang/gamerbot/commit/${hash})`,
         true
       );
-    return context.msg.channel.send(embed);
+    return embed.send(msg.channel);
   }
 }

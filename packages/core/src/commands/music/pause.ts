@@ -14,20 +14,19 @@ export class CommandPause implements Command {
     const { msg } = context;
     const queue = client.queues.get(msg.guild.id);
 
-    if (!queue.playing) return msg.channel.send(Embed.error('not playing'));
+    if (!queue.playing) return Embed.error('not playing').reply(msg);
 
     const voice = msg.member?.voice;
-    if (!voice?.channel || voice.channel.id !== queue.voiceConnection?.channel.id)
-      return msg.channel.send(Embed.error('you are not in the music channel'));
+    if (!voice?.channel || voice.channel.id !== queue.voiceChannel?.id)
+      return Embed.error('you are not in the music channel').reply(msg);
 
     try {
-      queue.voiceConnection?.dispatcher?.pause(true);
-      queue.paused = true;
+      queue.audioPlayer.pause();
       queue.updateNowPlaying();
     } catch (err) {
-      return msg.channel.send(Embed.error(codeBlock(err)));
+      return Embed.error(codeBlock(err)).reply(msg);
     }
 
-    return msg.channel.send(Embed.success('paused'));
+    msg.react('⏸️');
   }
 }

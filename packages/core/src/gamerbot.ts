@@ -1,4 +1,4 @@
-import { Client, ClientOptions, ClientUser, Guild, GuildEmoji } from 'discord.js';
+import { Client, ClientOptions, ClientUser, Guild, GuildEmoji, Snowflake } from 'discord.js';
 import fse from 'fs-extra';
 import { google } from 'googleapis';
 import Spotify from 'spotify-web-api-node';
@@ -44,7 +44,21 @@ export class Gamerbot extends Client {
 
   readonly queues = new Store<Queue>();
 
-  constructor(opts: GamerbotOptions = {}) {
+  constructor(
+    opts: GamerbotOptions = {
+      intents: [
+        'GUILDS',
+        'GUILD_MEMBERS',
+        'GUILD_BANS',
+        'GUILD_EMOJIS',
+        'GUILD_INVITES',
+        'GUILD_VOICE_STATES',
+        'GUILD_MESSAGES',
+        'GUILD_MESSAGE_REACTIONS',
+        'GUILD_MESSAGE_TYPING',
+      ],
+    }
+  ) {
     super({
       ...(opts as Pick<GamerbotOptions, keyof Omit<ClientOptions, 'partials'>>),
       partials: ['MESSAGE', 'REACTION'],
@@ -65,7 +79,7 @@ export class Gamerbot extends Client {
         return;
       }
 
-      this.mediaServer = this.guilds.cache.get(process.env.MEDIA_SERVER_ID)!;
+      this.mediaServer = this.guilds.cache.get(process.env.MEDIA_SERVER_ID as Snowflake)!;
 
       const expectedEmojis = ['success', 'error', 'warn', 'up_arrow', 'down_arrow'];
       expectedEmojis.forEach(name => {

@@ -14,19 +14,19 @@ export class CommandResume implements Command {
     const { msg } = context;
     const queue = client.queues.get(msg.guild.id);
 
-    if (!queue.playing) return msg.channel.send(Embed.error('not playing'));
+    if (!queue.playing) return Embed.error('not playing').reply(msg);
 
     const voice = msg.member?.voice;
-    if (!voice?.channel || voice.channel.id !== queue.voiceConnection?.channel.id)
-      return msg.channel.send(Embed.error('You are not in the music channel'));
+    if (!voice?.channel || voice.channel.id !== queue.voiceChannel?.id)
+      return Embed.error('You are not in the music channel').reply(msg);
 
     try {
-      queue.voiceConnection?.dispatcher.resume();
-      queue.paused = false;
+      queue.audioPlayer.unpause();
       queue.updateNowPlaying();
-      return msg.channel.send(Embed.success('Resumed'));
+      msg.reply('▶️');
+      return;
     } catch (err) {
-      return msg.channel.send(Embed.error(codeBlock(err)));
+      return Embed.error(codeBlock(err)).reply(msg);
     }
   }
 }

@@ -29,12 +29,12 @@ export class CommandCowsay implements Command {
 
     if (args.list) {
       msg.channel.stopTyping(true);
-      return msg.channel.send(Embed.info('Cows', codeBlock(Object.keys(cows).join(', '))));
+      return Embed.info('Cows', codeBlock(Object.keys(cows).join(', '))).reply(msg);
     }
 
     if (args._.length == 0 || /^\s+$/.test(args._.join(' '))) {
       msg.channel.stopTyping(true);
-      return msg.channel.send(Embed.error('nothing to say'));
+      return Embed.error('nothing to say').reply(msg);
     }
 
     msg.channel.startTyping();
@@ -45,7 +45,7 @@ export class CommandCowsay implements Command {
       ? cows[args.cow as keyof typeof import('@wiisportsresorts/cowsay/lib/cows')]
       : undefined;
 
-    if (args.cow && !cow) return msg.channel.send(Embed.error('Unknown cow'));
+    if (args.cow && !cow) return Embed.error('Unknown cow').reply(msg);
 
     const text = say(args._.join(' '), {
       W: 48,

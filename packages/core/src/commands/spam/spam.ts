@@ -34,8 +34,8 @@ export class CommandSpam implements Command {
       config: { allowSpam },
     } = context;
 
-    if (!allowSpam) return msg.channel.send(Embed.error('spam commands are off'));
-    if (hasMentions(args._.join(' ') as string)) return msg.channel.send('no');
+    if (!allowSpam) return Embed.error('spam commands are off').reply(msg);
+    if (hasMentions(args._.join(' ') as string)) return Embed.error('no').reply(msg);
 
     const { tts, repetitions, messages } = args;
 
@@ -47,7 +47,7 @@ export class CommandSpam implements Command {
     if (messages > 10) errors.push('too many messages, max 10');
     if (!args._[0]) errors.push(`no text to send`);
     if (errors.length) {
-      msg.channel.send(Embed.error('errors', errors.join('\n')));
+      Embed.error('errors', errors.join('\n')).reply(msg);
       msg.channel.stopTyping(true);
       return;
     }
@@ -63,17 +63,15 @@ export class CommandSpam implements Command {
     } else {
       if ((spamText.length + 1) * repetitions > 2000) {
         msg.channel.stopTyping(true);
-        return msg.channel.send(
-          Embed.error(
-            'too many repetitions (msg is over 2000 chars), use "--fill" to fill the entire message'
-          )
-        );
+        return Embed.error(
+          'too many repetitions (msg is over 2000 chars), use "--fill" to fill the entire message'
+        ).reply(msg);
       }
 
       for (let i = 0; i < repetitions; i++) output += ' ' + spamText;
     }
 
-    for (let i = 0; i < messages; i++) await msg.channel.send(output, { tts });
+    for (let i = 0; i < messages; i++) await msg.channel.send({ content: output, tts });
     msg.channel.stopTyping(true);
   }
 }

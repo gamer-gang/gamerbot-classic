@@ -35,36 +35,29 @@ export class CommandCrypto implements Command {
     const { msg, args, cmd, config } = context;
     const { crypto } = client;
 
-    if (!client.crypto.available)
-      return msg.channel.send(
-        Embed.error('Crypto support disabled', 'No credentials provided in environment')
-      );
+    if (!client.crypto.available) return;
+    Embed.error('Crypto support disabled', 'No credentials provided in environment').reply(msg);
 
-    if (args.list)
-      return msg.channel.send(Embed.info('Available currencies', crypto.symbols.join(', ')));
+    if (args.list) return Embed.info('Available currencies', crypto.symbols.join(', ')).reply(msg);
 
     const symbol = cmd === 'crypto' ? args._[0] : cmd;
 
     if (!symbol) {
-      return msg.channel.send(
-        Embed.error(
-          'No symbol provided',
-          `Try ${randomSymbol()} or ${randomSymbol()}, or see \`${
-            config.prefix
-          }crypto --list\` for all available currencies`
-        )
-      );
+      return Embed.error(
+        'No symbol provided',
+        `Try ${randomSymbol()} or ${randomSymbol()}, or see \`${
+          config.prefix
+        }crypto --list\` for all available currencies`
+      ).reply(msg);
     }
 
     const metadata = crypto.getMetadata(symbol.toUpperCase());
     const data = await crypto.getQuote(symbol.toUpperCase());
     if (!data || !metadata)
-      return msg.channel.send(
-        Embed.error(
-          'Invalid/unavailable symbol',
-          `See \`${config.prefix}crypto --list\` for available currencies`
-        )
-      );
+      return Embed.error(
+        'Invalid/unavailable symbol',
+        `See \`${config.prefix}crypto --list\` for available currencies`
+      ).reply(msg);
     const quote = data.quote.USD;
 
     // get custom emojis
@@ -124,7 +117,7 @@ export class CommandCrypto implements Command {
       },
     });
 
-    msg.channel.send(embed);
+    embed.reply(msg);
     msg.channel.stopTyping(true);
   }
 }

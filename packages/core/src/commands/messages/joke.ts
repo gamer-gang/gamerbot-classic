@@ -58,16 +58,16 @@ export class CommandJoke implements Command {
       let joke: string;
 
       if (args.codepen)
-        return msg.channel.send(Embed.error('codepen jokes were removed because captchas :('));
+        return Embed.error('codepen jokes were removed because captchas :(').reply(msg);
 
       msg.channel.startTyping();
 
       args.programming && (joke ??= await this.getProgrammingJoke(!!args.unsafe));
       joke ??= await this.getGenericJoke(!!args.unsafe);
 
-      msg.channel.send(joke);
+      msg.reply(joke);
     } catch (err) {
-      msg.channel.send(Embed.error('error fetching joke', codeBlock(err)));
+      Embed.error('error fetching joke', codeBlock(err)).reply(msg);
     }
     msg.channel.stopTyping(true);
   }

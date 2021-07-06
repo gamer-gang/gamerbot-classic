@@ -1,4 +1,4 @@
-import { Message, PermissionString } from 'discord.js';
+import { Message, PermissionString, Snowflake } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { Context } from '../../types';
 import { codeBlock, Embed, sanitize } from '../../util';
@@ -15,35 +15,32 @@ export class CommandBan implements Command {
     const { msg, args } = context;
 
     if (args._.length === 0)
-      return msg.channel.send(Embed.error('Expected a user (and optionally reason)'));
+      return Embed.error('Expected a user (and optionally reason)').reply(msg);
 
     try {
-      const member = msg.guild.members.resolve(args._[0].replace(/[<@!>]/g, ''));
+      const member = msg.guild.members.resolve(args._[0].replace(/[<@!>]/g, '') as Snowflake);
 
-      if (!member)
-        return msg.channel.send(Embed.error(`Could not resolve member \`${args._[0]}\``));
+      if (!member) return Embed.error(`Could not resolve member \`${args._[0]}\``).reply(msg);
 
       const banner = msg.guild.members.resolve(msg.author.id)!;
 
       if (banner.roles.highest.comparePositionTo(member.roles.highest) <= 0)
-        return msg.channel.send(Embed.error('You cannot ban that member'));
+        return Embed.error('You cannot ban that member').reply(msg);
 
       if (msg.guild.me!.roles.highest.comparePositionTo(member.roles.highest) <= 0)
-        return msg.channel.send(Embed.error('Bot cannot ban member'));
+        return Embed.error('Bot cannot ban member').reply(msg);
 
-      if (!member.bannable) return msg.channel.send(Embed.error('User is not bannable'));
+      if (!member.bannable) return Embed.error('User is not bannable').reply(msg);
 
       const reason = args._.slice(1).join(' ') || undefined;
 
       await member?.ban({ reason });
-      msg.channel.send(
-        Embed.success(
-          member.user.tag + ' was banned',
-          reason ? `Reason: ${sanitize(reason)}` : undefined
-        )
-      );
+      Embed.success(
+        member.user.tag + ' was banned',
+        reason ? `Reason: ${sanitize(reason)}` : undefined
+      ).reply(msg);
     } catch (err) {
-      msg.channel.send(Embed.error(codeBlock(err)));
+      Embed.error(codeBlock(err)).reply(msg);
     }
   }
 }

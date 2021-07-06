@@ -30,17 +30,15 @@ export class CommandPurge implements Command {
 
     let numberToDelete = parseInt(args._[0], 10);
 
-    // TODO add support for replying to start message when v13 drops
+    // TODO: add support for replying to start message when v13 drops
     if (args.to) {
       const messages = await msg.channel.messages.fetch();
       const startMessage = messages.get(args.to.toString());
       if (!startMessage)
-        return msg.channel.send(
-          Embed.error('Could not resolve starting message in current channel')
-        );
+        return Embed.error('Could not resolve starting message in current channel').reply(msg);
 
       if (getDateFromSnowflake(args.to.toString()).diffNow().as('days') > 14)
-        return msg.channel.send(Embed.error('Start of range is older than 14 days'));
+        return Embed.error('Start of range is older than 14 days').reply(msg);
 
       const messageArray = messages
         .array()
@@ -52,14 +50,14 @@ export class CommandPurge implements Command {
     }
 
     if (!numberToDelete || isNaN(numberToDelete) || numberToDelete < 2 || numberToDelete > 1000)
-      return msg.channel.send(Embed.error('Number must be an integer from 2 to 1000 inclusive'));
+      return Embed.error('Number must be an integer from 2 to 1000 inclusive').reply(msg);
 
     for (let i = 0; i < Math.ceil(numberToDelete / 100); i++) {
       const deletable = i === Math.floor(numberToDelete / 100) ? numberToDelete % 100 : 100;
       const deleted = await (msg.channel as TextChannel).bulkDelete(deletable, true);
       if (deleted.size < deletable) {
-        msg.channel
-          .send(Embed.warning('Stopped deleting because messages are older than 14 days'))
+        Embed.warning('Stopped deleting because messages are older than 14 days')
+          .send(msg.channel)
           .then(m => setTimeout(() => m.delete(), 5000));
         return;
       }

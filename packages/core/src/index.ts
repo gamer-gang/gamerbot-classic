@@ -1,3 +1,4 @@
+import { generateDependencyReport } from '@discordjs/voice';
 import { registerFont } from 'canvas';
 import { ClientEvents, Guild, GuildMember, Invite, TextChannel } from 'discord.js';
 import dotenv from 'dotenv';
@@ -6,8 +7,14 @@ import _ from 'lodash';
 import 'source-map-support/register';
 import { Config } from './entities/Config';
 import * as eggs from './listeners/eggs';
-import { intToLogEvents, logClientEvents, LogEventHandler, logHandlers } from './listeners/log';
-import { onMessage } from './listeners/message';
+import {
+  intToLogEvents,
+  LogClientEventName,
+  logClientEvents,
+  LogEventHandler,
+  logHandlers,
+} from './listeners/log';
+import { onMessageCreate } from './listeners/message';
 import * as reactions from './listeners/reactions';
 import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
@@ -26,7 +33,8 @@ import { findGuild, resolvePath } from './util';
 dotenv.config({ path: resolvePath('.env') });
 
 fse.mkdirp(resolvePath('data'));
-fse.mkdirp(resolvePath('data/gifs'));
+
+logger.info(generateDependencyReport());
 
 // register fonts for canvas
 const fonts: Record<string, { family: string; weight?: string; style?: string }> = {
@@ -40,10 +48,12 @@ Object.keys(fonts).forEach(filename =>
 export const setPresence = async (): Promise<void> => {
   const num = await eggs.get(client);
   client.presenceManager.presence = {
-    activity: {
-      type: 'PLAYING',
-      name: `with ${num.toLocaleString()} egg${num === 1 ? '' : 's'} | $help`,
-    },
+    activities: [
+      {
+        type: 'PLAYING',
+        name: `with ${num.toLocaleString()} egg${num === 1 ? '' : 's'} | $help`,
+      },
+    ],
   };
 };
 
@@ -83,7 +93,7 @@ client.on('ready', () => {
 const usernameCacheUpdates: { [userId: string]: NodeJS.Timeout } = {};
 
 // attach log handlers
-// TODO improve types
+// TODO: improve types
 const eventHooks: {
   [key: string]: {
     pre?: (guild: Guild) => (...args: any[]) => Promise<any>;
@@ -94,8 +104,8 @@ const eventHooks: {
     pre: (guild: Guild) => async (invite: Invite) => {
       inviteCache.set(invite.code, {
         code: invite.code,
-        creatorId: invite.inviter?.id,
-        creatorTag: invite.inviter?.tag,
+        creatorId: invite.inviter!.id,
+        creatorTag: invite.inviter!.tag,
         guildId: guild.id,
         uses: invite.uses ?? 0,
       });
@@ -111,7 +121,7 @@ const eventHooks: {
   guildMemberAdd: {
     pre: (guild: Guild) => async () => {
       // figure out which invite was just used
-      const newInvites = (await guild.fetchInvites()).array();
+      const newInvites = (await guild.invites.fetch()).array();
 
       let usedCached: CachedInvite | undefined;
       let usedNew: Invite | undefined;
@@ -176,13 +186,13 @@ const eventHooks: {
       let guild;
 
       for (const arg of args) {
-        guild = findGuild(arg);
+        guild = findGuild(arg as ClientEvents[LogClientEventName][0]);
         if (guild) break;
       }
 
       const logger = getLogger(`GUILD ${guild?.id ?? 'unknown'} EVENT ${event}`);
 
-      if (!guild) return logger.error(`could not find guild for resource ${args[0].toString()}`);
+      if (!guild) return logger.error(`could not find guild for resource ${args[0]?.toString()}`);
 
       let preInfo;
       const hooks = eventHooks[event];
@@ -252,7 +262,7 @@ const handleEvent =
   };
 
 client
-  .on('message', handleEvent(onMessage))
+  .on('messageCreate', handleEvent(onMessageCreate))
   .on('warn', logger.warn)
   .on('error', logger.error)
   .on('disconnect', () => logger.warn('client disconnected!'))

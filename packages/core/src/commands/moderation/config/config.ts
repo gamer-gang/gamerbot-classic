@@ -31,12 +31,10 @@ export class CommandConfig implements Command {
     );
 
     if (!args._[0] || !handlerName)
-      return msg.channel.send(
-        Embed.error(
-          'Invalid config option',
-          'Valid options:\n' + codeBlock(Object.keys(configHandlers).join('\n'))
-        )
-      );
+      return Embed.error(
+        'Invalid config option',
+        'Valid options:\n' + codeBlock(Object.keys(configHandlers).join('\n'))
+      ).reply(msg);
 
     configHandlers[handlerName](config, context, args._.slice(1).join(' '));
   }

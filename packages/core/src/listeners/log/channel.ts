@@ -12,111 +12,109 @@ const auditChangeTable: Record<string, string> = {
 };
 
 export const channelHandlers: LogHandlers = {
-  onChannelCreate: (guild: Guild, logChannel: TextChannel) => async (
-    channel: DMChannel | GuildChannel
-  ) => {
-    if (channel.type === 'dm') return;
+  onChannelCreate:
+    (guild: Guild, logChannel: TextChannel) => async (channel: DMChannel | GuildChannel) => {
+      if (channel.type === 'dm') return;
 
-    const auditEvent = await getLatestAuditEvent(guild);
+      const auditEvent = await getLatestAuditEvent(guild);
 
-    const embed = new Embed({
-      author: {
-        iconURL: guild.iconURL({ format: 'png' }) ?? undefined,
-        name: guild.name,
-      },
-      color: logColorFor('channelCreate'),
-      title: 'Channel created',
-    })
-      .addField('Name', channel.name)
-      .addField('ID', channel.id)
-      .addField('Type', channel.type)
-      .setTimestamp();
+      const embed = new Embed({
+        author: {
+          iconURL: guild.iconURL({ format: 'png' }) ?? undefined,
+          name: guild.name,
+        },
+        color: logColorFor('channelCreate'),
+        title: 'Channel created',
+      })
+        .addField('Name', channel.name)
+        .addField('ID', channel.id)
+        .addField('Type', channel.type)
+        .setTimestamp();
 
-    channel.parent && embed.addField('Category', channel.parent.name);
+      channel.parent && embed.addField('Category', channel.parent.name);
 
-    embed.addField('Created by', auditEvent.executor);
+      auditEvent.executor && embed.addField('Created by', auditEvent.executor.toString());
 
-    logChannel.send(embed);
-  },
-  onChannelDelete: (guild: Guild, logChannel: TextChannel) => async (
-    channel: DMChannel | GuildChannel
-  ) => {
-    if (channel.type === 'dm') return;
+      embed.send(logChannel);
+    },
+  onChannelDelete:
+    (guild: Guild, logChannel: TextChannel) => async (channel: DMChannel | GuildChannel) => {
+      if (channel.type === 'dm') return;
 
-    const auditEvent = await getLatestAuditEvent(guild);
+      const auditEvent = await getLatestAuditEvent(guild);
 
-    const embed = new Embed({
-      author: {
-        iconURL: guild.iconURL({ format: 'png' }) ?? undefined,
-        name: guild.name,
-      },
-      color: logColorFor('channelDelete'),
-      title: 'Channel deleted',
-    })
-      .addField('Name', channel.name)
-      .addField('ID', channel.id)
-      .addField('Type', channel.type)
-      .setTimestamp();
+      const embed = new Embed({
+        author: {
+          iconURL: guild.iconURL({ format: 'png' }) ?? undefined,
+          name: guild.name,
+        },
+        color: logColorFor('channelDelete'),
+        title: 'Channel deleted',
+      })
+        .addField('Name', channel.name)
+        .addField('ID', channel.id)
+        .addField('Type', channel.type)
+        .setTimestamp();
 
-    channel.parent && embed.addField('Category', channel.parent.name);
+      channel.parent && embed.addField('Category', channel.parent.name);
 
-    embed.addField('Deleted by', auditEvent.executor);
+      auditEvent.executor && embed.addField('Deleted by', auditEvent.executor.toString());
 
-    logChannel.send(embed);
-  },
-  onChannelUpdate: (guild: Guild, logChannel: TextChannel) => async (
-    prev: DMChannel | GuildChannel,
-    next: DMChannel | GuildChannel
-  ) => {
-    if (prev.type === 'dm' || next.type === 'dm') return;
+      embed.send(logChannel);
+    },
+  onChannelUpdate:
+    (guild: Guild, logChannel: TextChannel) =>
+    async (prev: DMChannel | GuildChannel, next: DMChannel | GuildChannel) => {
+      if (prev.type === 'dm' || next.type === 'dm') return;
 
-    const auditEvent = await getLatestAuditEvent(guild);
+      const auditEvent = await getLatestAuditEvent(guild);
 
-    const embed = new Embed({
-      author: {
-        iconURL: guild.iconURL({ format: 'png' }) ?? undefined,
-        name: guild.name,
-      },
-      color: logColorFor('channelUpdate'),
-      title: 'Channel updated',
-      description: `Updated channel: ${next.type === 'voice' ? `${next.name} (voice)` : next}, ID ${
-        next.id
-      }`,
-    }).setTimestamp();
+      const embed = new Embed({
+        author: {
+          iconURL: guild.iconURL({ format: 'png' }) ?? undefined,
+          name: guild.name,
+        },
+        color: logColorFor('channelUpdate'),
+        title: 'Channel updated',
+        description: `Updated channel: ${
+          next.type === 'voice' ? `${next.name} (voice)` : next
+        }, ID ${next.id}`,
+      }).setTimestamp();
 
-    const changes = _.omit(
-      _.omitBy(prev, (v, k) => next[k as keyof GuildChannel] === v),
-      'permissionOverwrites',
-      'rawPosition',
-      'lastMessageID'
-    );
-
-    if (!Object.keys(changes).length) return;
-
-    Object.keys(changes).forEach(change => {
-      if (change === 'parentID')
-        return embed.addField(
-          auditChangeTable[change] ?? change,
-          `\`${formatValue(
-            prev[change] ? guild.channels.cache.get(prev[change]!)?.name : null
-          )} => ${formatValue(
-            next[change] ? guild.channels.cache.get(next[change]!)?.name : null
-          )}\``
-        );
-
-      embed.addField(
-        auditChangeTable[change] ?? change,
-        `\`${formatValue(prev[change])} => ${formatValue(next[change])}\``
+      const changes = _.omit(
+        _.omitBy(prev, (v, k) => next[k as keyof GuildChannel] === v),
+        'permissionOverwrites',
+        'rawPosition',
+        'lastMessageID'
       );
-    });
 
-    if (
-      auditEvent.action === 'CHANNEL_UPDATE' &&
-      (auditEvent.target as GuildChannel).id === next.id &&
-      Math.abs(auditEvent.createdTimestamp - Date.now()) < 1500 // within 1500ms
-    )
-      embed.addField('Updated by', auditEvent.executor);
+      if (!Object.keys(changes).length) return;
 
-    logChannel.send(embed);
-  },
+      Object.keys(changes).forEach(change => {
+        if (change === 'parentId')
+          return embed.addField(
+            auditChangeTable[change] ?? change,
+            `\`${formatValue(
+              prev[change] ? guild.channels.cache.get(prev[change]!)?.name : null
+            )} => ${formatValue(
+              next[change] ? guild.channels.cache.get(next[change]!)?.name : null
+            )}\``
+          );
+
+        embed.addField(
+          auditChangeTable[change] ?? change,
+          `\`${formatValue(prev[change])} => ${formatValue(next[change])}\``
+        );
+      });
+
+      if (
+        auditEvent.action === 'CHANNEL_UPDATE' &&
+        (auditEvent.target as GuildChannel).id === next.id &&
+        Math.abs(auditEvent.createdTimestamp - Date.now()) < 1500 && // within 1500ms
+        auditEvent.executor
+      )
+        embed.addField('Updated by', auditEvent.executor.toString());
+
+      embed.send(logChannel);
+    },
 };

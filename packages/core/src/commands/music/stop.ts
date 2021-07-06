@@ -1,3 +1,4 @@
+import { getVoiceConnection } from '@discordjs/voice';
 import { Message } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
@@ -14,22 +15,23 @@ export class CommandStop implements Command {
     const { msg } = context;
     const queue = client.queues.get(msg.guild.id);
 
-    if (!msg.guild.me?.voice) return msg.channel.send(Embed.error('Not conected to a channel'));
+    if (!msg.guild.me?.voice) return Embed.error('Not conected to a channel').reply(msg);
 
     if ((msg.guild.me?.voice?.channel?.members?.array().length ?? 2) > 1) {
       const userVoice = msg.member?.voice;
-      if (!userVoice?.channel || userVoice.channel.id !== msg.guild.me.voice?.channel?.id)
-        return msg.channel.send(Embed.error('You are not in the music channel'));
+      if (!userVoice?.channel || userVoice.channel.id !== queue.voiceChannel?.id)
+        return Embed.error('You are not in the music channel').reply(msg);
     }
+
+    const connection = getVoiceConnection(msg.guild.id);
 
     try {
       queue.tracks = [];
-      queue.playing = false;
-      queue.voiceConnection?.dispatcher?.end();
-      msg.guild.me?.voice.kick();
-      return msg.channel.send(Embed.success('Stopped'));
+      connection?.destroy();
+      queue.audioPlayer.stop();
+      return Embed.success('Stopped').reply(msg);
     } catch (err) {
-      return msg.channel.send(Embed.error(codeBlock(err)));
+      return Embed.error(codeBlock(err)).reply(msg);
     }
   }
 }

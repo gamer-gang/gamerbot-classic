@@ -12,13 +12,13 @@ export class CommandSearch implements Command {
   async execute(context: Context): Promise<void | Message> {
     const { msg, args, cmd } = context;
 
-    if (args._.length === 0) return msg.channel.send(Embed.error('No search query provided'));
+    if (args._.length === 0) return Embed.error('No search query provided').reply(msg);
 
     const query = args._.map(word => encodeURIComponent(word)).join('+');
 
     const url =
       cmd === 'ddg' ? `https://duckduckgo.com/?q=${query}` : `https://lmgtfy.app/?q=${query}`;
 
-    msg.channel.send(url);
+    msg.reply(url);
   }
 }

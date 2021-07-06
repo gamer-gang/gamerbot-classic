@@ -1,4 +1,10 @@
-import { Message, TextChannel, VoiceChannel, VoiceConnection } from 'discord.js';
+import {
+  AudioPlayer,
+  AudioPlayerStatus,
+  createAudioPlayer,
+  getVoiceConnection,
+} from '@discordjs/voice';
+import { Message, TextChannel, VoiceChannel } from 'discord.js';
 import { youtube_v3 } from 'googleapis';
 import he from 'he';
 import { Duration } from 'luxon';
@@ -217,13 +223,35 @@ export class Queue {
   tracks: Track[] = [];
   voiceChannel?: VoiceChannel;
   textChannel?: TextChannel;
-  voiceConnection?: VoiceConnection;
-  playing = false;
-  paused = false;
+  audioPlayer: AudioPlayer = createAudioPlayer({ debug: process.env.NODE_ENV === 'development' });
   loop: LoopMode = 'none';
   index = 0;
   embed?: Message;
-  embedInterval?: NodeJS.Timeout;
+
+  reset(): void {
+    this.tracks = [];
+    this.loop = 'none';
+    this.embed?.delete();
+    delete this.embed;
+
+    if (this.voiceChannel) {
+      const connection = getVoiceConnection(this.voiceChannel.id);
+      connection?.destroy();
+      this.audioPlayer.stop();
+    }
+
+    delete this.textChannel;
+    delete this.voiceChannel;
+    this.index = 0;
+  }
+
+  get playing(): boolean {
+    return this.audioPlayer.state.status !== AudioPlayerStatus.Idle;
+  }
+
+  get paused(): boolean {
+    return this.audioPlayer.state.status === AudioPlayerStatus.Paused;
+  }
 
   constructor(public guildId: string) {}
 
@@ -232,13 +260,15 @@ export class Queue {
   }
 
   get remainingTime(): number {
-    if (!this.playing || !this.voiceConnection?.dispatcher) return 0;
+    if (!this.playing) return 0;
     return (
-      this.tracks[this.index].duration.as('seconds') -
-      Math.floor(
-        this.voiceConnection.dispatcher.totalStreamTime - this.voiceConnection.dispatcher.pausedTime
-      ) /
-        1000
+      // this.tracks[this.index].duration.as('seconds') -
+      // Math.floor(
+      //   this.voiceConnection. - this.voiceConnection.dispatcher.pausedTime
+      // ) /
+      //   1000
+      0
+      // TODO:
     );
   }
 
@@ -277,10 +307,10 @@ export class Queue {
 
     if (this.embed && !this.embed.deleted) {
       logger.debug(`existing non-deleted embed, editing it`);
-      return this.embed.edit(embed);
+      return this.embed.edit({ embeds: [embed] });
     } else if (this.textChannel) {
       logger.debug(`sending new now playing embed`);
-      this.embed = await this.textChannel.send(embed);
+      this.embed = await embed.send(this.textChannel);
       return this.embed;
     }
 

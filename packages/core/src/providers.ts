@@ -1,5 +1,6 @@
 import { EntityManager, MikroORM } from '@mikro-orm/core';
 import { AsyncLocalStorage } from 'async_hooks';
+import { Snowflake } from 'discord.js';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import log4js from 'log4js';
@@ -26,10 +27,10 @@ log4js.configure({
 });
 
 export interface CachedInvite {
-  guildId: string;
+  guildId: Snowflake;
   code: string;
-  creatorId?: string;
-  creatorTag?: string;
+  creatorId: Snowflake;
+  creatorTag: string;
   uses: number;
 }
 

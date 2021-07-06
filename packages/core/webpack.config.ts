@@ -49,7 +49,7 @@ export default <Configuration>{
   stats: { preset: 'normal', colors: true },
   externalsPresets: { node: true },
   // Every non-relative module is external
-  // TODO improve regexp
+  // TODO: improve regexp
   externals: [/^[^.][a-z\-0-9@/.]+$/],
   target: 'async-node',
   node: { __dirname: true },

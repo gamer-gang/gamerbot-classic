@@ -20,22 +20,22 @@ export class CommandPrevious implements Command {
     const { msg, args } = context;
     const queue = client.queues.get(msg.guild.id);
 
-    if (!queue.playing) return msg.channel.send(Embed.error('Not playing'));
+    if (!queue.playing) return Embed.error('Not playing').reply(msg);
 
     const voice = msg.member?.voice;
-    if (!voice?.channel || voice.channel.id !== queue.voiceConnection?.channel.id)
-      return msg.channel.send(Embed.error('You are not in the music channel'));
+    if (!voice?.channel || voice.channel.id !== queue.voiceChannel?.id)
+      return Embed.error('You are not in the music channel').reply(msg);
 
     try {
       if (args._[0] != undefined) {
         const int = parseInt(args._[0]);
 
         if (!int || isNaN(int) || int <= 0 || int > queue.index)
-          return msg.channel.send(Embed.error('Invalid amount'));
+          return Embed.error('Invalid amount').reply(msg);
 
         queue.index -= int + 1;
 
-        msg.channel.send(Embed.success(`Rewinded **${int}** tracks`));
+        Embed.success(`Rewinded **${int}** tracks`).reply(msg);
       } else {
         queue.index -= 2;
         msg.react('⏮️');
@@ -44,9 +44,9 @@ export class CommandPrevious implements Command {
       // break out of looping if looping one
       if (queue.loop === 'one') queue.index--;
 
-      queue.voiceConnection?.dispatcher?.end();
+      queue.audioPlayer.stop();
     } catch (err) {
-      return msg.channel.send(Embed.error(codeBlock(err)));
+      return Embed.error(codeBlock(err)).reply(msg);
     }
   }
 }

@@ -17,7 +17,7 @@ export class CommandDetails implements Command {
 
     const queue = client.queues.get(msg.guild.id);
 
-    if (!queue.playing) return msg.channel.send(Embed.error('Nothing playing'));
+    if (!queue.playing) return Embed.error('Nothing playing').reply(msg);
 
     const track = queue.tracks[queue.index];
 
@@ -82,6 +82,6 @@ export class CommandDetails implements Command {
       embed.addField('Duration', track.durationString, true);
     }
 
-    msg.channel.send(embed);
+    embed.reply(msg);
   }
 }

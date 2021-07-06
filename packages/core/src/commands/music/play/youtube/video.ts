@@ -17,17 +17,13 @@ export const getYoutubeVideo = async (
       id: [regExps.youtube.video.exec(args._[0])![1]],
     });
     if (!video.data.items?.length)
-      return msg.channel.send(
-        Embed.error("Video not found (either it doesn't exist or it's private)")
-      );
+      return Embed.error("Video not found (either it doesn't exist or it's private)").reply(msg);
     caller.queueTrack(new YoutubeTrack(msg.author.id, video.data.items[0]), { context });
   } catch (err) {
     getLogger(`MESSAGE ${msg.id}`).error(err);
     if (err.toString() === 'Error: resource youtube#videoListResponse not found')
-      return msg.channel.send(
-        Embed.error("Video not found (either it doesn't exist or it's private)")
-      );
+      return Embed.error("Video not found (either it doesn't exist or it's private)").reply(msg);
 
-    return msg.channel.send(Embed.error(codeBlock(err)));
+    return Embed.error(codeBlock(err)).reply(msg);
   }
 };

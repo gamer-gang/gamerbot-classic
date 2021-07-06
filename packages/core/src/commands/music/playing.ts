@@ -17,7 +17,7 @@ export class CommandPlaying implements Command {
 
     const queue = client.queues.get(msg.guild.id);
 
-    if (!queue.playing) return msg.channel.send(Embed.error('not playing'));
+    if (!queue.playing) return Embed.error('not playing').reply(msg);
 
     queue.embed?.delete();
     delete queue.embed;

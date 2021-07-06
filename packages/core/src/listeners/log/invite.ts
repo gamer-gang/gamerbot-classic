@@ -1,4 +1,4 @@
-import { Guild, Invite, TextChannel } from 'discord.js';
+import { Guild, Invite, Snowflake, TextChannel } from 'discord.js';
 import { DateTime } from 'luxon';
 import { LogHandlers } from '.';
 import { CachedInvite, client, getLogger, inviteCache, orm } from '../../providers';
@@ -11,15 +11,15 @@ client.on('ready', () => {
       new Promise<void>(resolve =>
         setTimeout(async () => {
           try {
-            const invites = (await guild.fetchInvites()).array();
+            const invites = (await guild.invites.fetch()).array();
 
             const trackedInvites: string[] = [];
 
             for (const invite of invites) {
               inviteCache.set(invite.code, {
                 code: invite.code,
-                creatorId: invite.inviter?.id,
-                creatorTag: invite.inviter?.tag,
+                creatorId: invite.inviter!.id,
+                creatorTag: invite.inviter!.tag,
                 guildId: guild.id,
                 uses: invite.uses ?? 0,
               });
@@ -53,17 +53,18 @@ export const inviteHandlers: LogHandlers = {
       title: 'Invite created',
     })
       .addField('Code', invite.code)
-      .addField('Max uses', invite.maxUses ? invite.maxUses : 'infinite')
+      .addField('Max uses', invite.maxUses ? invite.maxUses.toString() : 'infinite')
       .addField(
         'Expiration',
         expiry
           ? `${expiry.toLocaleString(DateTime.DATETIME_FULL)}, ${expiry.toRelative()}`
           : 'never'
       )
-      .addField('Created by', invite.inviter)
       .setTimestamp();
 
-    logChannel.send(embed);
+    invite.inviter && embed.addField('Created by', invite.inviter.toString());
+
+    embed.send(logChannel);
   },
   onInviteDelete:
     (guild: Guild, logChannel: TextChannel, cached: CachedInvite) => async (invite: Invite) => {
@@ -84,11 +85,16 @@ export const inviteHandlers: LogHandlers = {
             invite.maxUses ? '/' + invite.maxUses : ''
           }\n*approximate.`
         )
-        .addField('Created by', client.users.resolve(cached?.creatorId ?? '') ?? cached?.creatorTag)
-        .addField('Deleted by', auditEvent.executor)
+        .addField(
+          'Created by',
+          client.users.resolve(cached?.creatorId ?? ('' as Snowflake))?.toString() ??
+            cached.creatorTag
+        )
         .setTimestamp();
 
-      logChannel.send(embed);
+      auditEvent.executor && embed.addField('Deleted by', auditEvent.executor.toString());
+
+      embed.send(logChannel);
 
       inviteCache.delete(invite.code);
     },

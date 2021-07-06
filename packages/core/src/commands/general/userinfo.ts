@@ -1,4 +1,4 @@
-import { Message, User } from 'discord.js';
+import { Message, Snowflake, User } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
 import { Context } from '../../types';
@@ -17,15 +17,13 @@ export class CommandUserInfo implements Command {
 
     if (args._[0]) {
       user =
-        client.users.resolve(args._.join('')) ??
-        (client.users.resolve(args._[0].replace(/<@!?(\d+)>/g, '$1')) as User);
+        client.users.resolve(args._.join('') as Snowflake) ??
+        (client.users.resolve(args._[0].replace(/<@!?(\d+)>/g, '$1') as Snowflake) as User);
       if (!user)
-        return msg.channel.send(
-          Embed.error(
-            'Could not resolve user',
-            'Check if the user is valid and that gamerbot shares a server with the user.'
-          )
-        );
+        return Embed.error(
+          'Could not resolve user',
+          'Check if the user is valid and that gamerbot shares a server with the user.'
+        ).reply(msg);
     }
 
     const icon = getProfileImageUrl(user);
@@ -58,6 +56,6 @@ export class CommandUserInfo implements Command {
 
     icon && embed.setThumbnail(icon);
 
-    msg.channel.send(embed);
+    embed.reply(msg);
   }
 }
