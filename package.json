@@ -15,7 +15,7 @@
   },
   "scripts": {
     "dev": "docker-compose -f docker-compose.yml -f docker-compose.dev.yml up",
-    "build": "docker build . -f Dockerfile.build --tag gamerbot_build:latest && docker-compose build"
+    "build": "docker build . -f Dockerfile.build --tag gamerbot_build:latest"
   },
   "dependencies": {
     "@discordjs/opus": "^0.5.3",
