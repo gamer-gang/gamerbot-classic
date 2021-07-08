@@ -1,8 +1,8 @@
+import { byteSize, insertUuidDashes } from '@gamerbot/util';
 import { Canvas, Image } from 'canvas';
 import { Player } from 'hypixel-types';
 import hash from 'object-hash';
 import { client } from '../../providers';
-import { byteSize, insertUuidDashes } from '../../util';
 import { StatsData } from './stats';
 import {
   drawPrestige,

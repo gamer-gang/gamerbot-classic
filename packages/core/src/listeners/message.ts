@@ -1,3 +1,5 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, dbFindOneError, Embed, listify } from '@gamerbot/util';
 import { Message, TextChannel } from 'discord.js';
 import _ from 'lodash';
 import yargsParser from 'yargs-parser';
@@ -5,9 +7,8 @@ import { Command } from '../commands';
 import { ongoingTriviaQuestions } from '../commands/games/trivia';
 import { CommandHelp } from '../commands/general/help';
 import { Config } from '../entities/Config';
+import { Queue } from '../models';
 import { client, getLogger, logger, orm } from '../providers';
-import { Context, Queue } from '../types';
-import { codeBlock, dbFindOneError, Embed, listify } from '../util';
 import * as eggs from './eggs';
 import { intToLogEvents, LogEventHandler, LogEventName, logHandlers } from './log';
 

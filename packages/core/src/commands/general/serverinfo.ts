@@ -1,8 +1,8 @@
+import { Context } from '@gamerbot/types';
+import { Embed, getDateStringFromSnowflake } from '@gamerbot/util';
 import { Message, Snowflake } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
-import { Context } from '../../types';
-import { Embed, getDateStringFromSnowflake } from '../../util';
 
 export class CommandServerInfo implements Command {
   cmd = ['serverinfo', 'guildinfo', 'server', 'guild'];

@@ -1,8 +1,8 @@
+import { Context } from '@gamerbot/types';
+import { Embed } from '@gamerbot/util';
 import { Message, TextChannel } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
-import { Context } from '../../types';
-import { Embed } from '../../util';
 
 export class CommandPlaying implements Command {
   cmd = ['playing', 'np'];

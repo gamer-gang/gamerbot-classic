@@ -1,9 +1,9 @@
+import { findGuild, GuildHandle } from '@gamerbot/util';
 import { Guild, GuildAuditLogsEntry } from 'discord.js';
 import { inspect } from 'util';
 import { logColors, LogEventName, logEvents } from '.';
 import { Config } from '../../entities/Config';
 import { client, getLogger, orm } from '../../providers';
-import { findGuild, GuildHandle } from '../../util';
 
 export const getConfig = async (source: GuildHandle): Promise<Config> => {
   const guild = findGuild(source);

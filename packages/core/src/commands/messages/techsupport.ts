@@ -1,8 +1,8 @@
+import { Context } from '@gamerbot/types';
 import { Message } from 'discord.js';
 import yargsParser from 'yargs-parser';
 import { Command } from '..';
 import { client } from '../../providers';
-import { Context } from '../../types';
 
 export class CommandTechSupport implements Command {
   cmd = ['techsupport', 'support'];

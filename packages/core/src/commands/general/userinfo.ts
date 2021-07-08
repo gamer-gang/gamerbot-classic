@@ -1,8 +1,8 @@
+import { Context } from '@gamerbot/types';
+import { Embed, getDateStringFromSnowflake, getProfileImageUrl } from '@gamerbot/util';
 import { Message, Snowflake, User } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
-import { Context } from '../../types';
-import { Embed, getDateStringFromSnowflake, getProfileImageUrl } from '../../util';
 
 export class CommandUserInfo implements Command {
   cmd = ['userinfo', 'user'];

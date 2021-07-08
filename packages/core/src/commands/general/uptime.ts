@@ -1,8 +1,8 @@
+import { Context } from '@gamerbot/types';
+import { Embed, normalizeDuration } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { Duration } from 'luxon';
 import { Command } from '..';
-import { Context } from '../../types';
-import { Embed, normalizeDuration } from '../../util';
 
 export class CommandUptime implements Command {
   cmd = 'uptime';

@@ -1,9 +1,9 @@
 import { getVoiceConnection } from '@discordjs/voice';
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
-import { Context } from '../../types';
-import { codeBlock, Embed } from '../../util';
 
 export class CommandStop implements Command {
   cmd = ['stop', 'dc', 'disconnect'];

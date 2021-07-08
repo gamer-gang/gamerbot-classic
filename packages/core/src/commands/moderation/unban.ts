@@ -1,7 +1,7 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed } from '@gamerbot/util';
 import { Message, PermissionString, Snowflake } from 'discord.js';
 import { Command } from '..';
-import { Context } from '../../types';
-import { codeBlock, Embed } from '../../util';
 
 export class CommandUnban implements Command {
   cmd = 'unban';

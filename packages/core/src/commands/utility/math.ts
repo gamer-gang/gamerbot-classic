@@ -1,8 +1,8 @@
+import { Context } from '@gamerbot/types';
+import { Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { evaluate } from 'mathjs';
 import { Command, CommandDocs } from '..';
-import { Context } from '../../types';
-import { Embed } from '../../util';
 
 export class CommandMath implements Command {
   cmd = ['math', 'calc', 'eval'];

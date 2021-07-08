@@ -1,8 +1,8 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed } from '@gamerbot/util';
 import { Message, PermissionString } from 'discord.js';
 import { Command } from '../..';
 import { Config } from '../../../entities/Config';
-import { Context } from '../../../types';
-import { codeBlock, Embed } from '../../../util';
 import { allowSpam } from './allowspam';
 import { egg } from './egg';
 import { logChannel } from './logChannel';

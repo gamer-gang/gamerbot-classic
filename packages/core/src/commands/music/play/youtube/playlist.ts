@@ -1,10 +1,11 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed, getPlaylistVideos, regExps } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import _ from 'lodash';
 import { getLogger } from 'log4js';
 import { DateTime } from 'luxon';
+import { YoutubeTrack } from '../../../../models';
 import { client } from '../../../../providers';
-import { Context, YoutubeTrack } from '../../../../types';
-import { codeBlock, Embed, getPlaylistVideos, regExps } from '../../../../util';
 import { CommandPlay } from '../play';
 
 export const getYoutubePlaylist = async (

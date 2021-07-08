@@ -1,10 +1,11 @@
+import { Context } from '@gamerbot/types';
+import { Embed, formatDuration, listify } from '@gamerbot/util';
 import { Message, MessageReaction, User } from 'discord.js';
 import _ from 'lodash';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
+import { Queue } from '../../models';
 import { client } from '../../providers';
-import { Context, Queue } from '../../types';
-import { Embed, formatDuration, listify } from '../../util';
 
 export class CommandQueue implements Command {
   cmd = ['queue', 'q'];

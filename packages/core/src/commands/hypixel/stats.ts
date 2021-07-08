@@ -1,3 +1,5 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed, insertUuidDashes, sanitize } from '@gamerbot/util';
 import axios from 'axios';
 import { Image } from 'canvas';
 import { Message, MessageAttachment } from 'discord.js';
@@ -7,8 +9,6 @@ import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
 import { client, getLogger, orm } from '../../providers';
-import { Context } from '../../types';
-import { codeBlock, Embed, insertUuidDashes, sanitize } from '../../util';
 import { makeBedwarsStats } from './bedwars';
 import { statsProvider } from './util/cache';
 

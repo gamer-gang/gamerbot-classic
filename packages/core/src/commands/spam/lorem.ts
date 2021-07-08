@@ -1,9 +1,9 @@
+import { Context } from '@gamerbot/types';
+import { Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { LoremIpsum } from 'lorem-ipsum';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
-import { Context } from '../../types';
-import { Embed } from '../../util';
 
 export class CommandLorem implements Command {
   cmd = 'lorem';

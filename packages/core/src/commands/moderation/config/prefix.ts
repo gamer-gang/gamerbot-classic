@@ -1,7 +1,7 @@
+import { Context } from '@gamerbot/types';
+import { Embed, regExps } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { Config } from '../../../entities/Config';
-import { Context } from '../../../types';
-import { Embed, regExps } from '../../../util';
 
 export const prefix = async (
   config: Config,

@@ -1,6 +1,6 @@
+import { Color, color } from '@gamerbot/util';
 import { Canvas } from 'canvas';
 import _ from 'lodash';
-import { Color, color } from '../../../util/color';
 
 export const headerHeight = 44;
 export const mainHeight = 40;

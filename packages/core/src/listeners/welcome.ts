@@ -1,7 +1,7 @@
+import { dbFindOneError, parseDiscohookJSON } from '@gamerbot/util';
 import { GuildMember, PartialGuildMember, TextChannel } from 'discord.js';
 import { Config } from '../entities/Config';
 import { orm } from '../providers';
-import { dbFindOneError, parseDiscohookJSON } from '../util';
 
 export const onGuildMemberAdd = async (member: GuildMember | PartialGuildMember): Promise<void> => {
   const config = await orm.em.findOneOrFail(

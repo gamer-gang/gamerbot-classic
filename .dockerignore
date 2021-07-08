@@ -1,6 +1,6 @@
-dist
-data
-logs
+**/dist
+**/data
+**/logs
 .github
 .vscode
 builddir
@@ -8,11 +8,21 @@ builddir
 .env
 .env.*
 
-node_modules
+**/node_modules
 yarn-error.log
 .yarn/*
 !.yarn/cache
 !.yarn/releases
 !.yarn/plugins
-# !.yarn/sdks
 !.yarn/versions
+
+**/.cache
+.git
+
+docker-compose*
+Dockerfile*
+
+.prettierrc.json
+.vsls.json
+LICENSE
+README.md

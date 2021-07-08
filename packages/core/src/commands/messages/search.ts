@@ -1,7 +1,7 @@
+import { Context } from '@gamerbot/types';
+import { Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { Command } from '..';
-import { Context } from '../../types';
-import { Embed } from '../../util';
 
 export class CommandSearch implements Command {
   cmd = ['search', 'lmgtfy', 'google', 'ddg', 'duckduckgo'];

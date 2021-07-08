@@ -1,6 +1,6 @@
+import { Embed } from '@gamerbot/util';
 import { Guild, TextChannel, User } from 'discord.js';
 import { LogHandlers } from '.';
-import { Embed } from '../../util';
 import { getLatestAuditEvent, logColorFor } from './utils';
 
 export const guildBanHandlers: LogHandlers = {

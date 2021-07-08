@@ -1,7 +1,7 @@
+import { Context } from '@gamerbot/types';
+import { Embed, getDateFromSnowflake, getDateStringFromSnowflake } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { Command } from '..';
-import { Context } from '../../types';
-import { Embed, getDateFromSnowflake, getDateStringFromSnowflake } from '../../util';
 
 export class CommandTimestamp implements Command {
   cmd = 'timestamp';

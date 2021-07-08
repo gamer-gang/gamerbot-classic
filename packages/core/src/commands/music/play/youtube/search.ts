@@ -1,11 +1,12 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, delay, Embed } from '@gamerbot/util';
 import { Message, TextChannel } from 'discord.js';
 import _ from 'lodash';
 import { getLogger } from 'log4js';
 import { DateTime } from 'luxon';
 import yts from 'yt-search';
+import { YoutubeTrack } from '../../../../models';
 import { client } from '../../../../providers';
-import { Context, YoutubeTrack } from '../../../../types';
-import { codeBlock, delay, Embed } from '../../../../util';
 import { CommandPlay } from '../play';
 
 const parseAgo = (ago: string) => {

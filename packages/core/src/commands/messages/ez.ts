@@ -1,9 +1,9 @@
+import { Context } from '@gamerbot/types';
+import { resolvePath, sanitize } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import fse from 'fs-extra';
 import yaml from 'js-yaml';
 import { Command } from '..';
-import { Context } from '../../types';
-import { resolvePath, sanitize } from '../../util';
 
 const replacements = (
   yaml.load(fse.readFileSync(resolvePath('assets/ez.yaml')).toString()) as {

@@ -1,11 +1,12 @@
 import { generateDependencyReport } from '@discordjs/voice';
+import { findGuild, resolvePath } from '@gamerbot/util';
 import { registerFont } from 'canvas';
 import { ClientEvents, Guild, GuildMember, Invite, TextChannel } from 'discord.js';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import _ from 'lodash';
-import 'source-map-support/register';
 import { Config } from './entities/Config';
+import { CachedInvite } from './gamerbot';
 import * as eggs from './listeners/eggs';
 import {
   intToLogEvents,
@@ -18,17 +19,7 @@ import { onMessageCreate } from './listeners/message';
 import * as reactions from './listeners/reactions';
 import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
-import {
-  CachedInvite,
-  client,
-  getLogger,
-  inviteCache,
-  logger,
-  orm,
-  storage,
-  usernameCache,
-} from './providers';
-import { findGuild, resolvePath } from './util';
+import { client, getLogger, logger, orm, storage } from './providers';
 
 dotenv.config({ path: resolvePath('.env') });
 
@@ -73,7 +64,7 @@ const fetchMemberCache = async (): Promise<void> => {
   ).flat(1);
 
   members.forEach(m =>
-    usernameCache.set(m.id, {
+    client.usernameCache.set(m.id, {
       username: m.user.username,
       discriminator: m.user.discriminator,
     })
@@ -102,7 +93,7 @@ const eventHooks: {
 } = {
   inviteCreate: {
     pre: (guild: Guild) => async (invite: Invite) => {
-      inviteCache.set(invite.code, {
+      client.inviteCache.set(invite.code, {
         code: invite.code,
         creatorId: invite.inviter!.id,
         creatorTag: invite.inviter!.tag,
@@ -113,8 +104,8 @@ const eventHooks: {
   },
   inviteDelete: {
     pre: (guild: Guild) => async (invite: Invite) => {
-      const cached = _.clone(inviteCache.get(invite.code));
-      inviteCache.delete(invite.code);
+      const cached = _.clone(client.inviteCache.get(invite.code));
+      client.inviteCache.delete(invite.code);
       return cached;
     },
   },
@@ -127,7 +118,7 @@ const eventHooks: {
       let usedNew: Invite | undefined;
 
       for (const invite of newInvites) {
-        const cached = inviteCache.get(invite.code);
+        const cached = client.inviteCache.get(invite.code);
         if (!cached) {
           getLogger(`GUILD ${guild.id}`).warn(`invite ${invite.code} has no cached counterpart`);
           continue;
@@ -147,13 +138,13 @@ const eventHooks: {
     // we wait to stop receiving all `guildMemberUpdate` events before updating the global cache
     // required so that all guilds receive the event regardless of order
     post: (guild: Guild) => async (prev: GuildMember, next: GuildMember) => {
-      if (!usernameCache.has(next.id))
-        usernameCache.set(next.id, {
+      if (!client.usernameCache.has(next.id))
+        client.usernameCache.set(next.id, {
           username: next.user.username,
           discriminator: next.user.discriminator,
         });
 
-      const cached = usernameCache.get(next.id)!;
+      const cached = client.usernameCache.get(next.id)!;
 
       if (
         cached.username === next.user.username &&
@@ -164,7 +155,7 @@ const eventHooks: {
       usernameCacheUpdates[next.id] && clearTimeout(usernameCacheUpdates[next.id]);
 
       const updateCache = () => {
-        usernameCache.set(next.id, {
+        client.usernameCache.set(next.id, {
           username: next.user.username,
           discriminator: next.user.discriminator,
         });

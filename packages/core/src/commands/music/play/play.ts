@@ -5,6 +5,8 @@ import {
   getVoiceConnection,
   joinVoiceChannel,
 } from '@discordjs/voice';
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed, normalizeDuration, regExps } from '@gamerbot/util';
 import { Message, TextChannel, VoiceChannel } from 'discord.js';
 import _ from 'lodash';
 import { Duration } from 'luxon';
@@ -12,9 +14,8 @@ import miniget from 'miniget';
 import * as mm from 'music-metadata';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '../..';
+import { FileTrack, Track } from '../../../models';
 import { client, getLogger } from '../../../providers';
-import { Context, FileTrack, Track } from '../../../types';
-import { codeBlock, Embed, normalizeDuration, regExps } from '../../../util';
 import { getSpotifyAlbum } from './spotify/album';
 import { getSpotifyPlaylist } from './spotify/playlist';
 import { getSpotifyTrack } from './spotify/track';

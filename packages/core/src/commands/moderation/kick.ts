@@ -1,7 +1,7 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed, sanitize } from '@gamerbot/util';
 import { Message, PermissionString, Snowflake } from 'discord.js';
 import { Command, CommandDocs } from '..';
-import { Context } from '../../types';
-import { codeBlock, Embed, sanitize } from '../../util';
 
 export class CommandKick implements Command {
   cmd = 'kick';

@@ -1,10 +1,10 @@
+import { resolvePath } from '@gamerbot/util';
 import { MigrationObject, MikroORM } from '@mikro-orm/core';
 import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import { basename } from 'path';
 import { dbLogger } from './providers';
-import { resolvePath } from './util';
 
 dotenv.config({ path: resolvePath('.env') });
 

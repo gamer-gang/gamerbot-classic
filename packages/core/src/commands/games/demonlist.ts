@@ -1,9 +1,9 @@
+import { Context } from '@gamerbot/types';
+import { Embed } from '@gamerbot/util';
 import axios, { AxiosResponse } from 'axios';
 import { Message, MessageReaction, User } from 'discord.js';
 import _ from 'lodash';
 import { Command, CommandDocs } from '..';
-import { Context } from '../../types';
-import { Embed } from '../../util';
 
 const BASE_URL = 'https://pointercrate.com/api';
 

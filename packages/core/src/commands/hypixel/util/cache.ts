@@ -1,6 +1,6 @@
+import { insertUuidDashes } from '@gamerbot/util';
 import axios from 'axios';
 import { Player, PlayerResponse } from 'hypixel-types';
-import { insertUuidDashes } from '../../../util';
 
 const uuidRegex = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i;
 

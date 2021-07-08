@@ -1,9 +1,10 @@
+import { Context } from '@gamerbot/types';
+import { Embed, normalizeDuration, regExps } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import _ from 'lodash';
 import { Duration } from 'luxon';
+import { SpotifyTrack } from '../../../../models';
 import { client } from '../../../../providers';
-import { Context, SpotifyTrack } from '../../../../types';
-import { Embed, normalizeDuration, regExps } from '../../../../util';
 import { CommandPlay } from '../play';
 import { checkSpotify } from '../util';
 

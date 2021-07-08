@@ -1,3 +1,5 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { Config } from '../../../entities/Config';
 import {
@@ -6,8 +8,6 @@ import {
   logEvents as logEventNames,
   maxLogInteger,
 } from '../../../listeners/log';
-import { Context } from '../../../types';
-import { codeBlock, Embed } from '../../../util';
 
 export const logEvents = async (
   config: Config,

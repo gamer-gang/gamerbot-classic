@@ -1,12 +1,12 @@
+import { PresenceManager, resolvePath, Store } from '@gamerbot/util';
 import { Client, ClientOptions, ClientUser, Guild, GuildEmoji, Snowflake } from 'discord.js';
 import fse from 'fs-extra';
 import { google } from 'googleapis';
 import Spotify from 'spotify-web-api-node';
 import { Command } from './commands';
 import { CryptoManager } from './commands/crypto/CryptoManager';
+import { Queue } from './models';
 import { logger } from './providers';
-import { Queue } from './types';
-import { PresenceManager, resolvePath, Store } from './util';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface GamerbotOptions extends Omit<ClientOptions, 'partials'> {}
@@ -18,6 +18,19 @@ export type KnownEmojis =
   | 'worksonmymachine'
   | 'up_arrow'
   | 'down_arrow';
+
+export interface CachedInvite {
+  guildId: Snowflake;
+  code: string;
+  creatorId: Snowflake;
+  creatorTag: string;
+  uses: number;
+}
+
+export interface CachedUsername {
+  username: string;
+  discriminator: string;
+}
 
 export class Gamerbot extends Client {
   readonly commands: Command[] = [];
@@ -34,6 +47,9 @@ export class Gamerbot extends Client {
 
   readonly devMode = process.env.NODE_ENV === 'development';
   crypto!: CryptoManager;
+
+  inviteCache = new Map<string, CachedInvite>();
+  usernameCache = new Map<string, CachedUsername>();
 
   /** only safe to access after 'ready' event */
   mediaServer!: Guild;

@@ -1,7 +1,7 @@
+import { Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { DateTime } from 'luxon';
 import { client } from '../../../providers';
-import { Embed } from '../../../util';
 
 export const checkSpotify = (msg: Message): boolean => {
   if (client.spotifyDisabled) {

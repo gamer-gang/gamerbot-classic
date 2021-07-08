@@ -1,8 +1,8 @@
+import { Context } from '@gamerbot/types';
+import { Embed } from '@gamerbot/util';
 import { Guild, Message, Snowflake } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
-import { Context } from '../../types';
-import { Embed } from '../../util';
 
 export class CommandServericon implements Command {
   cmd = ['servericon', 'serverpfp', 'serveravatar', 'guildicon', 'guildpfp'];

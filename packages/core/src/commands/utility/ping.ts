@@ -1,6 +1,6 @@
+import { Context } from '@gamerbot/types';
 import { Message } from 'discord.js';
 import { Command } from '..';
-import { Context } from '../../types';
 
 export class CommandPing implements Command {
   cmd = 'ping';

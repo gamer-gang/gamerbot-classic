@@ -1,3 +1,4 @@
+import { Embed, getDateStringFromSnowflake, resolvePath } from '@gamerbot/util';
 import {
   Guild,
   GuildMember,
@@ -10,8 +11,8 @@ import {
 import fse from 'fs-extra';
 import { DateTime } from 'luxon';
 import { LogHandlers } from '.';
-import { CachedInvite, client, usernameCache } from '../../providers';
-import { Embed, getDateStringFromSnowflake, resolvePath } from '../../util';
+import { CachedInvite } from '../../gamerbot';
+import { client } from '../../providers';
 import { formatValue, getLatestAuditEvent, logColorFor } from './utils';
 
 fse.ensureFileSync(resolvePath('data/kicks.txt'));
@@ -137,13 +138,13 @@ export const guildMemberHandlers: LogHandlers = {
           `\`${formatValue(before)} => ${formatValue(after)}\``
         );
 
-      if (!usernameCache.has(next.id))
-        usernameCache.set(next.id, {
+      if (!client.usernameCache.has(next.id))
+        client.usernameCache.set(next.id, {
           username: next.user.username,
           discriminator: next.user.discriminator,
         });
 
-      const cached = usernameCache.get(next.id)!;
+      const cached = client.usernameCache.get(next.id)!;
 
       if (cached.username !== next.user.username)
         add('Username', cached.username, next.user.username);

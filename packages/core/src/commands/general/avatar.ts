@@ -1,8 +1,8 @@
+import { Context } from '@gamerbot/types';
+import { Embed, getProfileImageUrl } from '@gamerbot/util';
 import { Message, Snowflake, User } from 'discord.js';
 import { Command, CommandDocs } from '..';
 import { client } from '../../providers';
-import { Context } from '../../types';
-import { Embed, getProfileImageUrl } from '../../util';
 
 export class CommandAvatar implements Command {
   cmd = ['avatar', 'av'];

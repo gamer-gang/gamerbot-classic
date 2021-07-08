@@ -1,7 +1,7 @@
+import { Embed } from '@gamerbot/util';
 import { Message, MessageReaction, PartialMessage, PartialUser, User } from 'discord.js';
 import { ReactionRole, RoleEmoji } from '../entities/ReactionRole';
 import { client, getLogger, orm } from '../providers';
-import { Embed } from '../util';
 
 const verifyReaction = async (
   reaction: MessageReaction,

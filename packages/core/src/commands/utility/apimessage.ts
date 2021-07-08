@@ -1,7 +1,7 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed, parseDiscohookJSON } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { Command } from '..';
-import { Context } from '../../types';
-import { codeBlock, Embed, parseDiscohookJSON } from '../../util';
 
 // eslint-disable-next-line no-useless-escape
 // const urlRegExp = /^(https?|attachment):\/\/[a-z0-9\.\-\_]+\.[a-z0-9]+(\/[a-z0-9\/\.\-\_\$]+)?$/i;

@@ -1,7 +1,7 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed, parseDiscohookJSON } from '@gamerbot/util';
 import { Message, MessageReaction, User } from 'discord.js';
 import { Config } from '../../../entities/Config';
-import { Context } from '../../../types';
-import { codeBlock, Embed, parseDiscohookJSON } from '../../../util';
 
 const replacer = (msg: Context['msg']) => (json: string) =>
   json

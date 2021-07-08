@@ -7,12 +7,27 @@ services:
   redis:
     ports:
       - 127.0.0.1:6379:6379
-  app:
-    build: .
+  core:
+    user: '1000'
+    build:
+      context: .
+      dockerfile: Dockerfile.core
     volumes:
       - ./:/app
     ports:
       - 127.0.0.1:9229:9229
     environment:
       NODE_ARGS: --inspect=0.0.0.0:9229
-    command: ['yarn', '_docker']
+    command: ['yarn', 'workspace', '@gamerbot/core', '_docker']
+  music:
+    user: '1000'
+    build:
+      context: .
+      dockerfile: Dockerfile.music
+    volumes:
+      - ./:/app
+    ports:
+      - 127.0.0.1:9228:9228
+    environment:
+      NODE_ARGS: --inspect=0.0.0.0:9228
+    command: ['yarn', 'workspace', '@gamerbot/music', '_docker']

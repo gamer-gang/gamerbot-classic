@@ -1,0 +1,12 @@
+{
+  "name": "@gamerbot/types",
+  "version": "0.1.0",
+  "types": "./lib/index.d.ts",
+  "dependencies": {
+    "discord.js": "dev",
+    "yargs-parser": "^20.2.9"
+  },
+  "devDependencies": {
+    "@types/yargs-parser": "^20.2.1"
+  }
+}

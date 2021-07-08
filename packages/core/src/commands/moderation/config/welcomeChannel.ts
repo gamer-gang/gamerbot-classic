@@ -1,7 +1,7 @@
+import { Context } from '@gamerbot/types';
+import { Embed } from '@gamerbot/util';
 import { Message, Snowflake } from 'discord.js';
 import { Config } from '../../../entities/Config';
-import { Context } from '../../../types';
-import { Embed } from '../../../util';
 
 export const welcomeChannel = async (
   config: Config,

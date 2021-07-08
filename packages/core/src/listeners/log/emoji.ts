@@ -1,6 +1,6 @@
+import { Embed } from '@gamerbot/util';
 import { Guild, GuildEmoji, TextChannel } from 'discord.js';
 import { LogHandlers } from '.';
-import { Embed } from '../../util';
 import { formatValue, getLatestAuditEvent, logColorFor } from './utils';
 
 const auditChangeTable: Record<string, string> = {

@@ -1,11 +1,11 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed } from '@gamerbot/util';
 import didYouMean from 'didyoumean';
 import { Message, MessageReaction, User } from 'discord.js';
 import { DateTime } from 'luxon';
 import { zones } from 'tzdata';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
-import { Context } from '../../types';
-import { codeBlock, Embed } from '../../util';
 
 const luxonValidTimezones = Object.entries(zones)
   .filter(([zoneName, v]) => Array.isArray(v))

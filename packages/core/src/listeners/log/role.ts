@@ -1,7 +1,7 @@
+import { Embed } from '@gamerbot/util';
 import { Guild, Role, TextChannel } from 'discord.js';
 import _ from 'lodash';
 import { LogHandlers } from '.';
-import { Embed } from '../../util';
 import { formatValue, getLatestAuditEvent } from './utils';
 
 const changeTable = {

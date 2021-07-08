@@ -1,11 +1,11 @@
+import { Context } from '@gamerbot/types';
+import { Embed } from '@gamerbot/util';
 import { EntityManager } from '@mikro-orm/postgresql';
 import { Message } from 'discord.js';
 import yargsParser from 'yargs-parser';
 import { Command } from '..';
 import { EggLeaderboard } from '../../entities/EggLeaderboard';
 import { client, orm } from '../../providers';
-import { Context } from '../../types';
-import { Embed } from '../../util';
 
 export class CommandEggLeaderboard implements Command {
   cmd = ['eggleaderboard', 'egglb'];

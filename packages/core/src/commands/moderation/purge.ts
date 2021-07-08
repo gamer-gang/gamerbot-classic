@@ -1,8 +1,8 @@
+import { Context } from '@gamerbot/types';
+import { Embed, getDateFromSnowflake } from '@gamerbot/util';
 import { Message, PermissionString, TextChannel } from 'discord.js';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
-import { Context } from '../../types';
-import { Embed, getDateFromSnowflake } from '../../util';
 
 export class CommandPurge implements Command {
   cmd = 'purge';

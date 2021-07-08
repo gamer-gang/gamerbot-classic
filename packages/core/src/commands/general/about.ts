@@ -1,9 +1,10 @@
+import { Context } from '@gamerbot/types';
+import { Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import _ from 'lodash';
 import { Command } from '..';
+import packageJson from '../../../package.json';
 import { client } from '../../providers';
-import { Context } from '../../types';
-import { Embed } from '../../util';
 
 export class CommandAbout implements Command {
   cmd = 'about';
@@ -28,13 +29,7 @@ export class CommandAbout implements Command {
       .addField('Users', users.length.toString(), true)
       .setThumbnail('attachment://hexagon.png');
 
-    const hash = process.env.LATEST_COMMIT_HASH;
-    if (hash)
-      embed.addField(
-        'Latest commit',
-        `[\`${hash?.slice(0, 7)}\`](https://github.com/gamer-gang/gamerbot/commit/${hash})`,
-        true
-      );
+    embed.addField('Version', packageJson.version, true);
     return embed.send(msg.channel);
   }
 }

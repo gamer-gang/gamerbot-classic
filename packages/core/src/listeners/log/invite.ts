@@ -1,8 +1,9 @@
+import { Embed } from '@gamerbot/util';
 import { Guild, Invite, Snowflake, TextChannel } from 'discord.js';
 import { DateTime } from 'luxon';
 import { LogHandlers } from '.';
-import { CachedInvite, client, getLogger, inviteCache, orm } from '../../providers';
-import { Embed } from '../../util';
+import { CachedInvite } from '../../gamerbot';
+import { client, getLogger, orm } from '../../providers';
 import { getLatestAuditEvent, logColorFor } from './utils';
 
 client.on('ready', () => {
@@ -16,7 +17,7 @@ client.on('ready', () => {
             const trackedInvites: string[] = [];
 
             for (const invite of invites) {
-              inviteCache.set(invite.code, {
+              client.inviteCache.set(invite.code, {
                 code: invite.code,
                 creatorId: invite.inviter!.id,
                 creatorTag: invite.inviter!.tag,
@@ -96,6 +97,6 @@ export const inviteHandlers: LogHandlers = {
 
       embed.send(logChannel);
 
-      inviteCache.delete(invite.code);
+      client.inviteCache.delete(invite.code);
     },
 };

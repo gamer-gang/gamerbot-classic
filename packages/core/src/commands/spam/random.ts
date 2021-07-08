@@ -1,9 +1,9 @@
+import { Context } from '@gamerbot/types';
+import { Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import randomWords from 'random-words';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
-import { Context } from '../../types';
-import { Embed } from '../../util';
 
 export class CommandRandom implements Command {
   cmd = 'random';

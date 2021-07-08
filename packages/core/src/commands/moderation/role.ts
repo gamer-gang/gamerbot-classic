@@ -1,11 +1,11 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed } from '@gamerbot/util';
 import { GuildEmoji, Message, PermissionString, Snowflake, User } from 'discord.js';
 import emojiRegex from 'emoji-regex';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { ReactionRole, RoleEmoji } from '../../entities/ReactionRole';
 import { client, orm } from '../../providers';
-import { Context } from '../../types';
-import { codeBlock, Embed } from '../../util';
 
 export class CommandRole implements Command {
   cmd = 'role';

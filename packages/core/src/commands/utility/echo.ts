@@ -1,8 +1,8 @@
+import { Context } from '@gamerbot/types';
+import { Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import yargsParser from 'yargs-parser';
 import { Command } from '..';
-import { Context } from '../../types';
-import { Embed } from '../../util';
 
 export class CommandEcho implements Command {
   cmd = 'echo';

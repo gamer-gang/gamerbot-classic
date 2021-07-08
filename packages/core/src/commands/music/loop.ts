@@ -1,9 +1,10 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
+import { LoopMode } from '../../models';
 import { client } from '../../providers';
-import { Context, LoopMode } from '../../types';
-import { codeBlock, Embed } from '../../util';
 
 export class CommandSkip implements Command {
   cmd = 'loop';

@@ -1,3 +1,5 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed, sanitize } from '@gamerbot/util';
 import axios from 'axios';
 import { Message } from 'discord.js';
 import he from 'he';
@@ -5,8 +7,6 @@ import _ from 'lodash';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
 import { client, logger } from '../../providers';
-import { Context } from '../../types';
-import { codeBlock, Embed, sanitize } from '../../util';
 
 interface CategoriesResponse {
   trivia_categories: { id: number; name: string }[];

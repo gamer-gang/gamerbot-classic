@@ -1,8 +1,9 @@
+import { Context } from '@gamerbot/types';
+import { codeBlock, Embed, regExps } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { getLogger } from 'log4js';
+import { YoutubeTrack } from '../../../../models';
 import { client } from '../../../../providers';
-import { Context, YoutubeTrack } from '../../../../types';
-import { codeBlock, Embed, regExps } from '../../../../util';
 import { CommandPlay } from '../play';
 
 export const getYoutubeVideo = async (

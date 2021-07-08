@@ -6,7 +6,7 @@
     "lib": ["ESNext"],
     "incremental": true,
     "sourceMap": true,
-    "outDir": "dist",
+    "outDir": "./dist",
     "strict": true,
     "noImplicitAny": false,
     "moduleResolution": "node",

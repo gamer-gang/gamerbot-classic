@@ -1,8 +1,8 @@
 // stolen from https://github.com/Plancke/hypixel-php/tree/master/src/util/games/bedwars
 
+import { Color } from '@gamerbot/util';
 import { Player } from 'hypixel-types';
 import _ from 'lodash';
-import { Color } from '../../../util/color';
 import { getRank, rankPrefixes } from './rank';
 import { colors, getCharWidth, headerHeight, margin, padding, parseFormattedText } from './style';
 
