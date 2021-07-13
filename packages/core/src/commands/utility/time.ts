@@ -146,12 +146,10 @@ export class CommandTime implements Command {
     }
 
     const commonZones: (keyof typeof zones)[] = [
+      'Pacific/Honolulu',
       'America/Los_Angeles',
-      'America/Chicago',
       'America/New_York',
-      'Europe/London',
       'Europe/Berlin',
-      'Asia/Shanghai',
       'Asia/Tokyo',
       'Australia/Sydney',
     ];
