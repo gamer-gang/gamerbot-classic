@@ -112,8 +112,8 @@ export class CommandPlay implements Command {
         sortAliases[k].find(keyword => sort === keyword || keyword.includes(sort))
       );
 
-      if (!normalizedSort) return;
-      Embed.error('Invalid sort type (valid: newest, oldest, views, random)').reply(msg);
+      if (!normalizedSort)
+        return Embed.error('Invalid sort type (valid: newest, oldest, views, random)').reply(msg);
 
       args.sort = normalizedSort;
     }
