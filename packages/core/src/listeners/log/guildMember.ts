@@ -69,11 +69,13 @@ export const guildMemberHandlers: LogHandlers = {
           'Invite used',
           `${usedCached?.code} (created by ${
             client.users.resolve(usedCached?.creatorId ?? '') ?? usedCached?.creatorTag
-          } ${DateTime.fromMillis(
-            usedNew?.createdTimestamp as number
-          ).toRelative()}, expires ${DateTime.fromMillis(
-            usedNew?.expiresTimestamp as number
-          ).toRelative()})`
+          } ${DateTime.fromMillis(usedNew?.createdTimestamp as number).toRelative()}${
+            usedNew?.expiresTimestamp
+              ? `, expires ${DateTime.fromMillis(
+                  usedNew?.expiresTimestamp as number
+                ).toRelative()})`
+              : ''
+          }`
         );
       else if (!member.user.bot)
         embed.setDescription(
