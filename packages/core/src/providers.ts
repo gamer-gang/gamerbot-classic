@@ -28,25 +28,30 @@ const levelFilter = (name: string) => ({
 
 log4js.configure({
   appenders: {
+    _fileTrace: { ...fileAppender, filename: resolvePath(`logs/trace.log`) },
+    fileTrace: { ...levelFilter('_fileTrace'), level: 'trace' },
+
     _fileDebug: { ...fileAppender, filename: resolvePath(`logs/debug.log`) },
     fileDebug: { ...levelFilter('_fileDebug'), level: 'debug' },
 
-    _fileInfo: { ...fileAppender, filename: resolvePath(`logs/info.log`), level: 'info' },
+    _fileInfo: { ...fileAppender, filename: resolvePath(`logs/info.log`) },
     fileInfo: { ...levelFilter('_fileInfo'), level: 'info' },
 
-    _fileWarn: { ...fileAppender, filename: resolvePath(`logs/warn.log`), level: 'warn' },
+    _fileWarn: { ...fileAppender, filename: resolvePath(`logs/warn.log`) },
     fileWarn: { ...levelFilter('_fileWarn'), level: 'warn' },
 
     _console: { type: 'console', layout: { type: 'colored' } },
     console: {
       ...levelFilter('_console'),
-      level: devMode ? 'debug' : 'info',
+      level: devMode ? 'trace' : 'info',
     },
   },
   categories: {
     default: {
-      appenders: devMode ? ['console'] : ['console', 'fileWarn', 'fileInfo', 'fileDebug'],
-      level: 'debug',
+      appenders: devMode
+        ? ['console']
+        : ['console', 'fileWarn', 'fileInfo', 'fileDebug', 'fileTrace'],
+      level: 'trace',
       enableCallStack: !devMode,
     },
   },

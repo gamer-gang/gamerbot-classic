@@ -53,7 +53,7 @@ export default {
   user: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   debug: true,
-  logger: msg => dbLogger.debug(process.env.NODE_ENV === 'development' ? msg : c.unstyle(msg)),
+  logger: msg => dbLogger.trace(process.env.NODE_ENV === 'development' ? msg : c.unstyle(msg)),
   highlighter:
     process.env.NODE_ENV === 'development' ? new SqlHighlighter() : new NullHighlighter(),
   baseDir: resolvePath('.'),
