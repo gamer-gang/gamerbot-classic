@@ -1,8 +1,8 @@
 import { Embed } from '@gamerbot/util';
 import { Guild, Role, TextChannel } from 'discord.js';
 import _ from 'lodash';
-import { LogHandlers } from '.';
 import { formatValue, getLatestAuditEvent } from './utils';
+import { LogHandlers } from './_constants';
 
 const changeTable = {
   nickname: 'Nickname',

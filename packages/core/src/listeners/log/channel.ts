@@ -1,8 +1,8 @@
 import { Embed } from '@gamerbot/util';
 import { DMChannel, Guild, GuildChannel, TextChannel } from 'discord.js';
 import _ from 'lodash';
-import { LogHandlers } from '.';
 import { formatValue, getLatestAuditEvent, logColorFor } from './utils';
+import { LogHandlers } from './_constants';
 
 const auditChangeTable: Record<string, string> = {
   topic: 'Topic',

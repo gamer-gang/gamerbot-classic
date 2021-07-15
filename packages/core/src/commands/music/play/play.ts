@@ -125,7 +125,7 @@ export class CommandPlay implements Command {
     for (const [name, [regExp, handler]] of Object.entries(handlers)) {
       if (regExp.test(args._[0])) {
         handled = true;
-        getLogger(`MESSAGE ${msg.id}`).debug(`handling ${args._[0]} as ${name}`);
+        getLogger(`CommandPlay[guild=${msg.guild.id}]`).debug(`handling ${args._[0]} as ${name}`);
         await handler(context, this);
         break;
       }
@@ -134,7 +134,9 @@ export class CommandPlay implements Command {
     if (handled) return;
     if (regExps.url.test(args._[0])) Embed.error('Invalid URL').reply(msg);
 
-    getLogger(`MESSAGE ${msg.id}`).debug(`handling "${args._.join(' ')}" as search`);
+    getLogger(`CommandPlay[guild=${msg.guild.id}]`).debug(
+      `handling "${args._.join(' ')}" as search`
+    );
     await searchYoutube(context, this);
     msg.channel.stopTyping(true);
   }
@@ -166,18 +168,19 @@ export class CommandPlay implements Command {
   async playNext(context: Context): Promise<void> {
     const { msg } = context;
 
-    const logger = getLogger(`GUILD ${msg.guild.id}`);
+    const logger = getLogger(`CommandPlay#playNext[guild=${msg.guild.id}]`);
 
     const queue = client.queues.get(msg.guild.id);
     const track = queue.tracks[queue.index];
 
     if (!track) {
-      logger.debug('playNext called but no track at current index, exiting');
+      logger.debug('no track at current index, resetting queue');
+      queue.reset();
       return;
     }
 
-    if (!queue.playing) {
-      logger.debug(`playNext called but queue.playing = false, connecting to channel`);
+    if (!queue.voiceChannel) {
+      logger.debug(`no voice channel set, connecting to channel`);
       queue.voiceChannel = msg.member?.voice?.channel as VoiceChannel;
 
       const connection = joinVoiceChannel({
@@ -187,27 +190,22 @@ export class CommandPlay implements Command {
         selfDeaf: true,
       });
       connection.subscribe(queue.audioPlayer);
+    } else if (queue.voiceChannel.members.array().length <= 1) {
+      // only the bot in the channel
+      logger.debug('only the bot in the voice channel, resetting queue');
+      queue.reset();
+      return;
     }
+
+    logger.debug(`playing track "${track.title}"`);
 
     const connection = getVoiceConnection(msg.guild.id);
 
-    logger.debug(`playNext called, playing track "${track.title}"`);
-
     queue.updateNowPlaying();
-
-    let called = false;
 
     const callback = async () => {
       try {
-        if (called) {
-          logger.debug('aborting callback because already called');
-          return;
-        }
-        called = true;
-
         const queue = client.queues.get(msg.guild.id);
-
-        logger.debug(`callback called in ${msg.guild.name}`);
 
         queue.embed?.delete();
         delete queue.embed;

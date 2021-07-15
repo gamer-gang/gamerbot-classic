@@ -13,7 +13,10 @@ const verifyReaction = async (
     await reaction.fetch();
     return true;
   } catch (err) {
-    getLogger(`REACTION ON ${reaction.message.id}`).error('fetch error message: ', err);
+    const guild = reaction.message.guild?.id;
+    getLogger(
+      `verifyPermission[message=${reaction.message.id}${guild ? `,guild=${guild}` : ''}]`
+    ).error('fetch error message: ', err);
 
     const dm = await user.createDM();
     Embed.error(

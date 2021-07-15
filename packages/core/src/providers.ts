@@ -25,9 +25,8 @@ log4js.configure({
   },
 });
 
-export const logger = log4js.getLogger('MAIN');
 export const getLogger = (category: string): log4js.Logger => log4js.getLogger(category);
-export const dbLogger = log4js.getLogger('DB');
+export const dbLogger = log4js.getLogger('MikroORM');
 
 // db
 export const storage = new AsyncLocalStorage<EntityManager>();

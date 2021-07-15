@@ -21,7 +21,7 @@ export const getYoutubeVideo = async (
       return Embed.error("Video not found (either it doesn't exist or it's private)").reply(msg);
     caller.queueTrack(new YoutubeTrack(msg.author.id, video.data.items[0]), { context });
   } catch (err) {
-    getLogger(`MESSAGE ${msg.id}`).error(err);
+    getLogger(`getYoutubeVideo[guild=${context.msg.guild.id}]`).error(err);
     if (err.toString() === 'Error: resource youtube#videoListResponse not found')
       return Embed.error("Video not found (either it doesn't exist or it's private)").reply(msg);
 

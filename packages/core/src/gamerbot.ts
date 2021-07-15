@@ -6,7 +6,7 @@ import Spotify from 'spotify-web-api-node';
 import { Command } from './commands';
 import { CryptoManager } from './commands/crypto/CryptoManager';
 import { Queue } from './models';
-import { logger } from './providers';
+import { getLogger } from './providers';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface GamerbotOptions extends Omit<ClientOptions, 'partials'> {}
@@ -80,6 +80,8 @@ export class Gamerbot extends Client {
       partials: ['MESSAGE', 'REACTION'],
     });
 
+    const logger = getLogger('Gamerbot#constructor');
+
     this.presenceManager = new PresenceManager(this);
 
     this.initCommands();
@@ -123,6 +125,8 @@ export class Gamerbot extends Client {
   }
 
   private async initSpotify() {
+    const logger = getLogger('Gamerbot#initSpotify');
+
     if (!process.env.SPOTIFY_CLIENT_ID || !process.env.SPOTIFY_CLIENT_SECRET) {
       this.spotifyDisabled = true;
       logger.warn('missing spotify credentials! disabling spotify support');

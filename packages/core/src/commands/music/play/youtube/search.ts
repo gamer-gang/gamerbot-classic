@@ -152,7 +152,7 @@ export const searchYoutube = async (
       });
     }
   } catch (err) {
-    getLogger(`MESSAGE ${msg.id}`).error(err);
+    getLogger(`searchYoutube[guild=${context.msg.guild.id}]`).error(err);
     return Embed.error(codeBlock(err)).reply(msg);
   }
 };

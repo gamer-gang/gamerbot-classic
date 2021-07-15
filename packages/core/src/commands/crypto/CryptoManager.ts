@@ -8,7 +8,6 @@ export class CryptoManager {
   #quotes = new Map<string, CoinMarketCap.Quote>();
   #quoteFetchTime = 0;
   symbols!: string[];
-  #logger = getLogger('CryptoManager');
 
   available = true;
 
@@ -30,7 +29,7 @@ export class CryptoManager {
   }
 
   async fetchListings(): Promise<void> {
-    this.#logger.debug('fetching listings');
+    getLogger('CryptoManager#fetchListings').debug('fetching listings');
 
     const { data } = await axios.get('/v1/cryptocurrency/listings/latest', {
       baseURL: `https://${client.devMode ? 'sandbox' : 'pro'}-api.coinmarketcap.com`,

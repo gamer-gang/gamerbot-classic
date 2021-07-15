@@ -62,7 +62,7 @@ export const getYoutubePlaylist = async (
     const queue = client.queues.get(msg.guild.id);
     if (!queue.playing) caller.playNext(context);
   } catch (err) {
-    getLogger(`MESSAGE ${msg.id}`).error(err);
+    getLogger(`getYoutubePlaylist[guild=${context.msg.guild.id}]`).error(err);
     if (err.toString() === 'Error: resource youtube#playlistListResponse not found')
       return Embed.error("Playlist not found (either it doesn't exist or it's private)").reply(msg);
 

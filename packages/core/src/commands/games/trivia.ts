@@ -6,7 +6,7 @@ import he from 'he';
 import _ from 'lodash';
 import yargsParser from 'yargs-parser';
 import { Command, CommandDocs } from '..';
-import { client, logger } from '../../providers';
+import { client, getLogger } from '../../providers';
 
 interface CategoriesResponse {
   trivia_categories: { id: number; name: string }[];
@@ -167,7 +167,9 @@ export class CommandTrivia implements Command {
     const data = (await axios.get('https://opentdb.com/api_token.php?command=request'))
       .data as TokenRequestResponse;
     if (data.response_code !== 0) {
-      logger.error(`failed retrieving trivia session token! message: ${data.response_message}`);
+      getLogger('CommandTrivia#requestToken').error(
+        `failed retrieving trivia session token! message: ${data.response_message}`
+      );
       throw new Error(`Requesting token: ${data.response_message}`);
     }
 
@@ -181,7 +183,9 @@ export class CommandTrivia implements Command {
     ).data as TokenResetResponse;
 
     if (data.response_code !== 0) {
-      logger.warn(`failed resetting trivia session token! getting new one instead`);
+      getLogger('CommandTrivia#resetToken').warn(
+        `failed resetting trivia session token! getting new one instead`
+      );
       return this.requestToken();
     }
 

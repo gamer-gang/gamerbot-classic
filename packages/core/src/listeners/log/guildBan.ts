@@ -1,7 +1,7 @@
 import { Embed } from '@gamerbot/util';
 import { Guild, TextChannel, User } from 'discord.js';
-import { LogHandlers } from '.';
 import { getLatestAuditEvent, logColorFor } from './utils';
+import { LogHandlers } from './_constants';
 
 export const guildBanHandlers: LogHandlers = {
   onGuildBanAdd: (guild: Guild, logChannel: TextChannel) => async (guild: Guild, user: User) => {

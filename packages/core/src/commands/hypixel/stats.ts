@@ -241,7 +241,7 @@ export class CommandStats implements Command {
       }
 
       avatarImage.onerror = (err: Error) => {
-        getLogger(`STATS ${player.playername}`).error(err);
+        getLogger(`CommandStats[player=${player.playername}]`).error(err);
         throw err;
       };
 

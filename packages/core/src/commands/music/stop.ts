@@ -1,4 +1,3 @@
-import { getVoiceConnection } from '@discordjs/voice';
 import { Context } from '@gamerbot/types';
 import { codeBlock, Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
@@ -23,12 +22,8 @@ export class CommandStop implements Command {
         return Embed.error('You are not in the music channel').reply(msg);
     }
 
-    const connection = getVoiceConnection(msg.guild.id);
-
     try {
-      queue.tracks = [];
-      connection?.destroy();
-      queue.audioPlayer.stop();
+      queue.reset();
       return Embed.success('Stopped').reply(msg);
     } catch (err) {
       return Embed.error(codeBlock(err)).reply(msg);

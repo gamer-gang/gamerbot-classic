@@ -1,9 +1,9 @@
 import { findGuild, GuildHandle } from '@gamerbot/util';
 import { Guild, GuildAuditLogsEntry } from 'discord.js';
 import { inspect } from 'util';
-import { logColors, LogEventName, logEvents } from '.';
 import { Config } from '../../entities/Config';
 import { client, getLogger, orm } from '../../providers';
+import { logColors, LogEventName, logEvents } from './_constants';
 
 export const getConfig = async (source: GuildHandle): Promise<Config> => {
   const guild = findGuild(source);
@@ -22,12 +22,14 @@ export const getLatestAuditEvent = async (guild: Guild): Promise<GuildAuditLogsE
   const event = auditLogs.entries.array()[0];
 
   if (client.devMode) {
-    const logger = getLogger('     ');
+    const logger = getLogger('    ');
 
     const json = inspect(event.toJSON(), false, null, true);
     const split = json.split('\n');
 
-    getLogger('AUDIT').debug(`audit event ${event.id} in guild ${guild.name}`);
+    getLogger(`getLatestAuditEvent[guild=${guild.id}]`).debug(
+      `audit event ${event.id} in guild ${guild.name}`
+    );
 
     split.forEach(msg => logger.debug(msg));
   }

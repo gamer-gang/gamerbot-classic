@@ -30,21 +30,11 @@ export class CommandQueue implements Command {
       usage: 'queue -r, --rm, --remove <index|range>',
       description: 'remove video(s) at `<index|range>` from queue',
     },
-    {
-      usage: 'queue --reset',
-      description: 'reset queue if bad things happen',
-    },
   ];
   async execute(context: Context): Promise<void | Message> {
     const { msg, args } = context;
 
     const queue = client.queues.get(msg.guild.id);
-
-    if (args.reset) {
-      if (queue.playing) return Embed.error('Currently playing').reply(msg);
-      queue.reset();
-      return Embed.success('Queue reset').reply(msg);
-    }
 
     if (args.clear) {
       if (!queue.tracks.length) return Embed.error('Nothing playing').reply(msg);

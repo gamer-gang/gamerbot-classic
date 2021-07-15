@@ -26,11 +26,9 @@ export class Queue {
     this.embed?.delete();
     delete this.embed;
 
-    if (this.voiceChannel) {
-      const connection = getVoiceConnection(this.voiceChannel.id);
-      connection?.destroy();
-      this.audioPlayer.stop();
-    }
+    const connection = getVoiceConnection(this.guildId);
+    connection?.destroy();
+    this.audioPlayer.stop();
 
     delete this.textChannel;
     delete this.voiceChannel;
@@ -75,7 +73,7 @@ export class Queue {
   }
 
   async updateNowPlaying(): Promise<void | Message> {
-    const logger = getLogger(`GUILD ${this.guildId}`);
+    const logger = getLogger(`Queue#updateNowPlaying[guild=${this.guildId}]`);
     logger.debug(`updating now playing embed`);
     if (this.tracks.length === 0 || this.tracks[this.index] == undefined)
       throw new Error('track is null nerd');

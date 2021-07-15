@@ -1,8 +1,8 @@
 import { Context } from '@gamerbot/types';
 import { Embed } from '@gamerbot/util';
 import { Guild, TextChannel } from 'discord.js';
-import { LogEventHandler, LogEventName, LogHandlers } from '.';
 import { logColorFor } from './utils';
+import { LogEventHandler, LogEventName, LogHandlers } from './_constants';
 
 const onCommand =
   (event: LogEventName) =>

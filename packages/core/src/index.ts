@@ -1,4 +1,3 @@
-import { generateDependencyReport } from '@discordjs/voice';
 import { findGuild, resolvePath } from '@gamerbot/util';
 import { registerFont } from 'canvas';
 import { ClientEvents, Guild, GuildMember, Invite, TextChannel } from 'discord.js';
@@ -8,24 +7,17 @@ import _ from 'lodash';
 import { Config } from './entities/Config';
 import { CachedInvite } from './gamerbot';
 import * as eggs from './listeners/eggs';
-import {
-  intToLogEvents,
-  LogClientEventName,
-  logClientEvents,
-  LogEventHandler,
-  logHandlers,
-} from './listeners/log';
+import { getLogHandler, intToLogEvents } from './listeners/log';
+import { LogClientEventName, logClientEvents, LogEventHandler } from './listeners/log/_constants';
 import { onMessageCreate } from './listeners/message';
 import * as reactions from './listeners/reactions';
 import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
-import { client, getLogger, logger, orm, storage } from './providers';
+import { client, getLogger, orm, storage } from './providers';
 
 dotenv.config({ path: resolvePath('.env') });
 
 fse.mkdirp(resolvePath('data'));
-
-logger.info(generateDependencyReport());
 
 // register fonts for canvas
 const fonts: Record<string, { family: string; weight?: string; style?: string }> = {
@@ -70,11 +62,11 @@ const fetchMemberCache = async (): Promise<void> => {
     })
   );
 
-  logger.debug(`successfully cached ${members.length} users`);
+  getLogger('fetchMemberCache').debug(`successfully cached ${members.length} users`);
 };
 
 client.on('ready', () => {
-  logger.info(`${client.user.tag} ready`);
+  getLogger('Client!ready').info(`${client.user.tag} ready`);
   setPresence();
   setInterval(setPresence, 1000 * 60 * 10);
   fetchMemberCache();
@@ -120,7 +112,9 @@ const eventHooks: {
       for (const invite of newInvites) {
         const cached = client.inviteCache.get(invite.code);
         if (!cached) {
-          getLogger(`GUILD ${guild.id}`).warn(`invite ${invite.code} has no cached counterpart`);
+          getLogger(`Client!guildMemberAdd.pre[guild=${guild}]`).warn(
+            `invite ${invite.code} has no cached counterpart`
+          );
           continue;
         }
         if ((invite.uses ?? 0) > cached.uses) {
@@ -181,7 +175,7 @@ const eventHooks: {
         if (guild) break;
       }
 
-      const logger = getLogger(`GUILD ${guild?.id ?? 'unknown'} EVENT ${event}`);
+      const logger = getLogger(`Client!${event}.callback[guild=${guild?.id ?? 'unknown'}]`);
 
       if (!guild) return logger.error(`could not find guild for resource ${args[0]?.toString()}`);
 
@@ -192,7 +186,7 @@ const eventHooks: {
         preInfo = await hooks.pre(guild)(...args);
       }
 
-      const logHandler = logHandlers[handlerName];
+      const logHandler = getLogHandler(handlerName);
 
       if (!logHandler) {
         logger.debug(`no ${handlerName} handler, ignoring event`);
@@ -234,16 +228,20 @@ const eventHooks: {
 
         await orm.em.flush();
       } catch (err) {
-        getLogger(`GUILD ${guild?.id ?? 'unknown'} EVENT ${event}`).error(err);
+        logger.error(err);
       }
     });
   });
 });
 
+const debugLogger = getLogger('Client!debug');
 client.on('debug', content => {
-  if (client.devMode) logger.debug(content);
-  else if (content.includes('Remaining: '))
-    logger.info(`remaining gateway sessions: ${content.split(' ').reverse()[0]}`);
+  if (client.devMode) {
+    if (content.includes('Heartbeat')) return;
+    debugLogger.debug(content);
+  } else if (content.includes('Remaining: ')) {
+    getLogger('Client+info').info(`Remaining gateway sessions: ${content.split(' ').reverse()[0]}`);
+  }
 });
 
 const handleEvent =
@@ -254,13 +252,13 @@ const handleEvent =
 
 client
   .on('messageCreate', handleEvent(onMessageCreate))
-  .on('warn', logger.warn)
-  .on('error', logger.error)
-  .on('disconnect', () => logger.warn('client disconnected!'))
+  .on('warn', getLogger('Client!warn').warn)
+  .on('error', getLogger('Client!error').error)
+  .on('disconnect', () => getLogger('Client!disconnect').warn('client disconnected!'))
   .on(
     'guildCreate',
     handleEvent(async (guild: Guild) => {
-      getLogger(`GUILD ${guild.id}`).info(
+      getLogger(`Client!guildCreate[guild=${guild.id}]`).info(
         `joined guild: ${guild.name} (${guild.memberCount} members)`
       );
       const fresh = orm.em.create(Config, { guildId: guild.id });
@@ -269,7 +267,9 @@ client
   )
   .on('guildDelete', async guild => {
     const em = orm.em.fork();
-    getLogger(`GUILD ${guild.id}`).info(`left guild: ${guild.name} (${guild.memberCount} members)`);
+    getLogger(`Client!guildDelete[guild=${guild.id}]`).info(
+      `left guild: ${guild.name} (${guild.memberCount} members)`
+    );
     const config = await em.findOne(Config, { guildId: guild.id });
     config && (await em.removeAndFlush(config));
   })

@@ -10,10 +10,10 @@ import {
 } from 'discord.js';
 import fse from 'fs-extra';
 import { DateTime } from 'luxon';
-import { LogHandlers } from '.';
 import { CachedInvite } from '../../gamerbot';
 import { client } from '../../providers';
 import { formatValue, getLatestAuditEvent, logColorFor } from './utils';
+import { LogHandlers } from './_constants';
 
 fse.ensureFileSync(resolvePath('data/kicks.txt'));
 

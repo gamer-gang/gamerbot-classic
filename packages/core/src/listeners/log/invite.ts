@@ -1,42 +1,41 @@
-import { Embed } from '@gamerbot/util';
+import { delay, Embed } from '@gamerbot/util';
 import { Guild, Invite, Snowflake, TextChannel } from 'discord.js';
 import { DateTime } from 'luxon';
-import { LogHandlers } from '.';
 import { CachedInvite } from '../../gamerbot';
 import { client, getLogger, orm } from '../../providers';
 import { getLatestAuditEvent, logColorFor } from './utils';
+import { LogHandlers } from './_constants';
+
+const fetchInvite = async (guild: Guild) => {
+  try {
+    const invites = (await guild.invites.fetch()).array();
+
+    const trackedInvites: string[] = [];
+
+    for (const invite of invites) {
+      client.inviteCache.set(invite.code, {
+        code: invite.code,
+        creatorId: invite.inviter!.id,
+        creatorTag: invite.inviter!.tag,
+        guildId: guild.id,
+        uses: invite.uses ?? 0,
+      });
+
+      trackedInvites.push(invite.code);
+    }
+
+    getLogger(`fetchInvite[guild=${guild.id}]`).debug('successfully cached invites');
+
+    return;
+  } catch (err) {
+    getLogger(`fetchInvite[guild=${guild.id}]`).error(`error caching invites: ${err.message}`);
+  }
+};
 
 client.on('ready', () => {
-  const inviteFetchers = client.guilds.cache.array().map(
-    (guild, index) =>
-      new Promise<void>(resolve =>
-        setTimeout(async () => {
-          try {
-            const invites = (await guild.invites.fetch()).array();
-
-            const trackedInvites: string[] = [];
-
-            for (const invite of invites) {
-              client.inviteCache.set(invite.code, {
-                code: invite.code,
-                creatorId: invite.inviter!.id,
-                creatorTag: invite.inviter!.tag,
-                guildId: guild.id,
-                uses: invite.uses ?? 0,
-              });
-
-              trackedInvites.push(invite.code);
-            }
-
-            getLogger(`GUILD ${guild.id}`).debug('successfully cached invites');
-
-            resolve();
-          } catch (err) {
-            getLogger(`GUILD ${guild.id}`).error(`error caching invites\n${err.stack}`);
-          }
-        }, index * 2500)
-      )
-  );
+  const inviteFetchers = client.guilds.cache
+    .array()
+    .map((guild, index) => delay(index * 2500)(undefined).then(() => fetchInvite(guild)));
 
   Promise.all(inviteFetchers).then(() => orm.em.flush());
 });

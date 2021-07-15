@@ -77,7 +77,7 @@ export const getYoutubeChannel = async (
     if (err.message.includes("Cannot read property 'length' of undefined"))
       return Embed.error('Invalid channel').reply(msg);
 
-    getLogger(`MESSAGE ${msg.id}`).error(err);
+    getLogger(`getYoutubeChannel[guild=${context.msg.guild.id}]`).error(err);
     return Embed.error(codeBlock(err)).reply(msg);
   }
 };

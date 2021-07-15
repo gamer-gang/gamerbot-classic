@@ -8,9 +8,10 @@ import { ongoingTriviaQuestions } from '../commands/games/trivia';
 import { CommandHelp } from '../commands/general/help';
 import { Config } from '../entities/Config';
 import { Queue } from '../models';
-import { client, getLogger, logger, orm } from '../providers';
+import { client, getLogger, orm } from '../providers';
 import * as eggs from './eggs';
-import { intToLogEvents, LogEventHandler, LogEventName, logHandlers } from './log';
+import { getLogHandler, intToLogEvents } from './log';
+import { LogEventHandler, LogEventName } from './log/_constants';
 
 const verifyPermissions = (context: Context, command: Command): boolean => {
   const { msg, config, cmd } = context;
@@ -19,7 +20,7 @@ const verifyPermissions = (context: Context, command: Command): boolean => {
   const botPermissions = msg.guild?.me?.permissionsIn(msg.channel);
 
   if (!botPermissions?.has('SEND_MESSAGES')) {
-    logger.error(
+    getLogger(`verifyPermissions[guild=${context.msg.guild.id}]`).error(
       `cannot respond to "${msg.cleanContent}" in ${msg.channel.id} due to missing permissions`
     );
     return false;
@@ -66,23 +67,22 @@ const logCommandEvents = (context: Context, command: Command) => {
   )}` as LogEventName;
   const handlerName = `on${event[0].toUpperCase()}${event.substr(1)}` as LogEventHandler;
 
-  const logHandler = logHandlers[handlerName];
+  const logHandler = getLogHandler(handlerName);
 
-  const logger = getLogger(`GUILD ${msg.guild.id} EVENT ${event}`);
-
-  if (!logHandler) {
-    if (handlerName.includes('onGamerbot'))
-      logger.debug(`no handler for ${handlerName}, ignoring event`);
-    else logger.warn(`no handler for ${handlerName}, ignoring event`);
-    return;
-  }
+  const logger = getLogger(`Client!${event}[guild=${msg.guild.id}]`);
 
   if (!intToLogEvents(config.logSubscribedEvents).includes(event)) {
     logger.debug('guild has not subscribed to the event, aborting');
     return;
   }
 
-  logger.debug(`handler for ${event} exists`);
+  if (!logHandler) {
+    if (handlerName.includes('onGamerbot'))
+      logger.debug(`${handlerName} does not exist, ignoring event`);
+    else logger.warn(`${handlerName} does not exist, ignoring event`);
+    return;
+  }
+
   if (!config.logChannelId) {
     logger.debug(`guild does not have a log channel set, aborting`);
     return;
@@ -101,7 +101,7 @@ const logCommandEvents = (context: Context, command: Command) => {
 export const onMessageCreate = async (msg: Context['msg']): Promise<void | Message> => {
   const start = process.hrtime();
 
-  const logger = getLogger(`MESSAGE ${msg.id}`);
+  const logger = getLogger(`Client!messageCreate[guild=${msg.guild.id}]`);
 
   if (msg.author.bot && !msg.author?.tag.endsWith('#0000')) return;
   if (msg.author.id == client.user?.id) return;

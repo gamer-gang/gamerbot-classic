@@ -12,7 +12,9 @@ export const onVoiceStateUpdate = (oldState: VoiceState, newState: VoiceState): 
     // that's us!
     if (oldState.channelId != null && newState.channelId == null) {
       // disconnected
-      getLogger(`VOICE ${newState.id}`).debug('bot was disconnected in ' + newState.guild.id);
+      getLogger(`Client!voiceStateUpdate[guild=${newState.guild.id}]`).debug(
+        'bot was disconnected'
+      );
       cleanQueue(newState.guild);
     } else if (oldState.channelId == null && newState.channelId != null) {
       // joined

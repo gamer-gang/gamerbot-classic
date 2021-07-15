@@ -1,4 +1,3 @@
-import { Guild, TextChannel } from 'discord.js';
 import { channelHandlers } from './channel';
 import { commandHandlers } from './command';
 import { emojiHandlers } from './emoji';
@@ -7,68 +6,7 @@ import { guildBanHandlers } from './guildBan';
 import { guildMemberHandlers } from './guildMember';
 import { inviteHandlers } from './invite';
 import { roleHandlers } from './role';
-
-export type LogClientEventName = typeof logClientEvents[number];
-export type LogGamerbotCommandEventName = typeof logGamerbotCommandEvents[number];
-export type LogEventName = typeof logEvents[number];
-export type LogEventHandler = `on${Capitalize<LogEventName>}`;
-export type LogHandlers = Partial<
-  Record<
-    LogEventHandler,
-    (guild: Guild, logChannel: TextChannel, preInfo?: any) => (...args: any[]) => Promise<void>
-  >
->;
-
-export const logClientEvents = [
-  'channelCreate',
-  'channelDelete',
-  'channelUpdate',
-  'emojiCreate',
-  'emojiDelete',
-  'emojiUpdate',
-  'guildBanAdd',
-  'guildBanRemove',
-  'guildMemberAdd',
-  'guildMemberRemove',
-  'guildMemberUpdate',
-  'guildUpdate',
-  'inviteCreate',
-  'inviteDelete',
-  'presenceUpdate',
-  'roleCreate',
-  'roleDelete',
-  'roleUpdate',
-  'voiceStateUpdate',
-] as const;
-
-export const logGamerbotCommandEvents = [
-  'gamerbotCommandGif',
-  'gamerbotCommandApimessage',
-  'gamerbotCommandCowsay',
-  'gamerbotCommandEcho',
-  'gamerbotCommandEggleaderboard',
-  'gamerbotCommandEz',
-  'gamerbotCommandJoke',
-  'gamerbotCommandConfig',
-  'gamerbotCommandBan',
-  'gamerbotCommandKick',
-  'gamerbotCommandPurge',
-  'gamerbotCommandRole',
-  'gamerbotCommandUnban',
-  'gamerbotCommandPlay',
-  'gamerbotCommandPrevious',
-  'gamerbotCommandSkip',
-  'gamerbotCommandShuffle',
-  'gamerbotCommandStop',
-] as const;
-
-export const logEvents = [...logClientEvents, ...logGamerbotCommandEvents] as const;
-
-// https://coolors.co/gradient-palette/40c9ff-e81cff
-export const logColors = [
-  0x40c9ff, 0x4fb9ff, 0x5faaff, 0x6e9aff, 0x7d8aff, 0x8c7aff, 0x9c6bff, 0xab5bff, 0xba4bff,
-  0xc93bff, 0xd92cff, 0xe81cff,
-];
+import { LogEventName, logEvents, LogHandlers } from './_constants';
 
 export const maxLogInteger = logEvents.map((__, index) => 2 ** index).reduce((a, b) => a + b);
 
@@ -103,7 +41,7 @@ export const logEventsToInt = (subscribedEvents: LogEventName[]): bigint => {
   );
 };
 
-export const logHandlers: LogHandlers = {
+const logHandlers: LogHandlers = {
   ...commandHandlers,
   ...channelHandlers,
   ...emojiHandlers,
@@ -113,3 +51,6 @@ export const logHandlers: LogHandlers = {
   ...inviteHandlers,
   ...roleHandlers,
 };
+
+export const getLogHandler = (name: keyof LogHandlers): LogHandlers[keyof LogHandlers] =>
+  logHandlers[name];
