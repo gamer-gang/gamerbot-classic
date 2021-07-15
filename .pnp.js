@@ -299,6 +299,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["@types/yt-search", "npm:2.3.1"],
             ["@wiisportsresorts/cowsay", "npm:0.1.0"],
             ["amqplib", "npm:0.8.0"],
+            ["ansi-colors", "npm:4.1.1"],
             ["axios", "npm:0.21.1"],
             ["bufferutil", "npm:4.0.3"],
             ["canvas", "npm:2.8.0"],

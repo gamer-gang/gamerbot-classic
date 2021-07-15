@@ -1,6 +1,7 @@
 import { resolvePath } from '@gamerbot/util';
-import { MigrationObject, MikroORM } from '@mikro-orm/core';
+import { MigrationObject, MikroORM, NullHighlighter } from '@mikro-orm/core';
 import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
+import c from 'ansi-colors';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import { basename } from 'path';
@@ -51,9 +52,10 @@ export default {
   dbName: process.env.POSTGRES_DB,
   user: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
-  debug: process.env.NODE_ENV === 'development',
-  logger: msg => dbLogger.debug(msg),
-  highlighter: new SqlHighlighter(),
+  debug: true,
+  logger: msg => dbLogger.debug(process.env.NODE_ENV === 'development' ? msg : c.unstyle(msg)),
+  highlighter:
+    process.env.NODE_ENV === 'development' ? new SqlHighlighter() : new NullHighlighter(),
   baseDir: resolvePath('.'),
   discovery: { disableDynamicFileAccess: true },
   migrations: {

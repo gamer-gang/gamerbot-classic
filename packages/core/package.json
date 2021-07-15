@@ -30,6 +30,7 @@
     "@types/webpack-env": "^1.16.2",
     "@wiisportsresorts/cowsay": "^0.1.0",
     "amqplib": "^0.8.0",
+    "ansi-colors": "^4.1.1",
     "axios": "^0.21.1",
     "bufferutil": "^4.0.3",
     "canvas": "^2.8.0",

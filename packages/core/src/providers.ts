@@ -1,6 +1,7 @@
 import { registerClientUtil, resolvePath } from '@gamerbot/util';
 import { EntityManager, MikroORM } from '@mikro-orm/core';
 import { AsyncLocalStorage } from 'async_hooks';
+import { execSync } from 'child_process';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import log4js from 'log4js';
@@ -11,22 +12,51 @@ dotenv.config({ path: resolvePath('.env') });
 
 fse.mkdirp(resolvePath('logs'));
 
+const devMode = process.env.NODE_ENV === 'development';
+
+const fileAppender = {
+  type: 'file',
+  maxLogSize: 10485760, // ~10 MB
+  compress: true,
+};
+
+const levelFilter = (name: string) => ({
+  type: 'logLevelFilter',
+  appender: name,
+  maxLevel: 'mark',
+});
+
 log4js.configure({
   appenders: {
-    file: { type: 'file', filename: `logs/${new Date().toISOString()}.log` },
-    console: { type: 'console', layout: { type: 'colored' } },
+    _fileDebug: { ...fileAppender, filename: resolvePath(`logs/debug.log`) },
+    fileDebug: { ...levelFilter('_fileDebug'), level: 'debug' },
+
+    _fileInfo: { ...fileAppender, filename: resolvePath(`logs/info.log`), level: 'info' },
+    fileInfo: { ...levelFilter('_fileInfo'), level: 'info' },
+
+    _fileWarn: { ...fileAppender, filename: resolvePath(`logs/warn.log`), level: 'warn' },
+    fileWarn: { ...levelFilter('_fileWarn'), level: 'warn' },
+
+    _console: { type: 'console', layout: { type: 'colored' } },
+    console: {
+      ...levelFilter('_console'),
+      level: devMode ? 'debug' : 'info',
+    },
   },
   categories: {
     default: {
-      appenders: process.env.NODE_ENV === 'production' ? ['file', 'console'] : ['console'],
-      level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-      enableCallStack: true,
+      appenders: devMode ? ['console'] : ['console', 'fileWarn', 'fileInfo', 'fileDebug'],
+      level: 'debug',
+      enableCallStack: !devMode,
     },
   },
 });
 
 export const getLogger = (category: string): log4js.Logger => log4js.getLogger(category);
 export const dbLogger = log4js.getLogger('MikroORM');
+
+// init message
+getLogger('').mark('\n' + execSync('figlet -f small gamerbot').toString());
 
 // db
 export const storage = new AsyncLocalStorage<EntityManager>();

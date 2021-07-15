@@ -18,10 +18,11 @@ services:
       - redis
     environment:
       - REDIS_URL=redis://redis
-  rabbitmq:
-    image: rabbitmq:3
-    volumes:
-      - rabbitmq-data:/var/lib/rabbitmq
+  # rabbitmq:
+  #   image: rabbitmq:3
+  #   volumes:
+  #     - rabbitmq-data:/var/lib/rabbitmq
+  #     - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
   core:
     build:
       context: .
@@ -31,21 +32,21 @@ services:
       - core-logs:/app/logs
     depends_on:
       - db
-      - rabbitmq
+      # - rabbitmq
       - crafatar
     env_file: .env
     environment:
       - POSTGRES_HOST=db
       - CRAFATAR_URL=http://crafatar:3000
-  music:
-    build:
-      context: .
-      dockerfile: Dockerfile.music
-    depends_on:
-      - rabbitmq
-    env_file: .env
-    environment:
-      - AMQP_URL=amqp://rabbitmq
+  # music:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile.music
+  #   depends_on:
+  #     - rabbitmq
+  #   env_file: .env
+  #   environment:
+  #     - AMQP_URL=amqp://rabbitmq
 
 volumes:
   core-data: {}
