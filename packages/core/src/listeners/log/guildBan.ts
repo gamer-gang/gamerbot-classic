@@ -1,22 +1,22 @@
 import { Embed } from '@gamerbot/util';
-import { Guild, TextChannel, User } from 'discord.js';
+import { Guild, GuildBan, TextChannel } from 'discord.js';
 import { getLatestAuditEvent, logColorFor } from './utils';
 import { LogHandlers } from './_constants';
 
 export const guildBanHandlers: LogHandlers = {
-  onGuildBanAdd: (guild: Guild, logChannel: TextChannel) => async (guild: Guild, user: User) => {
+  onGuildBanAdd: (guild: Guild, logChannel: TextChannel) => async (ban: GuildBan) => {
     const auditEvent = await getLatestAuditEvent(guild);
 
     const embed = new Embed({
       author: {
-        iconURL: user.displayAvatarURL({ format: 'png' }) ?? undefined,
-        name: user.tag,
+        iconURL: ban.user.displayAvatarURL({ format: 'png' }) ?? undefined,
+        name: ban.user.tag,
       },
       color: logColorFor('guildBanAdd'),
       title: 'User banned',
     })
-      .addField('User ID', user.id)
-      .setThumbnail(user.displayAvatarURL({ format: 'png' }))
+      .addField('User ID', ban.user.id)
+      .setThumbnail(ban.user.displayAvatarURL({ format: 'png' }))
       .setTimestamp();
 
     auditEvent.executor && embed.addField('Banned by', auditEvent.executor.toString());
@@ -24,19 +24,19 @@ export const guildBanHandlers: LogHandlers = {
 
     embed.send(logChannel);
   },
-  onGuildBanRemove: (guild: Guild, logChannel: TextChannel) => async (guild: Guild, user: User) => {
+  onGuildBanRemove: (guild: Guild, logChannel: TextChannel) => async (ban: GuildBan) => {
     const auditEvent = await getLatestAuditEvent(guild);
 
     const embed = new Embed({
       author: {
-        iconURL: user.displayAvatarURL({ format: 'png' }) ?? undefined,
-        name: user.tag,
+        iconURL: ban.user.displayAvatarURL({ format: 'png' }) ?? undefined,
+        name: ban.user.tag,
       },
       color: logColorFor('guildBanRemove'),
       title: 'User unbanned',
     })
-      .addField('User ID', user.id)
-      .setThumbnail(user.displayAvatarURL({ format: 'png' }))
+      .addField('User ID', ban.user.id)
+      .setThumbnail(ban.user.displayAvatarURL({ format: 'png' }))
       .setTimestamp();
 
     auditEvent.executor && embed.addField('Unbanned by', auditEvent.executor.toString());

@@ -22,7 +22,7 @@ export const getLatestAuditEvent = async (guild: Guild): Promise<GuildAuditLogsE
   const event = auditLogs.entries.array()[0];
 
   if (client.devMode) {
-    const logger = getLogger('    ');
+    const logger = getLogger(' ');
 
     const json = inspect(event.toJSON(), false, null, true);
     const split = json.split('\n');
