@@ -14,17 +14,17 @@ import {
   ThreadChannel,
 } from 'discord.js';
 import _ from 'lodash/fp';
-import { color } from './color';
+import { Color } from './color';
 import { getProfilePicture } from './message';
 import { getClient } from './_client';
 
 type EmbedIntent = 'info' | 'success' | 'warning' | 'error';
 
 export class Colors {
-  static readonly green = color(0x8eef43);
-  static readonly blue = color(0x209fd5);
-  static readonly red = color(0xfb4b4e);
-  static readonly orange = color(0xefa443);
+  static readonly green = Color.from(0x8eef43);
+  static readonly blue = Color.from(0x209fd5);
+  static readonly red = Color.from(0xfb4b4e);
+  static readonly orange = Color.from(0xefa443);
 }
 
 export interface EmbedOptions {
@@ -82,17 +82,17 @@ export class Embed extends MessageEmbed {
     if (!this.color && !options?.noColor) {
       switch (options?.intent) {
         case 'error':
-          this.setColor(Colors.red());
+          this.setColor(Colors.red.number);
           break;
         case 'warning':
-          this.setColor(Colors.orange());
+          this.setColor(Colors.orange.number);
           break;
         case 'success':
-          this.setColor(Colors.green());
+          this.setColor(Colors.green.number);
           break;
         case 'info':
         default:
-          this.setColor(Colors.blue());
+          this.setColor(Colors.blue.number);
       }
     }
 

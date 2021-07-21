@@ -1,10 +1,11 @@
 // stolen from https://github.com/Plancke/hypixel-php/tree/master/src/util/games/bedwars
 
+import { canvasStyle as s } from '@gamerbot/config';
 import { Color } from '@gamerbot/util';
 import { Player } from 'hypixel-types';
 import _ from 'lodash';
 import { getRank, rankPrefixes } from './rank';
-import { colors, getCharWidth, headerHeight, margin, padding, parseFormattedText } from './style';
+import { colors, parseFormattedText } from './style';
 
 export const EASY_LEVELS = 4;
 export const EASY_LEVELS_XP = 7000;
@@ -128,7 +129,7 @@ export const getPrestigePlaintext = (player: Player): string => {
 export const drawPrestige = (c: CanvasRenderingContext2D, player: Player): number => {
   c.save();
 
-  const charWidth = getCharWidth(+c.font.split('px')[0]);
+  const charWidth = s.getCharWidth(+c.font.split('px')[0]);
 
   const level = Math.floor(getLevelForExp(player.stats.Bedwars.Experience ?? 0));
   const palette = getPrestigePalette(level);
@@ -146,11 +147,11 @@ export const drawPrestige = (c: CanvasRenderingContext2D, player: Player): numbe
   const width = _.clone(split)
     .reverse()
     .reduce((offset, segment) => {
-      c.fillStyle = segment.color('hex');
-      c.fillText(segment.text, offset, padding + headerHeight);
+      c.fillStyle = segment.color.hex;
+      c.fillText(segment.text, offset, s.padding + s.headerHeight);
 
       return offset - (segment.text === star ? c.measureText(star).width * 1.1 : charWidth);
-    }, c.canvas.width - padding - margin * 2);
+    }, c.canvas.width - s.padding - s.margin * 2);
 
   c.restore();
 
@@ -160,12 +161,12 @@ export const drawPrestige = (c: CanvasRenderingContext2D, player: Player): numbe
 export const drawRank = (
   c: CanvasRenderingContext2D,
   player: Player,
-  x = padding,
-  y = padding + headerHeight
+  x = s.padding,
+  y = s.padding + s.headerHeight
 ): [width: number, nameColor: Color] => {
   c.save();
 
-  const charWidth = getCharWidth(+c.font.split('px')[0]);
+  const charWidth = s.getCharWidth(+c.font.split('px')[0]);
 
   const split = parseFormattedText(rankPrefixes[getRank(player)]).map(segment => {
     if (/^\*+$/.test(segment.text)) {
@@ -177,7 +178,7 @@ export const drawRank = (
   });
 
   const prefixWidth = split.reduce((offset, segment) => {
-    c.fillStyle = segment.color('hex');
+    c.fillStyle = segment.color.hex;
     c.fillText(segment.text, offset - charWidth * 0.2, y);
 
     return offset + charWidth * segment.text.length;

@@ -1,3 +1,4 @@
+import { canvasStyle as s } from '@gamerbot/config';
 import { byteSize, insertUuidDashes } from '@gamerbot/util';
 import { Canvas, Image } from 'canvas';
 import { Player } from 'hypixel-types';
@@ -12,20 +13,7 @@ import {
   getPrestigePlaintext,
 } from './util/bwprestige';
 import { getRankPlaintext } from './util/rank';
-import {
-  bg,
-  colorCode,
-  drawFormattedText,
-  fg,
-  font,
-  getCharWidth,
-  headerHeight,
-  mainHeight,
-  margin,
-  padding,
-  round,
-  stripFormatting,
-} from './util/style';
+import { colorCode, drawFormattedText, stripFormatting } from './util/style';
 
 const imageCache = new Map<string, { playername: string; statsData: StatsData }>();
 
@@ -64,8 +52,6 @@ const rows = {
   Overall: '',
 };
 
-const subheaderHeight = 28;
-
 export const makeBedwarsStats = (data?: Player, avatar?: Image, quality = true): StatsData => {
   if (!data?.stats?.Bedwars) throw new Error('no data');
 
@@ -92,9 +78,9 @@ export const makeBedwarsStats = (data?: Player, avatar?: Image, quality = true):
 
     const obj = {
       ...raw,
-      KDR: round(raw.K / raw.D),
-      FKDR: round(raw.FK / raw.FD),
-      'W/L': round(raw.W / raw.L),
+      KDR: s.round(raw.K / raw.D),
+      FKDR: s.round(raw.FK / raw.FD),
+      'W/L': s.round(raw.W / raw.L),
     };
 
     stats[game] = {} as any;
@@ -111,27 +97,27 @@ export const makeBedwarsStats = (data?: Player, avatar?: Image, quality = true):
   const levelExp = getExpForLevel(level);
 
   const canvas = new Canvas(
-    getCharWidth(mainHeight) * 85 + margin * 2,
-    (Object.keys(rows).length + 3) * (mainHeight + 2 * padding) +
-      headerHeight +
-      padding +
-      margin * 2
+    s.getCharWidth(s.mainHeight) * 85 + s.margin * 2,
+    (Object.keys(rows).length + 3) * (s.mainHeight + 2 * s.padding) +
+      s.headerHeight +
+      s.padding +
+      s.margin * 2
   );
 
   const c = canvas.getContext('2d');
 
   c.textAlign = 'left';
-  c.font = font(headerHeight);
+  c.font = s.font(s.headerHeight);
   const categoryWidth = Math.max(...Object.keys(rows).map(row => c.measureText(row).width));
 
-  c.font = font(mainHeight);
+  c.font = s.font(s.mainHeight);
   const columnWidths = Object.keys(columns).map(
     col =>
       Math.max(
         c.measureText(col).width,
         ...Object.keys(rows).map(mode => c.measureText(stats[mode][col].toString()).width)
       ) +
-      padding * 0.75
+      s.padding * 0.75
   );
 
   const leftHeader = data.displayname;
@@ -151,7 +137,7 @@ export const makeBedwarsStats = (data?: Player, avatar?: Image, quality = true):
     `§b${Math.floor(((level % 1) * levelExp) / 10) * 10}§r/§a${levelExp}§r to next level`,
     [
       `Games Played: ${data.stats.Bedwars.games_played_bedwars}`,
-      `BBLR: ${round(
+      `BBLR: ${s.round(
         (data.stats.Bedwars.beds_broken_bedwars ?? 0) / (data.stats.Bedwars.beds_lost_bedwars ?? 0)
       )}`,
     ].join('  '),
@@ -160,7 +146,7 @@ export const makeBedwarsStats = (data?: Player, avatar?: Image, quality = true):
   // very ugly and complicated but it works
   canvas.width = Math.max(
     (avatar?.width ?? 0) +
-      getCharWidth(headerHeight) *
+      s.getCharWidth(s.headerHeight) *
         (getRankPlaintext(data).length +
           leftHeader.length +
           rightHeader.length +
@@ -171,24 +157,26 @@ export const makeBedwarsStats = (data?: Player, avatar?: Image, quality = true):
       .map(
         (__, i) =>
           (avatar?.width ?? 0) +
-          getCharWidth(subheaderHeight) *
+          s.getCharWidth(s.subheaderHeight) *
             (stripFormatting(leftSubheaders[i] ?? '').length +
               stripFormatting(rightSubheaders[i] ?? '').length +
               8)
       ),
-    categoryWidth + padding * 3 + columnWidths.map(c => c + padding * 2).reduce((a, b) => a + b, 0)
+    categoryWidth +
+      s.padding * 3 +
+      columnWidths.map(c => c + s.padding * 2).reduce((a, b) => a + b, 0)
   );
 
-  c.fillStyle = bg;
+  c.fillStyle = s.bgColor;
   c.fillRect(0, 0, canvas.width, canvas.height);
 
   c.save();
 
-  c.translate(margin, margin);
+  c.translate(s.margin, s.margin);
 
-  c.fillStyle = fg;
+  c.fillStyle = s.fgColor;
   c.textAlign = 'left';
-  c.strokeStyle = fg;
+  c.strokeStyle = s.fgColor;
   c.lineWidth = 0.5;
 
   if (quality) {
@@ -198,37 +186,37 @@ export const makeBedwarsStats = (data?: Player, avatar?: Image, quality = true):
     c.antialias = 'subpixel';
   }
 
-  c.font = font(headerHeight);
+  c.font = s.font(s.headerHeight);
 
-  const width = canvas.width - margin * 2;
-  const height = canvas.height - margin * 2;
+  const width = canvas.width - s.margin * 2;
+  const height = canvas.height - s.margin * 2;
 
-  avatar && c.drawImage(avatar, padding, padding);
+  avatar && c.drawImage(avatar, s.padding, s.padding);
 
   c.save();
   const [nameOffset, nameColor] = drawRank(
     c,
     data,
-    (avatar?.width ?? 0) + (avatar ? 2 : 1) * padding
+    (avatar?.width ?? 0) + (avatar ? 2 : 1) * s.padding
   );
-  c.fillStyle = nameColor('hex');
-  c.fillText(leftHeader, nameOffset, padding + headerHeight);
+  c.fillStyle = nameColor.hex;
+  c.fillText(leftHeader, nameOffset, s.padding + s.headerHeight);
   c.restore();
 
   c.textAlign = 'right';
-  c.fillText(rightHeader, drawPrestige(c, data), padding + headerHeight);
+  c.fillText(rightHeader, drawPrestige(c, data), s.padding + s.headerHeight);
 
   c.textAlign = 'left';
   c.save();
-  c.font = font(subheaderHeight);
-  c.fillStyle = colorCode(0x7)('hex');
+  c.font = s.font(s.subheaderHeight);
+  c.fillStyle = colorCode(0x7).hex;
 
   leftSubheaders.forEach((line, index) => {
     drawFormattedText(
       c,
       line,
-      (avatar?.width ?? 0) + (avatar ? 2 : 1) * padding,
-      headerHeight + (index + 1) * subheaderHeight + (2 + index * 0.5) * padding
+      (avatar?.width ?? 0) + (avatar ? 2 : 1) * s.padding,
+      s.headerHeight + (index + 1) * s.subheaderHeight + (2 + index * 0.5) * s.padding
     );
   });
 
@@ -236,28 +224,32 @@ export const makeBedwarsStats = (data?: Player, avatar?: Image, quality = true):
     drawFormattedText(
       c,
       line,
-      width - padding,
-      headerHeight + (index + 1) * subheaderHeight + (2 + index * 0.5) * padding,
+      width - s.padding,
+      s.headerHeight + (index + 1) * s.subheaderHeight + (2 + index * 0.5) * s.padding,
       'right'
     );
   });
 
   c.restore();
 
-  c.font = font(mainHeight);
+  c.font = s.font(s.mainHeight);
 
   c.save();
-  c.translate(0, headerHeight + mainHeight + mainHeight + 5 * padding);
+  c.translate(0, s.headerHeight + s.mainHeight + s.mainHeight + 5 * s.padding);
 
   Object.keys(rows).forEach((mode, i) => {
-    const lineY = i * (mainHeight + padding * 2) + mainHeight + 2 * padding;
+    const lineY = i * (s.mainHeight + s.padding * 2) + s.mainHeight + 2 * s.padding;
 
     c.beginPath();
     c.moveTo(0, lineY);
     c.lineTo(width, lineY);
     c.stroke();
 
-    c.fillText(mode, padding, i * (mainHeight + padding * 2) + 2.5 * padding + 2 * mainHeight);
+    c.fillText(
+      mode,
+      s.padding,
+      i * (s.mainHeight + s.padding * 2) + 2.5 * s.padding + 2 * s.mainHeight
+    );
   });
 
   c.textAlign = 'right';
@@ -269,12 +261,12 @@ export const makeBedwarsStats = (data?: Player, avatar?: Image, quality = true):
     .map((col, i) => {
       i = Object.keys(columns).length - 1 - i;
 
-      c.fillText(col, -padding, mainHeight + padding);
+      c.fillText(col, -s.padding, s.mainHeight + s.padding);
 
-      const lineX = -(columnWidths[i] + padding * 2);
+      const lineX = -(columnWidths[i] + s.padding * 2);
 
       c.beginPath();
-      c.moveTo(lineX, padding);
+      c.moveTo(lineX, s.padding);
       c.lineTo(lineX, height - c.currentTransform.f);
       c.stroke();
 
@@ -282,12 +274,12 @@ export const makeBedwarsStats = (data?: Player, avatar?: Image, quality = true):
         const value = stats[mode][col];
         c.fillText(
           value.toString(),
-          -padding,
-          j * (mainHeight + padding * 2) + 2.5 * padding + 2 * mainHeight
+          -s.padding,
+          j * (s.mainHeight + s.padding * 2) + 2.5 * s.padding + 2 * s.mainHeight
         );
       });
 
-      c.translate(-(padding * 2 + columnWidths[i]), 0);
+      c.translate(-(s.padding * 2 + columnWidths[i]), 0);
     });
 
   c.restore();
