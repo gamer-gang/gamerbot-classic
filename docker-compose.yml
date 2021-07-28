@@ -1,6 +1,7 @@
 version: '3.9'
 services:
   db:
+    restart: unless-stopped
     image: postgres:13
     volumes:
       - db-data:/var/lib/postgresql/data
@@ -9,8 +10,10 @@ services:
       - POSTGRES_USER
       - POSTGRES_PASSWORD
   redis:
+    restart: unless-stopped
     image: redis:6
   crafatar:
+    restart: unless-stopped
     image: crafatar/crafatar:latest
     volumes:
       - crafatar-images:/crafatar/images
@@ -24,6 +27,7 @@ services:
   #     - rabbitmq-data:/var/lib/rabbitmq
   #     - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
   core:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile.core
