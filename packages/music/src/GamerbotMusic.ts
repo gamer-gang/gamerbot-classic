@@ -6,17 +6,7 @@ export class GamerbotMusic extends Client {
 
   constructor(
     opts: Omit<ClientOptions, 'partials'> = {
-      intents: [
-        'GUILDS',
-        'GUILD_MEMBERS',
-        'GUILD_BANS',
-        'GUILD_EMOJIS',
-        'GUILD_INVITES',
-        'GUILD_VOICE_STATES',
-        'GUILD_MESSAGES',
-        'GUILD_MESSAGE_REACTIONS',
-        'GUILD_MESSAGE_TYPING',
-      ],
+      intents: ['GUILDS', 'GUILD_MEMBERS', 'GUILD_VOICE_STATES', 'GUILD_MESSAGES'],
     }
   ) {
     super(opts);

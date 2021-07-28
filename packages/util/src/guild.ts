@@ -9,16 +9,21 @@ import {
   Role,
   VoiceState,
 } from 'discord.js';
-import { ChannelType } from 'discord.js/typings/enums';
+import { ChannelTypes } from 'discord.js/typings/enums';
 import { getClient } from './_client';
 
-const guildChannelTypes: (keyof typeof ChannelType)[] = [
-  'text',
-  'voice',
-  'category',
-  'news',
-  'store',
-  'unknown',
+const guildChannelTypes: (keyof typeof ChannelTypes)[] = [
+  'GUILD_TEXT',
+  'GUILD_VOICE',
+  'GUILD_STAGE_VOICE',
+  'GUILD_CATEGORY',
+  'GUILD_STORE',
+  'GUILD_NEWS',
+  'GUILD_NEWS_THREAD',
+  'GUILD_NEWS_THREAD',
+  'GUILD_PUBLIC_THREAD',
+  'GUILD_PRIVATE_THREAD',
+  'UNKNOWN',
 ];
 
 export type GuildHandle = any /* ClientEvents[LogClientEventName][0] */ | Channel;
