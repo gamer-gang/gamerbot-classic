@@ -10,8 +10,8 @@ export class YoutubeTrack extends Track {
   internalType = 'youtube' as const;
   livestream: boolean;
 
-  constructor(requesterId: string, public data: youtube_v3.Schema$Video) {
-    super(requesterId);
+  constructor(public data: youtube_v3.Schema$Video) {
+    super();
     this.livestream = this.data.snippet?.liveBroadcastContent === 'live';
   }
 

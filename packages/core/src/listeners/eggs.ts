@@ -8,7 +8,7 @@ import { setPresence } from '..';
 import { Config } from '../entities/Config';
 import { EggLeaderboard } from '../entities/EggLeaderboard';
 import { Gamerbot } from '../gamerbot';
-import { orm } from '../providers';
+import { getORM } from '../providers';
 
 const eggfile = yaml.load(fse.readFileSync(resolvePath('assets/egg.yaml')).toString('utf-8'));
 if (typeof eggfile !== 'object') throw new Error('egg.yaml must be object');
@@ -33,6 +33,8 @@ class EggCooldown {
 const cooldowns: Record<string, EggCooldown> = {};
 
 const getEggsFromDB = async () => {
+  const orm = await getORM();
+
   const builder = (orm.em as EntityManager).createQueryBuilder(EggLeaderboard);
   const eggsObjects: { eggs: number }[] = await builder.select('eggs').execute();
 
@@ -42,6 +44,8 @@ const getEggsFromDB = async () => {
 let eggCount: number;
 
 const getLeaderboardEntry = async (user: User) => {
+  const orm = await getORM();
+
   const entry = await (async (user: User) => {
     const existing = await orm.em.findOne(EggLeaderboard, { userId: user.id });
     if (existing) {
@@ -62,6 +66,8 @@ export const get = async (client: Gamerbot): Promise<number> => {
 };
 
 const grantEgg = async (msg: Message | PartialMessage) => {
+  const orm = await getORM();
+
   msg.react('🥚');
   eggCount++;
   setPresence();

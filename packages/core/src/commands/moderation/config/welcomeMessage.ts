@@ -1,95 +1,131 @@
-import { Context } from '@gamerbot/types';
 import { codeBlock, Embed, parseDiscohookJSON } from '@gamerbot/util';
-import { Message, MessageReaction, User } from 'discord.js';
+import { Message, MessageActionRow, MessageButton } from 'discord.js';
 import { Config } from '../../../entities/Config';
+import { CommandEvent } from '../../../models/CommandEvent';
 
-const replacer = (msg: Context['msg']) => (json: string) =>
+const replacer = (event: CommandEvent) => (json: string) =>
   json
-    .replace(/%USER%/g, `<@${msg.author.id}>`)
-    .replace(/%USERTAG%/g, `${msg.author.tag}`)
-    .replace(/%GUILD%/g, `${msg.guild.name}`);
+    .replace(/%USER%/g, `<@${event.user.id}>`)
+    .replace(/%USERTAG%/g, `${event.user.tag}`)
+    .replace(/%GUILD%/g, `${event.guild.name}`);
 
 export const welcomeMessage = async (
-  config: Config,
-  context: Context,
+  event: CommandEvent,
   value?: string
 ): Promise<void | Message | Message[]> => {
-  const { msg } = context;
+  const config = await event.em.findOneOrFail(Config, { guildId: event.guild.id });
 
-  const replace = replacer(msg);
+  const exampleReplace = replacer(event);
 
   if (!value) {
-    if (!config.welcomeJson) return Embed.warning('no welcome message set').reply(msg);
-    await Embed.info(
-      `${msg.guild.name}: current welcome message (\`${config.prefix}config welcomeMessage\` unset to remove)`,
-      codeBlock(JSON.stringify(JSON.parse(config.welcomeJson), null, 2), 'json')
-    ).reply(msg);
+    if (!config.welcomeJson) return event.reply(Embed.info('No welcome message set'));
+    await event.reply(
+      Embed.info(
+        `${event.guild.name}: current welcome message (\`${config.prefix}config welcomeMessage unset\` to remove)`,
+        codeBlock(JSON.stringify(JSON.parse(config.welcomeJson), null, 2), 'json')
+      )
+    );
 
-    return msg.channel.send(parseDiscohookJSON(replace(config.welcomeJson)));
+    return event.channel.send(parseDiscohookJSON(exampleReplace(config.welcomeJson)));
   }
 
   if (value === 'unset') {
     delete config.welcomeJson;
-    return Embed.warning('unset welcome message').reply(msg);
+    return event.reply(Embed.success('Unset welcome message'));
   }
 
   try {
     if (config.welcomeJson) {
-      await msg.reply('existing welcome message: ');
-      await msg.channel.send(parseDiscohookJSON(replace(config.welcomeJson)));
+      await event.reply('Existing welcome message: ');
+      await event.channel.send(parseDiscohookJSON(exampleReplace(config.welcomeJson)));
 
-      const confirmation = await msg.channel.send(
-        `${msg.author} replace this welcome message with a new one?`
+      const row = new MessageActionRow({
+        components: [
+          new MessageButton({ customId: 'cancel', style: 'DANGER', label: 'Cancel' }),
+          new MessageButton({ customId: 'replace', style: 'PRIMARY', label: 'Replace' }),
+        ],
+      });
+
+      const confirmationMessage = `${event.user} replace this welcome message with a new one?`;
+
+      const confirmation = await event.channel.send({
+        content: confirmationMessage,
+        components: [row],
+      });
+
+      const collector = confirmation.createMessageComponentCollector({
+        idle: 1000 * 60 * 5,
+        filter: interaction => interaction.user.id === event.user.id,
+      });
+
+      collector.on('collect', interaction => {
+        if (interaction.customId)
+          return void interaction.reply({ embeds: [Embed.info('Cancelled')] });
+
+        collector.stop();
+        confirmMessage(value, event);
+      });
+
+      collector.on(
+        'stop',
+        () => void confirmation.edit({ content: confirmationMessage, components: [] })
       );
 
-      const collector = confirmation.createReactionCollector({
-        idle: 15000,
-        filter: (reaction: MessageReaction, user: User) =>
-          ['✅', '❌'].includes(reaction.emoji.name!) && user.id === msg.author?.id,
-      });
-
-      collector.on('collect', (reaction, user) => {
-        if (reaction.emoji.name === '❌') return msg.channel.send('cancelled');
-        collector.stop();
-        confirmMessage(value, config, context);
-      });
-
-      await confirmation.react('✅');
-      confirmation.react('❌');
       return;
     }
 
-    confirmMessage(value, config, context);
+    confirmMessage(value, event);
   } catch (err) {
-    Embed.error(codeBlock(err)).send(msg.channel);
+    Embed.error(codeBlock(err)).send(event.channel);
   }
 };
 
-const confirmMessage = async (json: string, config: Config, context: Context) => {
-  const { msg } = context;
+const confirmMessage = async (json: string, event: CommandEvent) => {
+  const config = await event.em.findOneOrFail(Config, { guildId: event.guild.id });
 
-  await msg.channel.send(parseDiscohookJSON(replacer(msg)(json)));
-  const confirmation = await msg.reply(`${msg.author} set this as the welcome message?`);
+  if (event.isMessage() || event.interaction.replied)
+    await event.channel.send(parseDiscohookJSON(replacer(event)(json)));
+  await event.reply(parseDiscohookJSON(replacer(event)(json)));
 
-  await confirmation.react('✅');
-  confirmation.react('❌');
-
-  const collector = confirmation.createReactionCollector({
-    idle: 15000,
-    filter: (reaction: MessageReaction, user: User) =>
-      ['✅', '❌'].includes(reaction.emoji.name!) && user.id === msg.author?.id,
+  const row = new MessageActionRow({
+    components: [
+      new MessageButton({ customId: 'cancel', style: 'DANGER', label: 'Cancel' }),
+      new MessageButton({ customId: 'replace', style: 'PRIMARY', label: 'Set' }),
+    ],
   });
 
-  collector.on('collect', reaction => {
-    if (reaction.emoji.name === '❌') return msg.channel.send('cancelled');
+  const confirmationMessage = `${event.user} set this as the welcome message?`;
+  const confirmation = await event.channel.send({
+    content: confirmationMessage,
+    components: [row],
+  });
 
+  const collector = confirmation.createMessageComponentCollector({
+    idle: 1000 * 60 * 5,
+    filter: interaction => interaction.user.id === event.user.id,
+  });
+
+  collector.on('collect', interaction => {
+    if (interaction.customId === 'cancel')
+      return void interaction.reply({ embeds: [Embed.info('Cancelled')] });
+
+    collector.stop();
     config.welcomeJson = JSON.stringify(JSON.parse(json));
 
     if (!config.welcomeChannelId)
-      Embed.warning(
-        'message set successfully',
-        'warning: no welcome channel set, messages will default to system message channel'
-      ).reply(msg);
-    else Embed.success('new welcome message set').reply(msg);
+      interaction.reply({
+        embeds: [
+          Embed.warning(
+            'message set successfully',
+            'warning: no welcome channel set; messages will default to system message channel'
+          ),
+        ],
+      });
+    else interaction.reply({ embeds: [Embed.success('new welcome message set')] });
   });
+
+  collector.on(
+    'stop',
+    () => void confirmation.edit({ content: confirmationMessage, components: [] })
+  );
 };

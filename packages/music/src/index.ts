@@ -1,7 +1,8 @@
 import { generateDependencyReport } from '@discordjs/voice';
 import { resolvePath } from '@gamerbot/util';
 import dotenv from 'dotenv';
-import { client, getLogger } from './providers';
+import { getLogger } from 'log4js';
+import { client } from './providers';
 
 dotenv.config({ path: resolvePath('.env') });
 

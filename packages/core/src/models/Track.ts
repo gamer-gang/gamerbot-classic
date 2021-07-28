@@ -13,8 +13,6 @@ export type BaseTrack = {
 export abstract class Track {
   internalType = 'unknown';
 
-  constructor(public requesterId: string) {}
-
   isYoutube(): this is YoutubeTrack {
     return this.internalType === 'youtube';
   }
@@ -26,6 +24,8 @@ export abstract class Track {
   isFile(): this is FileTrack {
     return this.internalType === 'file';
   }
+
+  requesterId?: string;
 
   abstract get url(): string | undefined;
   abstract get type(): string;

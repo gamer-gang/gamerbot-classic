@@ -2,18 +2,22 @@ import {
   AudioPlayer,
   AudioPlayerStatus,
   createAudioPlayer,
+  createAudioResource,
+  DiscordGatewayAdapterCreator,
   getVoiceConnection,
+  joinVoiceChannel,
 } from '@discordjs/voice';
-import { Embed, formatDuration } from '@gamerbot/util';
-import { Message, TextChannel, VoiceChannel } from 'discord.js';
+import { codeBlock, Embed, formatDuration } from '@gamerbot/util';
+import { Message, Snowflake, StageChannel, TextChannel, VoiceChannel } from 'discord.js';
 import { getLogger } from 'log4js';
+import { client } from '../providers';
 import { Track } from './Track';
 
 export type LoopMode = 'none' | 'one' | 'all';
 
 export class Queue {
   tracks: Track[] = [];
-  voiceChannel?: VoiceChannel;
+  voiceChannel?: VoiceChannel | StageChannel;
   textChannel?: TextChannel;
   audioPlayer: AudioPlayer = createAudioPlayer({ debug: process.env.NODE_ENV === 'development' });
   loop: LoopMode = 'none';
@@ -70,6 +74,116 @@ export class Queue {
       .reduce((a, b) => a + Math.round(b), 0);
 
     return formatDuration(isNaN(totalDurationSeconds) ? 0 : totalDurationSeconds);
+  }
+
+  queueTracks(tracks: Track[], requesterId: Snowflake): number {
+    tracks.forEach(t => (t.requesterId = requesterId));
+
+    const length = this.tracks.push(...tracks);
+    const startOfSegment = length - tracks.length;
+
+    if (!this.playing) {
+      this.index = startOfSegment;
+      this.playNext();
+    }
+
+    return startOfSegment;
+  }
+
+  // TODO: run voice connections and audio players in a separate process for better performance
+  // as of now, the audio player may freeze/lag for a bit when running other intensive bot commands
+
+  async playNext(): Promise<void> {
+    const logger = getLogger(`CommandPlay#playNext[guild=${this.guildId}]`);
+
+    const track = this.tracks[this.index];
+
+    if (!track) {
+      logger.debug('no track at current index, resetting queue');
+      this.reset();
+      return;
+    }
+
+    if (!this.voiceChannel) throw new Error('No voice channel set');
+
+    if (!getVoiceConnection(this.guildId)) {
+      const connection = joinVoiceChannel({
+        guildId: this.guildId,
+        channelId: this.voiceChannel.id,
+        adapterCreator: client.guilds.resolve(this.guildId! as Snowflake)!
+          .voiceAdapterCreator as unknown as DiscordGatewayAdapterCreator,
+        selfDeaf: true,
+      });
+      connection.subscribe(this.audioPlayer);
+    }
+
+    logger.debug(`playing track "${track.title}"`);
+
+    const connection = getVoiceConnection(this.guildId);
+
+    this.updateNowPlaying();
+
+    const callback = async () => {
+      try {
+        this.embed?.delete();
+        delete this.embed;
+
+        if (this.voiceChannel && this.voiceChannel.members.array().length <= 1) {
+          // only the bot in the channel
+          logger.debug('only the bot in the voice channel, resetting queue');
+          this.reset();
+          return;
+        }
+
+        if (this.loop === 'one') {
+          logger.debug('looping one');
+          return this.playNext();
+        }
+
+        const nextTrack = this.tracks[this.index + 1];
+        if (!nextTrack) {
+          logger.debug('next track does not exist');
+          if (this.loop === 'all') {
+            logger.debug('looping all, setting index to 0');
+            this.index = 0;
+            this.playNext();
+          } else {
+            // no more in queue and not looping
+            logger.debug('not looping all, disconnecting');
+            this.index++;
+            connection?.destroy();
+            return;
+          }
+        } else {
+          logger.debug('next track exists, incrementing index and continuing');
+          this.index++;
+          return this.playNext();
+        }
+      } catch (err) {
+        logger.error('error encountered in callback');
+        logger.error(err);
+        this.textChannel && Embed.error(codeBlock(err)).send(this.textChannel);
+      }
+    };
+
+    // const options: StreamOptions = {
+    //   highWaterMark: 1 << 32,
+    //   volume: false,
+    // };
+
+    try {
+      logger.debug('playing track to dispatcher');
+
+      const resource = createAudioResource(await track.getPlayable());
+
+      this.audioPlayer.play(resource);
+
+      this.audioPlayer.on('error', err => logger.error(err)).once(AudioPlayerStatus.Idle, callback);
+    } catch (err) {
+      logger.error(err);
+      this.textChannel && Embed.error(err.message).send(this.textChannel);
+      return callback();
+    }
   }
 
   async updateNowPlaying(): Promise<void | Message> {

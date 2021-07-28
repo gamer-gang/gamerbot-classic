@@ -1,7 +1,8 @@
 import { Embed } from '@gamerbot/util';
 import { Message, MessageReaction, PartialMessage, PartialUser, User } from 'discord.js';
+import { getLogger } from 'log4js';
 import { ReactionRole, RoleEmoji } from '../entities/ReactionRole';
-import { client, getLogger, orm } from '../providers';
+import { client, getORM } from '../providers';
 
 const verifyReaction = async (
   reaction: MessageReaction,
@@ -52,6 +53,8 @@ const getCollector = async ({
   msg: Message | PartialMessage;
   reaction: MessageReaction;
 }) => {
+  const orm = await getORM();
+
   const collectorMessage = await orm.em.findOne(ReactionRole, { messageId: msg.id });
   if (!collectorMessage) return;
 

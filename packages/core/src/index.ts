@@ -4,16 +4,18 @@ import { ClientEvents, Guild, GuildMember, Invite, TextChannel } from 'discord.j
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import _ from 'lodash';
+import { getLogger } from 'log4js';
 import { Config } from './entities/Config';
 import { CachedInvite } from './gamerbot';
+import { onInteractionCreate } from './listeners/command/onInteractionCreate';
+import { onMessageCreate } from './listeners/command/onMessageCreate';
 import * as eggs from './listeners/eggs';
 import { getLogHandler, intToLogEvents } from './listeners/log';
 import { LogClientEventName, logClientEvents, LogEventHandler } from './listeners/log/_constants';
-import { onMessageCreate } from './listeners/message';
 import * as reactions from './listeners/reactions';
 import * as voice from './listeners/voice';
 import * as welcome from './listeners/welcome';
-import { client, getLogger, orm, storage } from './providers';
+import { client, directORM, getORM, storage } from './providers';
 
 dotenv.config({ path: resolvePath('.env') });
 
@@ -167,6 +169,7 @@ const eventHooks: {
   if (event === 'presenceUpdate' || event === 'voiceStateUpdate') return;
 
   client.on(event, async (...args) => {
+    const orm = await getORM();
     storage.run(orm.em.fork(true, true), async () => {
       let guild;
 
@@ -247,17 +250,21 @@ client.on('debug', content => {
 const handleEvent =
   (handler: (...args: any[]) => unknown) =>
   (...args: any[]) => {
-    storage.run(orm.em.fork(true, true), () => handler(...args));
+    storage.run(directORM().em.fork(true, true), () => {
+      handler(...args);
+    });
   };
 
 client
   .on('messageCreate', handleEvent(onMessageCreate))
+  .on('interactionCreate', handleEvent(onInteractionCreate))
   .on('warn', getLogger('Client!warn').warn)
   .on('error', getLogger('Client!error').error)
   .on('disconnect', () => getLogger('Client!disconnect').warn('client disconnected!'))
   .on(
     'guildCreate',
     handleEvent(async (guild: Guild) => {
+      const orm = await getORM();
       getLogger(`Client!guildCreate[guild=${guild.id}]`).info(
         `joined guild: ${guild.name} (${guild.memberCount} members)`
       );
@@ -265,14 +272,17 @@ client
       await orm.em.persistAndFlush(fresh);
     })
   )
-  .on('guildDelete', async guild => {
-    const em = orm.em.fork();
-    getLogger(`Client!guildDelete[guild=${guild.id}]`).info(
-      `left guild: ${guild.name} (${guild.memberCount} members)`
-    );
-    const config = await em.findOne(Config, { guildId: guild.id });
-    config && (await em.removeAndFlush(config));
-  })
+  .on(
+    'guildDelete',
+    handleEvent(async (guild: Guild) => {
+      const orm = await getORM();
+      getLogger(`Client!guildDelete[guild=${guild.id}]`).info(
+        `left guild: ${guild.name} (${guild.memberCount} members)`
+      );
+      const config = await orm.em.findOne(Config, { guildId: guild.id });
+      config && (await orm.em.removeAndFlush(config));
+    })
+  )
   .on('guildMemberAdd', handleEvent(welcome.onGuildMemberAdd))
   .on('voiceStateUpdate', handleEvent(voice.onVoiceStateUpdate))
   .on('messageReactionAdd', handleEvent(reactions.onMessageReactionAdd))

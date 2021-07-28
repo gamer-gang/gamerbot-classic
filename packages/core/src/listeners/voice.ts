@@ -1,5 +1,6 @@
 import { Guild, VoiceChannel, VoiceState } from 'discord.js';
-import { client, getLogger } from '../providers';
+import { getLogger } from 'log4js';
+import { client } from '../providers';
 
 const cleanQueue = (guild: Guild) => {
   const queue = client.queues.get(guild.id);

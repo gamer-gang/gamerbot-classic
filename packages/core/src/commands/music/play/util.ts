@@ -1,24 +1,15 @@
-import { Embed } from '@gamerbot/util';
-import { Message } from 'discord.js';
 import { DateTime } from 'luxon';
 import { client } from '../../../providers';
 
-export const checkSpotify = (msg: Message): boolean => {
-  if (client.spotifyDisabled) {
-    Embed.error('Spotify support disabled', 'No credentials provided in environment').reply(msg);
-    return false;
-  }
+export const checkSpotify = (): void | never => {
+  if (client.spotifyDisabled)
+    throw new Error('% Spotify support disabled: no credentials provided in environment');
 
   if (!client.spotify.getAccessToken()) {
-    Embed.error(
-      'Cannot connect to spotify',
-      `Please try again in ${DateTime.now()
+    throw new Error(
+      `% Cannot connect to spotify. Please try again in ${DateTime.now()
         .plus({ seconds: client.spotifyTimeoutSeconds })
         .toRelative({})}`
-    ).reply(msg);
-
-    return false;
+    );
   }
-
-  return true;
 };

@@ -54,10 +54,7 @@ export const findGuild = (handle: GuildHandle): Guild | undefined => {
 
   if (isChannel(handle)) {
     // try to find a guild with this channel
-    const guild = client.guilds.cache.array().find(guild => {
-      console.log(guild.channels.cache.array());
-      return guild.channels.cache.get(handle.id);
-    });
+    const guild = client.guilds.cache.array().find(guild => guild.channels.cache.get(handle.id));
 
     return guild;
   }

@@ -1,14 +1,17 @@
 import { findGuild, GuildHandle } from '@gamerbot/util';
 import { Guild, GuildAuditLogsEntry } from 'discord.js';
+import { getLogger } from 'log4js';
 import { inspect } from 'util';
 import { Config } from '../../entities/Config';
-import { client, getLogger, orm } from '../../providers';
+import { client, getORM } from '../../providers';
 import { logColors, LogEventName, logEvents } from './_constants';
 
 export const getConfig = async (source: GuildHandle): Promise<Config> => {
   const guild = findGuild(source);
 
   if (!guild) throw new Error('Could not find a config for resource ' + source?.toString());
+
+  const orm = await getORM();
 
   const config = await orm.em.findOne(Config, {
     guildId: guild.id,

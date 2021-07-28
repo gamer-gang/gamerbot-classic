@@ -7,6 +7,9 @@ services:
   redis:
     ports:
       - 127.0.0.1:6379:6379
+  crafatar:
+    ports:
+      - 127.0.0.1:3000:3000
   core:
     user: '1000'
     volumes:

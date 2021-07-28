@@ -1,10 +1,10 @@
 import { registerClientUtil, resolvePath } from '@gamerbot/util';
-import { EntityManager, MikroORM } from '@mikro-orm/core';
+import { Connection, EntityManager, IDatabaseDriver, MikroORM } from '@mikro-orm/core';
 import { AsyncLocalStorage } from 'async_hooks';
 import { execSync } from 'child_process';
 import dotenv from 'dotenv';
 import fse from 'fs-extra';
-import log4js from 'log4js';
+import log4js, { getLogger } from 'log4js';
 import { Gamerbot } from './gamerbot';
 import mikroOrmConfig from './mikro-orm.config';
 
@@ -57,16 +57,38 @@ log4js.configure({
   },
 });
 
-export const getLogger = (category: string): log4js.Logger => log4js.getLogger(category);
-export const dbLogger = log4js.getLogger('MikroORM');
-
 // init message
 getLogger('').mark('\n' + execSync('figlet -f small gamerbot').toString());
 
 // db
 export const storage = new AsyncLocalStorage<EntityManager>();
-export const orm = await MikroORM.init({ ...mikroOrmConfig, context: () => storage.getStore() });
-await orm.getMigrator().up();
+let orm: MikroORM<IDatabaseDriver<Connection>>;
+
+let initORM: Promise<void>;
+
+export const getORM = async (): Promise<typeof orm> => {
+  if (!orm) {
+    if (!initORM)
+      initORM = new Promise(resolve => {
+        MikroORM.init({ ...mikroOrmConfig, context: () => storage.getStore() }).then(tempORM => {
+          tempORM
+            .getMigrator()
+            .up()
+            .then(() => {
+              orm = tempORM;
+              resolve();
+            });
+        });
+      });
+
+    await initORM;
+  }
+
+  return orm;
+};
+
+/** use with caution; may be undefined/not work */
+export const directORM = (): typeof orm => orm;
 
 // client
 export const client: Gamerbot = new Gamerbot();

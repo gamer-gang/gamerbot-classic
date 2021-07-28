@@ -15,6 +15,4 @@ log4js.configure({
   },
 });
 
-export const getLogger = (category: string): log4js.Logger => log4js.getLogger(category);
-
 export const client = new GamerbotMusic();

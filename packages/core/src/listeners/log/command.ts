@@ -1,25 +1,30 @@
-import { Context } from '@gamerbot/types';
 import { Embed } from '@gamerbot/util';
 import { Guild, TextChannel } from 'discord.js';
+import { CommandEvent } from '../../models/CommandEvent';
 import { logColorFor } from './utils';
 import { LogEventHandler, LogEventName, LogHandlers } from './_constants';
 
 const onCommand =
-  (event: LogEventName) =>
+  (logEvent: LogEventName) =>
   (guild: Guild, logChannel: TextChannel) =>
-  async (context: Readonly<Context>) => {
-    const { msg } = context;
-
+  async (event: Readonly<CommandEvent>) => {
     const embed = new Embed({
       author: {
-        iconURL: msg.author.displayAvatarURL({ format: 'png' }) ?? undefined,
-        name: msg.author.tag,
+        iconURL: event.user.displayAvatarURL({ format: 'png' }) ?? undefined,
+        name: event.user.tag,
       },
-      color: logColorFor(event),
+      color: logColorFor(logEvent),
       title: 'User issued gamerbot command',
     })
-      .addField('Command', `\`${msg.cleanContent}\``)
-      .addField('User ID', msg.author.id)
+      .addField(
+        'Command',
+        `\`${
+          event.isInteraction()
+            ? JSON.stringify(event.interaction.toJSON())
+            : event.message.cleanContent
+        }\``
+      )
+      .addField('User ID', event.user.id)
       .setTimestamp();
 
     embed.send(logChannel);
@@ -39,7 +44,7 @@ const commands: LogEventName[] = [
   'gamerbotCommandJoke',
   'gamerbotCommandKick',
   'gamerbotCommandPlay',
-  'gamerbotCommandPrevious',
+  'gamerbotCommandBack',
   'gamerbotCommandPurge',
   'gamerbotCommandRole',
   'gamerbotCommandShuffle',

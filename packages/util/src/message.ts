@@ -43,10 +43,12 @@ export const listify = (array: unknown[]): string => {
 export const parseDiscohookJSON = (json: string): MessageOptions => {
   const data = JSON.parse(json) as Discohook.Message;
 
+  if (!data) throw 'Empty message';
+
   let embed: Embed | undefined = undefined;
 
   if (data.embeds) {
-    if (data.embeds.length > 1) throw 'max 1 embed';
+    if (data.embeds.length > 1) throw 'Max 1 embed';
 
     const embedData = data.embeds[0] as Discohook.Embed & EmbedOptions;
 

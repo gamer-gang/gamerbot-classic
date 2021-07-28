@@ -1,8 +1,9 @@
 import { delay, Embed } from '@gamerbot/util';
 import { Guild, Invite, Snowflake, TextChannel } from 'discord.js';
+import { getLogger } from 'log4js';
 import { DateTime } from 'luxon';
 import { CachedInvite } from '../../gamerbot';
-import { client, getLogger, orm } from '../../providers';
+import { client, getORM } from '../../providers';
 import { getLatestAuditEvent, logColorFor } from './utils';
 import { LogHandlers } from './_constants';
 
@@ -32,7 +33,9 @@ const fetchInvite = async (guild: Guild) => {
   }
 };
 
-client.on('ready', () => {
+client.on('ready', async () => {
+  const orm = await getORM();
+
   const inviteFetchers = client.guilds.cache
     .array()
     .map((guild, index) => delay(index * 2500)(undefined).then(() => fetchInvite(guild)));

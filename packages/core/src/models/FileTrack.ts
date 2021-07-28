@@ -11,8 +11,8 @@ export interface FileTrackData {
 export class FileTrack extends Track {
   internalType = 'file' as const;
 
-  constructor(requesterId: string, public data: FileTrackData) {
-    super(requesterId);
+  constructor(public data: FileTrackData) {
+    super();
   }
 
   get type(): string {

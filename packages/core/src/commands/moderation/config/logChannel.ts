@@ -1,41 +1,45 @@
-import { Context } from '@gamerbot/types';
 import { Embed } from '@gamerbot/util';
-import { Message, Snowflake } from 'discord.js';
+import { GuildChannel, Message, Snowflake } from 'discord.js';
 import { Config } from '../../../entities/Config';
+import { CommandEvent } from '../../../models/CommandEvent';
 
 export const logChannel = async (
-  config: Config,
-  context: Context,
-  value?: string
+  event: CommandEvent,
+  newValue?: string | GuildChannel
 ): Promise<void | Message> => {
-  const { msg } = context;
+  const config = await event.em.findOneOrFail(Config, { guildId: event.guild.id });
 
-  if (!value) {
+  if (!newValue) {
     if (config.logChannelId)
-      return Embed.info(
-        `log channel is set to <#${config.logChannelId}>`,
-        `use \`${config.prefix}config logChannel unset\` to remove`
-      ).reply(msg);
-    return Embed.warning('no log channel set').reply(msg);
+      return event.reply(
+        Embed.info(
+          `Log channel is set to <#${config.logChannelId}>`,
+          `Use \`${config.prefix}config logChannel unset\` to remove`
+        )
+      );
+    return event.reply(Embed.info('No log channel set'));
   }
 
-  if (value === 'unset') {
+  if (newValue === 'unset') {
     delete config.logChannelId;
-    return Embed.warning('unset log channel', 'logs will no longer be sent').reply(msg);
+    return event.reply(Embed.warning('Unset log channel', 'Logs will no longer be sent'));
   }
 
-  const channelId = value.replace(/[<#>]/g, '') as Snowflake;
-  const channel = msg.guild?.channels.cache.get(channelId);
-  if (!channel) return Embed.error('invalid channel `' + value + '`').reply(msg);
-  if (channel.type !== 'text') return Embed.error('only text channels allowed').reply(msg);
+  const channelId = newValue.toString().replace(/[<#>]/g, '') as Snowflake;
+  const channel = event.guild?.channels.cache.get(channelId);
+  if (!channel) return event.reply(Embed.error('Invalid channel `' + newValue + '`').ephemeral());
+  if (channel.type !== 'GUILD_TEXT')
+    return event.reply(Embed.error('Only text channels allowed').ephemeral());
 
   config.logChannelId = channel.id;
 
   if (BigInt(config.logSubscribedEvents) + 1n - 1n !== 0n)
-    return Embed.success(`log channel set to ${channel}`).reply(msg);
+    return event.reply(Embed.success(`Log channel set to ${channel}`).ephemeral());
   else
-    return Embed.success(
-      `log channel set to **${channel}**`,
-      "don't forget to subscribe to some events (`$config logEvents <int/event list>`)!"
-    ).reply(msg);
+    return event.reply(
+      Embed.success(
+        `Log channel set to **${channel}**`,
+        `Don't forget to subscribe to some events (\`${config.prefix}config logEvents <int/event list>\`)!`
+      )
+    );
 };

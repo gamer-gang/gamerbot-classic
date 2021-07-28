@@ -1,38 +1,42 @@
-import { Context } from '@gamerbot/types';
 import { Embed } from '@gamerbot/util';
-import { Message, Snowflake } from 'discord.js';
+import { GuildChannel, Message, Snowflake } from 'discord.js';
 import { Config } from '../../../entities/Config';
+import { CommandEvent } from '../../../models/CommandEvent';
 
 export const welcomeChannel = async (
-  config: Config,
-  context: Context,
-  value?: string
+  event: CommandEvent,
+  newValue?: string | GuildChannel
 ): Promise<void | Message> => {
-  const { msg } = context;
+  const config = await event.em.findOneOrFail(Config, { guildId: event.guild.id });
 
-  if (!value) {
+  if (!newValue) {
     if (config.welcomeChannelId)
-      return Embed.info(
-        `welcome channel is set to <#${config.welcomeChannelId}>`,
-        `use \`${config.prefix}config welcomeChannel unset\` to remove`
-      ).reply(msg);
+      return event.reply(
+        Embed.info(
+          `Welcome channel is set to <#${config.welcomeChannelId}>`,
+          `Use \`${config.prefix}config welcomeChannel unset\` to remove`
+        )
+      );
 
-    return Embed.warning('no welcome channel set').reply(msg);
+    return event.reply(Embed.info('No welcome channel set'));
   }
 
-  if (value === 'unset') {
+  if (newValue === 'unset') {
     delete config.welcomeChannelId;
-    return Embed.warning(
-      'unset welcome channel',
-      'welcome messages will go to the system message channel'
-    ).reply(msg);
+    return event.reply(
+      Embed.success(
+        'Unset welcome channel',
+        'Welcome messages will go to the system message channel'
+      )
+    );
   }
 
-  const channelId = value.replace(/[<#>]/g, '') as Snowflake;
-  const channel = msg.guild?.channels.cache.get(channelId);
-  if (!channel) return Embed.error('invalid channel `' + value + '`').reply(msg);
-  if (channel.type !== 'text') return Embed.error('only text channels allowed').reply(msg);
+  const channelId = newValue.toString().replace(/[<#>]/g, '') as Snowflake;
+  const channel = event.guild.channels.cache.get(channelId);
+  if (!channel) return event.reply(Embed.error('Invalid channel `' + newValue + '`').ephemeral());
+  if (channel.type !== 'GUILD_TEXT')
+    return event.reply(Embed.error('Only text channels allowed').ephemeral());
 
   config.welcomeChannelId = channel.id;
-  return Embed.success(`welcome channel set to ${channel}`).reply(msg);
+  return event.reply(Embed.success(`Welcome channel set to ${channel}`));
 };

@@ -2,11 +2,11 @@ import { PresenceManager, resolvePath, Store } from '@gamerbot/util';
 import { Client, ClientOptions, ClientUser, Guild, GuildEmoji, Snowflake } from 'discord.js';
 import fse from 'fs-extra';
 import { google } from 'googleapis';
+import { getLogger } from 'log4js';
 import Spotify from 'spotify-web-api-node';
 import { Command } from './commands';
 import { CryptoManager } from './commands/crypto/CryptoManager';
-import { Queue } from './models';
-import { getLogger } from './providers';
+import { Queue } from './models/Queue';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface GamerbotOptions extends Omit<ClientOptions, 'partials'> {}
@@ -66,7 +66,7 @@ export class Gamerbot extends Client {
         'GUILDS',
         'GUILD_MEMBERS',
         'GUILD_BANS',
-        'GUILD_EMOJIS',
+        'GUILD_EMOJIS_AND_STICKERS',
         'GUILD_INVITES',
         'GUILD_VOICE_STATES',
         'GUILD_MESSAGES',
@@ -153,24 +153,79 @@ export class Gamerbot extends Client {
   }
 
   private async initCommands() {
-    let modules: any[];
+    const logger = getLogger('Gamerbot#initCommands');
+
+    logger.debug(`starting command discovery`);
+
+    const modules: { [key: string]: any } = {};
     if (process.env.WEBPACK) {
       const requireContext = require.context('./commands', true, /\.ts$/);
-      modules = await Promise.all(requireContext.keys().map(r => requireContext(r)));
+      const files = requireContext.keys();
+      for (const file of files) {
+        logger.debug(`  - discovered file ${file}`);
+        modules[file] = await requireContext(file);
+      }
     } else {
-      modules = await Promise.all(
-        fse.readdirSync(resolvePath('./commands')).map(file => import(`./commands/${file}`))
-      );
+      const files = fse.readdirSync(resolvePath('./commands'));
+      for (const file of files) {
+        modules[file] = await import(`./commands/${file}`);
+      }
     }
 
-    modules.forEach(mod => {
-      const valid = Object.keys(mod).filter(name => /^Command[A-Z].*/.test(name.toString()));
-      if (valid.length) this.commands.push(...valid.map(name => new mod[name]()));
+    logger.debug(`imports finished`);
+    logger.debug(`beginning export discovery`);
+
+    Object.keys(modules).forEach(key => {
+      logger.debug(`processing module ${key}`);
+      logger.debug(`  - searching module ${key}`);
+      const module = modules[key];
+      const exports = Object.keys(module).map(name => name.toString());
+      const commandClasses = exports.filter(name => {
+        logger.debug(`    - discovered export ${name}`);
+        if (/^Command.+/.test(name)) {
+          logger.debug(`      - name looks like possibly a command; adding to list`);
+          return true;
+        }
+        logger.debug(`      - ignoring`);
+        return false;
+      });
+
+      logger.debug(`  - discovery finished`);
+
+      if (!commandClasses.length) return;
+
+      logger.debug(`  - beginning command verification`);
+
+      for (const command of commandClasses) {
+        logger.debug(`  - testing ${command}`);
+        const instance = new module[command]();
+        if (!instance.cmd) {
+          logger.warn('       - missing cmd field');
+          continue;
+        }
+        if (!instance.docs) {
+          logger.warn('       - missing docs field');
+          continue;
+        }
+        if (!instance.execute) {
+          logger.warn('       - missing execute method');
+          continue;
+        }
+        if (!instance.commandOptions) {
+          logger.debug('      - missing commandOptions field (continuing anyway)');
+        }
+        logger.debug(`    - ${command} passed, adding to command list`);
+        this.commands.push(instance);
+      }
+
+      logger.debug(`  - verification finished`);
+      logger.debug(`done processing ${key}`);
     });
 
+    logger.debug(`sorting commands by name`);
     this.commands.sort((a, b) => {
-      const cmdA = (Array.isArray(a.cmd) ? a.cmd[0] : a.cmd).toLowerCase();
-      const cmdB = (Array.isArray(b.cmd) ? b.cmd[0] : b.cmd).toLowerCase();
+      const cmdA = a.cmd[0].toLowerCase();
+      const cmdB = b.cmd[0].toLowerCase();
       return cmdA < cmdB ? -1 : cmdA > cmdB ? 1 : 0;
     });
   }

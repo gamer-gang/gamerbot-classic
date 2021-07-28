@@ -4,8 +4,8 @@ import { SqlHighlighter } from '@mikro-orm/sql-highlighter';
 import c from 'ansi-colors';
 import dotenv from 'dotenv';
 import fs from 'fs';
+import { getLogger } from 'log4js';
 import { basename } from 'path';
-import { dbLogger } from './providers';
 
 dotenv.config({ path: resolvePath('.env') });
 
@@ -44,6 +44,8 @@ const getMigrations = () => {
   }
 };
 
+const logger = getLogger('MikroORM');
+
 export default {
   entities: getEntities(),
   type: 'postgresql',
@@ -53,7 +55,7 @@ export default {
   user: process.env.POSTGRES_USER,
   password: process.env.POSTGRES_PASSWORD,
   debug: true,
-  logger: msg => dbLogger.trace(process.env.NODE_ENV === 'development' ? msg : c.unstyle(msg)),
+  logger: msg => logger.trace(process.env.NODE_ENV === 'development' ? msg : c.unstyle(msg)),
   highlighter:
     process.env.NODE_ENV === 'development' ? new SqlHighlighter() : new NullHighlighter(),
   baseDir: resolvePath('.'),

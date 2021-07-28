@@ -14,7 +14,7 @@ const auditChangeTable: Record<string, string> = {
 export const channelHandlers: LogHandlers = {
   onChannelCreate:
     (guild: Guild, logChannel: TextChannel) => async (channel: DMChannel | GuildChannel) => {
-      if (channel.type === 'dm') return;
+      if (channel.type === 'DM') return;
 
       const auditEvent = await getLatestAuditEvent(guild);
 
@@ -39,7 +39,7 @@ export const channelHandlers: LogHandlers = {
     },
   onChannelDelete:
     (guild: Guild, logChannel: TextChannel) => async (channel: DMChannel | GuildChannel) => {
-      if (channel.type === 'dm') return;
+      if (channel.type === 'DM') return;
 
       const auditEvent = await getLatestAuditEvent(guild);
 
@@ -65,7 +65,7 @@ export const channelHandlers: LogHandlers = {
   onChannelUpdate:
     (guild: Guild, logChannel: TextChannel) =>
     async (prev: DMChannel | GuildChannel, next: DMChannel | GuildChannel) => {
-      if (prev.type === 'dm' || next.type === 'dm') return;
+      if (prev.type === 'DM' || next.type === 'DM') return;
 
       const auditEvent = await getLatestAuditEvent(guild);
 
@@ -77,7 +77,7 @@ export const channelHandlers: LogHandlers = {
         color: logColorFor('channelUpdate'),
         title: 'Channel updated',
         description: `Updated channel: ${
-          next.type === 'voice' ? `${next.name} (voice)` : next
+          next.type === 'GUILD_VOICE' ? `${next.name} (voice)` : next
         }, ID ${next.id}`,
       }).setTimestamp();
 

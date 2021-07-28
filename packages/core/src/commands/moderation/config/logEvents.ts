@@ -1,46 +1,47 @@
-import { Context } from '@gamerbot/types';
 import { codeBlock, Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { Config } from '../../../entities/Config';
 import { intToLogEvents, maxLogInteger } from '../../../listeners/log';
 import { LogEventName, logEvents as logEventNames } from '../../../listeners/log/_constants';
+import { CommandEvent } from '../../../models/CommandEvent';
 
 export const logEvents = async (
-  config: Config,
-  context: Context,
-  value?: string
+  event: CommandEvent,
+  newValue?: string
 ): Promise<void | Message> => {
-  const { msg } = context;
+  const config = await event.em.findOneOrFail(Config, { guildId: event.guild.id });
 
-  if (!value) {
+  if (!newValue) {
     // do not touch, it works
     if (BigInt(config.logSubscribedEvents) + 1n - 1n === 0n)
-      return Embed.info('no subscribed events').reply(msg);
+      return event.reply(Embed.info('No subscribed events'));
 
     const events = intToLogEvents(config.logSubscribedEvents);
 
-    return Embed.info(
-      `current logged events (**${config.logSubscribedEvents}**)`,
-      `use \`${config.prefix}config logChannel 0\` to stop receiving logs\n${codeBlock(
-        events.join('\n')
-      )}`
-    ).reply(msg);
+    return event.reply(
+      Embed.info(
+        `Current logged events (**${config.logSubscribedEvents}**)`,
+        `Use \`${config.prefix}config logChannel 0\` to stop receiving logs\n${codeBlock(
+          events.join('\n')
+        )}`
+      )
+    );
   }
 
-  if (value === '0') {
+  if (newValue === '0') {
     config.logSubscribedEvents = 0n;
-    return Embed.warning('unset subscribed events', 'logs will no longer be sent').reply(msg);
+    return event.reply(Embed.warning('Unset subscribed events', 'Logs will no longer be sent'));
   }
 
-  const int = value.startsWith('0b')
-    ? parseInt(value.slice(2), 2)
-    : value.startsWith('0x')
-    ? parseInt(value.slice(2), 16)
-    : /^\d+$/.test(value)
-    ? parseInt(value, 10)
-    : /^\w+((\s+|\s*,\s*)\w+)*$/.test(value)
-    ? value
-        .split(value.includes(',') ? /\s*,\s*/g : /\s+/g)
+  const int = newValue.startsWith('0b')
+    ? parseInt(newValue.slice(2), 2)
+    : newValue.startsWith('0x')
+    ? parseInt(newValue.slice(2), 16)
+    : /^\d+$/.test(newValue)
+    ? parseInt(newValue, 10)
+    : /^\w+((\s+|\s*,\s*)\w+)*$/.test(newValue)
+    ? newValue
+        .split(newValue.includes(',') ? /\s*,\s*/g : /\s+/g)
         .map(v => {
           const index = logEventNames.indexOf(v as LogEventName);
           if (index === -1) return NaN;
@@ -50,21 +51,27 @@ export const logEvents = async (
     : NaN;
 
   if (isNaN(int) || !isFinite(int) || int < 1 || int > maxLogInteger)
-    return Embed.error(
-      'invalid permissions',
-      `valid permissions${codeBlock(logEventNames.join('\n'))}`
-    ).reply(msg);
+    return event.reply(
+      Embed.error(
+        'Invalid permissions',
+        `Valid permissions:${codeBlock(logEventNames.join('\n'))}`
+      ).ephemeral()
+    );
 
   config.logSubscribedEvents = BigInt(int);
 
   if (config.logChannelId)
-    return Embed.success(
-      `successfully subscribed to the following events (**${int}**):`,
-      codeBlock(intToLogEvents(int).join('\n'))
-    ).reply(msg);
+    return event.reply(
+      Embed.success(
+        `Successfully subscribed to the following events (**${int}**):`,
+        codeBlock(intToLogEvents(int).join('\n'))
+      )
+    );
   else
-    return Embed.success(
-      `successfully subscribed to the following events (**${int}**).\ndon't forget to set a log channel (\`$config logChannel <channel>\`)!`,
-      codeBlock(intToLogEvents(int).join('\n'))
-    ).reply(msg);
+    return event.reply(
+      Embed.success(
+        `Successfully subscribed to the following events (**${int}**).\nDon't forget to set a log channel (\`$config logChannel <channel>\`)!`,
+        codeBlock(intToLogEvents(int).join('\n'))
+      )
+    );
 };

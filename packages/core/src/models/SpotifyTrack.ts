@@ -18,8 +18,8 @@ export interface SpotifyTrackData {
 export class SpotifyTrack extends Track {
   internalType = 'spotify' as const;
 
-  constructor(requesterId: string, public data: SpotifyTrackData) {
-    super(requesterId);
+  constructor(public data: SpotifyTrackData) {
+    super();
   }
 
   get type(): string {

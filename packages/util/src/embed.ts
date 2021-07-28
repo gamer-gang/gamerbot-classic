@@ -1,8 +1,11 @@
 import {
+  CommandInteraction,
   DMChannel,
   FileOptions,
   GuildEmoji,
+  InteractionReplyOptions,
   Message,
+  MessageComponentInteraction,
   MessageEmbed,
   MessageEmbedOptions,
   MessageOptions,
@@ -17,6 +20,8 @@ import _ from 'lodash/fp';
 import { Color } from './color';
 import { getProfilePicture } from './message';
 import { getClient } from './_client';
+
+type APIMessage = Exclude<MessageComponentInteraction['message'], Message>;
 
 type EmbedIntent = 'info' | 'success' | 'warning' | 'error';
 
@@ -75,6 +80,7 @@ export class Embed extends MessageEmbed {
   }
 
   files: FileOptions[] = [];
+  #ephemeral = false;
 
   constructor(options?: (MessageEmbed | MessageEmbedOptions) & EmbedOptions) {
     super(options);
@@ -109,6 +115,11 @@ export class Embed extends MessageEmbed {
     return this;
   }
 
+  ephemeral(ephemeral = true): this {
+    this.#ephemeral = ephemeral;
+    return this;
+  }
+
   // setFooter(text: unknown): this {
   //   super.setFooter(
   //     'gamerbot  •  ' + text,
@@ -135,9 +146,46 @@ export class Embed extends MessageEmbed {
   }
 
   reply(
-    message: Message | PartialMessage,
-    options: MessagePayload | ReplyMessageOptions = {}
-  ): Promise<Message> {
-    return message.reply(_.merge({ embeds: [this], files: this.files }, options));
+    message: Message | PartialMessage | CommandInteraction,
+    options?: MessagePayload | ReplyMessageOptions
+  ): Promise<Message>;
+  reply(interaction: CommandInteraction, options?: InteractionReplyOptions): Promise<void>;
+  reply(
+    message: Message | PartialMessage | CommandInteraction,
+    options: MessagePayload | ReplyMessageOptions | InteractionReplyOptions = {}
+  ): Promise<Message | void> {
+    if (message instanceof CommandInteraction)
+      return message.reply(
+        _.merge({ embeds: [this], files: this.files, ephemeral: this.#ephemeral }, options)
+      );
+    else return message.reply(_.merge({ embeds: [this], files: this.files }, options));
+  }
+
+  edit(
+    message: Message | PartialMessage | CommandInteraction,
+    options?: MessagePayload | ReplyMessageOptions
+  ): Promise<Message>;
+  edit(
+    interaction: CommandInteraction,
+    options?: InteractionReplyOptions
+  ): Promise<Message | APIMessage>;
+  edit(
+    message: Message | PartialMessage | CommandInteraction,
+    options: MessagePayload | ReplyMessageOptions | InteractionReplyOptions = {}
+  ): Promise<Message | APIMessage | void> {
+    if (message instanceof CommandInteraction)
+      return message.editReply(
+        _.merge({ embeds: [this], files: this.files, ephemeral: this.#ephemeral }, options)
+      );
+    else return message.reply(_.merge({ embeds: [this], files: this.files }, options));
+  }
+
+  followUp(
+    interaction: CommandInteraction,
+    options?: InteractionReplyOptions
+  ): Promise<Message | APIMessage> {
+    return interaction.followUp(
+      _.merge({ embeds: [this], files: this.files, ephemeral: this.#ephemeral }, options)
+    );
   }
 }
