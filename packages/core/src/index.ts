@@ -239,12 +239,12 @@ const eventHooks: {
 
 const debugLogger = getLogger('Client!debug');
 client.on('debug', content => {
-  if (client.devMode) {
-    if (content.includes('Heartbeat')) return;
-    debugLogger.debug(content);
-  } else if (content.includes('Remaining: ')) {
+  if (content.includes('Heartbeat')) return;
+
+  debugLogger.debug(content);
+
+  if (content.includes('Remaining: '))
     getLogger('Client+info').info(`Remaining gateway sessions: ${content.split(' ').reverse()[0]}`);
-  }
 });
 
 const handleEvent =

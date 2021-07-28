@@ -146,9 +146,9 @@ export class CommandEggLeaderboard extends Command {
     const formattedList = page
       .map(
         (lb, index) =>
-          `${index + 1}. **${lb.userTag}** with **${lb.eggs.toLocaleString()}** egg${
-            lb.eggs > 1 ? 's' : ''
-          }`
+          `${pageNumber * 20 + index + 1}. **${
+            lb.userTag
+          }** with **${lb.eggs.toLocaleString()}** egg${lb.eggs > 1 ? 's' : ''}`
       )
       .join('\n');
 
@@ -163,7 +163,7 @@ ${formattedList}
         : 'No eggers! Get egging!!!'
     );
 
-    if (pages.length > 1) embed.setFooter(`Page ${pageNumber}/${pages.length}`);
+    if (pages.length > 1) embed.setFooter(`Page ${pageNumber + 1}/${pages.length}`);
 
     return embed;
   }

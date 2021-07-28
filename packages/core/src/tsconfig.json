@@ -2,7 +2,7 @@
   "include": ["."],
   "compilerOptions": {
     "target": "es2020",
-    "module": "esnext",
+    "module": "commonjs",
     "lib": ["ESNext"],
     "incremental": true,
     "sourceMap": true,

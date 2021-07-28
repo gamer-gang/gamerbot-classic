@@ -16,9 +16,6 @@ export class CommandInternalDeploy extends InternalCommand {
     if (event.isInteraction()) return;
     const msg = event.message;
 
-    const manager = client.devMode ? event.guild.commands : client.application?.commands;
-    if (!manager) return Embed.error('Command manager is undefined').reply(msg);
-
     Embed.info('Deploying...').send(msg.channel);
 
     let internalCommands = 0;
@@ -41,15 +38,19 @@ export class CommandInternalDeploy extends InternalCommand {
     });
 
     try {
-      await manager.set(data);
+      const commands = (
+        client.devMode
+          ? await event.guild.commands.set(data)
+          : await client.application!.commands.set(data)
+      ).array();
 
       Embed.success(
-        `Deployed **${data.length}** commands ${
+        `Deployed **${commands.length}** commands ${
           client.devMode ? `to **${msg.guild.name}**` : '**globally**'
         }, overwriting previous deployment`,
-        `**Commands**: ${data.map(command => command.name).join(', ')}
+        `**Commands**: ${commands.map(command => command.name).join(', ')}
 
-Excluded **${internalCommands}** internal commands${
+Excluded **${internalCommands}** internal command${internalCommands === 1 ? '' : 's'}${
           nonSlashCommands.length
             ? `
 

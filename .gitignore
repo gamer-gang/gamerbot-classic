@@ -24,3 +24,4 @@ yarn-error.log
 **/.cache
 
 .vscode/extensions.json
+packages/core/src/clearguildcommands.ts

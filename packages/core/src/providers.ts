@@ -6,7 +6,6 @@ import dotenv from 'dotenv';
 import fse from 'fs-extra';
 import log4js, { getLogger } from 'log4js';
 import { Gamerbot } from './gamerbot';
-import mikroOrmConfig from './mikro-orm.config';
 
 dotenv.config({ path: resolvePath('.env') });
 
@@ -70,7 +69,11 @@ export const getORM = async (): Promise<typeof orm> => {
   if (!orm) {
     if (!initORM)
       initORM = new Promise(resolve => {
-        MikroORM.init({ ...mikroOrmConfig, context: () => storage.getStore() }).then(tempORM => {
+        MikroORM.init({
+          // eslint-disable-next-line @typescript-eslint/no-var-requires
+          ...require('./mikro-orm.config').default,
+          context: () => storage.getStore(),
+        }).then(tempORM => {
           tempORM
             .getMigrator()
             .up()
