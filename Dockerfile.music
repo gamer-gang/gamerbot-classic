@@ -8,6 +8,7 @@ RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources
 RUN apt update && apt -y install \
   yarn \
   ffmpeg \
+  figlet \
   # node-canvas deps
   libcairo2-dev \
   libgif-dev \

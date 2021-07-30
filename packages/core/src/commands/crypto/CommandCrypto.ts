@@ -53,7 +53,7 @@ export class CommandCrypto extends Command {
         Embed.error('Crypto support disabled', 'No credentials provided in environment').ephemeral()
       );
 
-    const subcommand = event.isInteraction() ? event.options.getSubCommand() : event.argv[0];
+    const subcommand = event.isInteraction() ? event.options.getSubcommand() : event.argv[0];
 
     if (subcommand !== 'get' && subcommand !== 'list')
       return event.reply(

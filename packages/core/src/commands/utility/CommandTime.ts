@@ -74,7 +74,7 @@ export class CommandTime extends Command {
 
   async execute(event: CommandEvent): Promise<void | Message> {
     const subcommand = event.isInteraction()
-      ? event.options.getSubCommand()
+      ? event.options.getSubcommand()
       : event.argv[0] ?? 'world';
 
     if (subcommand !== 'list' && subcommand !== 'in' && subcommand !== 'world')

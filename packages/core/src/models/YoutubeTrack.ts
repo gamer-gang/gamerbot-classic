@@ -1,9 +1,8 @@
+import { PlayableType } from '@gamerbot/common';
 import { formatDuration, normalizeDuration } from '@gamerbot/util';
 import { youtube_v3 } from 'googleapis';
 import he from 'he';
 import { Duration } from 'luxon';
-import { Readable } from 'stream';
-import ytdl from 'ytdl-core';
 import { Track } from './Track';
 
 export class YoutubeTrack extends Track {
@@ -53,8 +52,8 @@ export class YoutubeTrack extends Track {
     return normalizeDuration(Duration.fromISO(this.data.contentDetails?.duration as string));
   }
 
-  async getPlayable(ytdlOptions: ytdl.downloadOptions = {}): Promise<Readable> {
+  async getPlayable(): Promise<[type: PlayableType, url: string]> {
     if (!this.data.id) throw new Error(`video '${this.data.snippet?.title}' has no video id`);
-    return ytdl(this.data.id, ytdlOptions);
+    return ['youtube', `https://youtube.com/watch?v=${this.data.id}`];
   }
 }

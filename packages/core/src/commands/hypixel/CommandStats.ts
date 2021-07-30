@@ -120,7 +120,7 @@ export class CommandStats extends Command {
     const timeStart = process.hrtime();
 
     const subcommand =
-      (event.isInteraction() ? event.options.getSubCommand() : event.argv[0]) ?? 'get';
+      (event.isInteraction() ? event.options.getSubcommand() : event.argv[0]) ?? 'get';
 
     if (
       subcommand !== 'find-username' &&

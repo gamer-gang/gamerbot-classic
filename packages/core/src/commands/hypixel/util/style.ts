@@ -1,4 +1,4 @@
-import { canvasStyle } from '@gamerbot/config';
+import { canvasStyle } from '@gamerbot/common';
 import { Color } from '@gamerbot/util';
 import _ from 'lodash';
 

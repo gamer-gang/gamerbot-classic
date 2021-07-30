@@ -21,7 +21,7 @@ export class CommandStop extends Command {
     if (!event.guild.me?.voice)
       return event.reply(Embed.error('Not conected to a channel').ephemeral());
 
-    if ((event.guild.me?.voice?.channel?.members?.array().length ?? 2) > 1) {
+    if ((event.guild.me?.voice?.channel?.members?.array().length ?? 0) > 1) {
       const userVoice = event.guild.members.cache.get(event.user.id)?.voice;
       if (!userVoice?.channel || userVoice.channel.id !== queue.voiceChannel?.id)
         return event.reply(

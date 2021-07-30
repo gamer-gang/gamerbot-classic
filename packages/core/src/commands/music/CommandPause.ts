@@ -18,14 +18,14 @@ export class CommandPause extends Command {
   async execute(event: CommandEvent): Promise<void | Message> {
     const queue = client.queues.get(event.guild.id);
 
-    if (!queue.playing) return event.reply(Embed.error('not playing').ephemeral());
+    if (!(await queue.playing)) return event.reply(Embed.error('not playing').ephemeral());
 
     const voice = event.guild.members.cache.get(event.user.id)?.voice;
     if (!voice?.channel || voice.channel.id !== queue.voiceChannel?.id)
       return event.reply(Embed.error('you are not in the music channel').ephemeral());
 
     try {
-      queue.audioPlayer.pause();
+      queue.adapter.send('pause');
       queue.updateNowPlaying();
 
       if (event.isMessage()) event.react('⏸️');

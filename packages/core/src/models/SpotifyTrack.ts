@@ -1,8 +1,7 @@
+import { PlayableType } from '@gamerbot/common';
 import { formatDuration } from '@gamerbot/util';
 import { Duration } from 'luxon';
-import { Readable } from 'stream';
 import yts from 'yt-search';
-import ytdl from 'ytdl-core';
 import { client } from '../providers';
 import { Track } from './Track';
 
@@ -56,7 +55,7 @@ export class SpotifyTrack extends Track {
       .join(', ');
   }
 
-  async getPlayable(ytdlOptions: ytdl.downloadOptions = {}): Promise<Readable> {
+  async getPlayable(): Promise<[type: PlayableType, url: string]> {
     const error =
       `could not play **${this.titleMarkup}**\n` + `couldn't find an equivalent video on youtube`;
 
@@ -71,6 +70,6 @@ export class SpotifyTrack extends Track {
     });
     if (!video || !video.data.items || !video.data.items[0]) throw new Error(error);
 
-    return ytdl(video.data.items[0].id!, ytdlOptions);
+    return ['youtube', `https://youtube.com/watch?v=${video.data.items[0].id!}`];
   }
 }

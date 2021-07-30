@@ -1,3 +1,3 @@
-import { webpackConfig } from '@gamerbot/config';
+import { webpackConfig } from '@gamerbot/common';
 
 export default webpackConfig(__dirname);

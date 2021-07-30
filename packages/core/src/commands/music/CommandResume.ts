@@ -18,7 +18,7 @@ export class CommandResume extends Command {
   async execute(event: CommandEvent): Promise<void | Message> {
     const queue = client.queues.get(event.guild.id);
 
-    if (!queue.playing) return event.reply(Embed.error('Not playing').ephemeral());
+    if (!(await queue.playing)) return event.reply(Embed.error('Not playing').ephemeral());
 
     const voice = event.guild.members.cache.get(event.user.id)?.voice;
     if (!voice?.channel || voice.channel.id !== queue.voiceChannel?.id)
@@ -29,8 +29,9 @@ export class CommandResume extends Command {
       );
 
     try {
-      queue.audioPlayer.unpause();
+      queue.adapter.send('resume');
       queue.updateNowPlaying();
+
       if (event.isMessage()) event.react('▶️');
       else event.reply(Embed.success('Playback resumed'));
       return;

@@ -20,7 +20,7 @@ export class CommandTrackInfo extends Command {
   async execute(event: CommandEvent): Promise<void | Message> {
     const queue = client.queues.get(event.guild.id);
 
-    if (!queue.playing) return event.reply(Embed.error('Nothing playing').ephemeral());
+    if (!(await queue.playing)) return event.reply(Embed.error('Nothing playing').ephemeral());
 
     const track = queue.tracks[queue.index];
 

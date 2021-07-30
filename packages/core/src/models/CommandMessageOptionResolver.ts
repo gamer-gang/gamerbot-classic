@@ -20,10 +20,10 @@ export class CommandMessageOptionResolver {
   get(name: string, required?: boolean): CommandInteractionOption | null {
     throw new Error('Method not implemented.');
   }
-  getSubCommand(): string {
+  getSubcommand(): string {
     throw new Error('Method not implemented.');
   }
-  getSubCommandGroup(): string {
+  getSubcommandGroup(): string {
     throw new Error('Method not implemented.');
   }
   getBoolean(name: string, required: true): boolean;

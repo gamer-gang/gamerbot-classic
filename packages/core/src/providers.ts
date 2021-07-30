@@ -27,16 +27,16 @@ const levelFilter = (name: string) => ({
 
 log4js.configure({
   appenders: {
-    _fileTrace: { ...fileAppender, filename: resolvePath(`logs/trace.log`) },
+    _fileTrace: { ...fileAppender, filename: resolvePath(`logs/tcore-race.log`) },
     fileTrace: { ...levelFilter('_fileTrace'), level: 'trace' },
 
-    _fileDebug: { ...fileAppender, filename: resolvePath(`logs/debug.log`) },
+    _fileDebug: { ...fileAppender, filename: resolvePath(`logs/core-debug.log`) },
     fileDebug: { ...levelFilter('_fileDebug'), level: 'debug' },
 
-    _fileInfo: { ...fileAppender, filename: resolvePath(`logs/info.log`) },
+    _fileInfo: { ...fileAppender, filename: resolvePath(`logs/core-info.log`) },
     fileInfo: { ...levelFilter('_fileInfo'), level: 'info' },
 
-    _fileWarn: { ...fileAppender, filename: resolvePath(`logs/warn.log`) },
+    _fileWarn: { ...fileAppender, filename: resolvePath(`logs/core-warn.log`) },
     fileWarn: { ...levelFilter('_fileWarn'), level: 'warn' },
 
     _console: { type: 'console', layout: { type: 'colored' } },

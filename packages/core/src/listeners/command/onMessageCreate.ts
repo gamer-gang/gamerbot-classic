@@ -18,7 +18,7 @@ export const onMessageCreate = async (msg: DetailedMessage): Promise<void | Mess
 
   const logger = getLogger(`Client!messageCreate[guild=${msg.guild.id}]`);
 
-  client.queues.setIfUnset(msg.guild.id, new Queue(msg.guild.id));
+  !client.queues.has(msg.guild.id) && client.queues.set(msg.guild.id, new Queue(msg.guild.id));
 
   const orm = await getORM();
 

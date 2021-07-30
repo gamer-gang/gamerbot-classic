@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "types": "./lib/index.d.ts",
   "dependencies": {
-    "discord.js": "dev",
+    "discord.js": "^13.0.0-dev.2675b08.1627603447",
     "yargs-parser": "^20.2.9"
   },
   "devDependencies": {

@@ -1,4 +1,4 @@
-import { canvasStyle as s } from '@gamerbot/config';
+import { canvasStyle as s } from '@gamerbot/common';
 import { Color, Embed, HslTriple, RgbTriple } from '@gamerbot/util';
 import { Canvas } from 'canvas';
 import { Message } from 'discord.js';

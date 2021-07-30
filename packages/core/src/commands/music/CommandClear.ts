@@ -24,7 +24,7 @@ export class CommandClear extends Command {
 
     try {
       if (!queue.tracks.length) return event.reply(Embed.error('Nothing playing').ephemeral());
-      queue.tracks = queue.playing ? [queue.tracks[queue.index]] : [];
+      queue.tracks = (await queue.playing) ? [queue.tracks[queue.index]] : [];
       return event.reply(Embed.success('Queue cleared'));
     } catch (err) {
       return event.reply(Embed.error(codeBlock(err)).ephemeral());

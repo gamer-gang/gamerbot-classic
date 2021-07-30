@@ -19,7 +19,7 @@ export class CommandShuffle extends Command {
   async execute(event: CommandEvent): Promise<void | Message> {
     const queue = client.queues.get(event.guild.id);
 
-    if (!queue.playing) return event.reply(Embed.error('Not playing').ephemeral());
+    if (!(await queue.playing)) return event.reply(Embed.error('Not playing').ephemeral());
     if (queue.tracks.length <= 1) return event.reply(Embed.error('Nothing in queue').ephemeral());
 
     const voice = event.guild.members.cache.get(event.user.id)?.voice;

@@ -1,28 +1,36 @@
-import {
-  AudioPlayer,
-  AudioPlayerStatus,
-  createAudioPlayer,
-  createAudioResource,
-  DiscordGatewayAdapterCreator,
-  getVoiceConnection,
-  joinVoiceChannel,
-} from '@discordjs/voice';
-import { codeBlock, Embed, formatDuration } from '@gamerbot/util';
+import { AudioPlayerStatus } from '@discordjs/voice';
+import { C2MMessageAdapter, M2CEvents } from '@gamerbot/common';
+import { codeBlock, delay, Embed, formatDuration } from '@gamerbot/util';
 import { Message, Snowflake, StageChannel, TextChannel, VoiceChannel } from 'discord.js';
 import { getLogger } from 'log4js';
-import { client } from '../providers';
 import { Track } from './Track';
 
 export type LoopMode = 'none' | 'one' | 'all';
 
 export class Queue {
+  adapter: C2MMessageAdapter;
   tracks: Track[] = [];
   voiceChannel?: VoiceChannel | StageChannel;
   textChannel?: TextChannel;
-  audioPlayer: AudioPlayer = createAudioPlayer({ debug: process.env.NODE_ENV === 'development' });
   loop: LoopMode = 'none';
   index = 0;
   embed?: Message;
+
+  constructor(public guildId: string) {
+    this.adapter = new C2MMessageAdapter(
+      guildId,
+      getLogger(`C2MMessageAdapter+tx`),
+      getLogger(`C2MMessageAdapter+rx`)
+    );
+
+    const logger = getLogger(`C2MMessageAdapter!error[guild=${guildId}]`);
+    this.adapter.on('error', (id, guildId, eventId, code, message) => {
+      if (guildId.toString() !== this.guildId) return;
+      logger.error(`event ${eventId} errored (${code}): ${message}`);
+    });
+
+    this.adapter.connect();
+  }
 
   reset(): void {
     this.tracks = [];
@@ -30,31 +38,51 @@ export class Queue {
     this.embed?.delete();
     delete this.embed;
 
-    const connection = getVoiceConnection(this.guildId);
-    connection?.destroy();
-    this.audioPlayer.stop();
+    this.adapter.send('stop');
+
+    // const connection = getVoiceConnection(this.guildId);
+    // connection?.destroy();
+    // this.audioPlayer.stop();
 
     delete this.textChannel;
     delete this.voiceChannel;
     this.index = 0;
   }
 
-  get playing(): boolean {
-    return this.audioPlayer.state.status !== AudioPlayerStatus.Idle;
+  #getStatus(): Promise<AudioPlayerStatus | 'not-connected'> {
+    return new Promise(resolve => {
+      const statusListener = (
+        id: bigint,
+        guildId: bigint,
+        ...[eventId, status]: M2CEvents['status']
+      ) => {
+        if (requestId.toString() !== eventId) return;
+        this.adapter.off('status', statusListener);
+        resolve(status);
+      };
+
+      this.adapter.on('status', statusListener);
+
+      const requestId = this.adapter.send('status');
+    });
   }
 
-  get paused(): boolean {
-    return this.audioPlayer.state.status === AudioPlayerStatus.Paused;
+  get playing(): Promise<boolean> {
+    return this.#getStatus().then(
+      status => status !== AudioPlayerStatus.Idle && status !== 'not-connected'
+    );
   }
 
-  constructor(public guildId: string) {}
+  get paused(): Promise<boolean> {
+    return this.#getStatus().then(status => status === AudioPlayerStatus.Paused);
+  }
 
   get loopSymbol(): string {
     return this.loop === 'all' ? '🔁' : this.loop === 'one' ? '🔂' : '';
   }
 
-  get remainingTime(): number {
-    if (!this.playing) return 0;
+  async remainingTime(): Promise<number> {
+    if (!(await this.playing)) return 0;
     return (
       // this.tracks[this.index].duration.as('seconds') -
       // Math.floor(
@@ -76,13 +104,15 @@ export class Queue {
     return formatDuration(isNaN(totalDurationSeconds) ? 0 : totalDurationSeconds);
   }
 
-  queueTracks(tracks: Track[], requesterId: Snowflake): number {
+  async queueTracks(tracks: Track[], requesterId: Snowflake): Promise<number> {
+    const logger = getLogger(`CommandPlay#queueTracks[guild=${this.guildId}]`);
     tracks.forEach(t => (t.requesterId = requesterId));
 
     const length = this.tracks.push(...tracks);
     const startOfSegment = length - tracks.length;
 
-    if (!this.playing) {
+    if (!(await this.playing)) {
+      logger.debug('not playing, calling playNext');
       this.index = startOfSegment;
       this.playNext();
     }
@@ -106,20 +136,25 @@ export class Queue {
 
     if (!this.voiceChannel) throw new Error('No voice channel set');
 
-    if (!getVoiceConnection(this.guildId)) {
-      const connection = joinVoiceChannel({
-        guildId: this.guildId,
-        channelId: this.voiceChannel.id,
-        adapterCreator: client.guilds.resolve(this.guildId! as Snowflake)!
-          .voiceAdapterCreator as unknown as DiscordGatewayAdapterCreator,
-        selfDeaf: true,
-      });
-      connection.subscribe(this.audioPlayer);
+    if ((await this.#getStatus()) === 'not-connected') {
+      this.adapter.send('join', this.voiceChannel.id);
+      await delay(500)(0);
     }
+
+    // if (!getVoiceConnection(this.guildId)) {
+    //   const connection = joinVoiceChannel({
+    //     guildId: this.guildId,
+    //     channelId: this.voiceChannel.id,
+    //     adapterCreator: client.guilds.resolve(this.guildId! as Snowflake)!
+    //       .voiceAdapterCreator as unknown as DiscordGatewayAdapterCreator,
+    //     selfDeaf: true,
+    //   });
+    //   connection.subscribe(this.audioPlayer);
+    // }
 
     logger.debug(`playing track "${track.title}"`);
 
-    const connection = getVoiceConnection(this.guildId);
+    // const connection = getVoiceConnection(this.guildId);
 
     this.updateNowPlaying();
 
@@ -151,7 +186,8 @@ export class Queue {
             // no more in queue and not looping
             logger.debug('not looping all, disconnecting');
             this.index++;
-            connection?.destroy();
+            // connection?.destroy();
+            this.adapter.send('stop');
             return;
           }
         } else {
@@ -172,13 +208,25 @@ export class Queue {
     // };
 
     try {
-      logger.debug('playing track to dispatcher');
+      const endListener = (id: bigint, guildId: bigint, ...[eventId]: M2CEvents['end']) => {
+        if (guildId.toString() !== this.guildId) return;
+        this.adapter.off('end', endListener);
+        callback();
+      };
 
-      const resource = createAudioResource(await track.getPlayable());
+      this.adapter.on('end', endListener);
 
-      this.audioPlayer.play(resource);
+      console.log(this.adapter.listeners('end'));
 
-      this.audioPlayer.on('error', err => logger.error(err)).once(AudioPlayerStatus.Idle, callback);
+      this.adapter.send('play', ...(await track.getPlayable()));
+
+      // setInterval(() => console.log(this.adapter.listeners('end')), 5000);
+
+      // const resource = createAudioResource(await track.getPlayable());
+
+      // this.audioPlayer.play(resource);
+
+      // this.audioPlayer.on('error', err => logger.error(err)).once(AudioPlayerStatus.Idle, callback);
     } catch (err) {
       logger.error(err);
       this.textChannel && Embed.error(err.message).send(this.textChannel);
@@ -195,7 +243,7 @@ export class Queue {
     const track = this.tracks[this.index];
 
     const embed = new Embed({
-      title: `Now Playing ${this.loopSymbol} ${this.paused ? '⏸️' : ''}`,
+      title: `Now Playing ${this.loopSymbol} ${(await this.paused) ? '⏸️' : ''}`,
       description: `**${track.titleMarkup}** (${track.type})`,
     });
 

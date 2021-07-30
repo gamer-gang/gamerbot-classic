@@ -1,6 +1,5 @@
+import { PlayableType } from '@gamerbot/common';
 import { Duration } from 'luxon';
-import { Readable } from 'stream';
-import ytdl from 'ytdl-core';
 import { FileTrack } from './FileTrack';
 import { SpotifyTrack } from './SpotifyTrack';
 import { YoutubeTrack } from './YoutubeTrack';
@@ -29,7 +28,7 @@ export abstract class Track {
 
   abstract get url(): string | undefined;
   abstract get type(): string;
-  abstract getPlayable(ytdlOptions?: ytdl.downloadOptions): Promise<string | Readable>;
+  abstract getPlayable(): Promise<[type: PlayableType, url: string]>;
   abstract get titleMarkup(): string;
   abstract get title(): string;
   abstract get durationString(): string;

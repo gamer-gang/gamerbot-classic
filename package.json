@@ -31,9 +31,9 @@
   },
   "devDependencies": {
     "@types/libsodium-wrappers": "^0.7.9",
-    "@types/node": "^15.14.2",
-    "@typescript-eslint/eslint-plugin": "^4.28.4",
-    "@typescript-eslint/parser": "^4.28.4",
+    "@types/node": "^15.14.4",
+    "@typescript-eslint/eslint-plugin": "^4.28.5",
+    "@typescript-eslint/parser": "^4.28.5",
     "concurrently": "^6.2.0",
     "eslint": "^7.31.0",
     "node-gyp": "^8.1.0",

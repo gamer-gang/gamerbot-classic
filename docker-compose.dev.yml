@@ -19,12 +19,12 @@ services:
     environment:
       NODE_ARGS: --inspect=0.0.0.0:9229
     command: ['yarn', 'workspace', '@gamerbot/core', '_docker']
-  # music:
-  #   user: '1000'
-  #   volumes:
-  #     - ./:/app
-  #   ports:
-  #     - 127.0.0.1:9228:9228
-  #   environment:
-  #     NODE_ARGS: --inspect=0.0.0.0:9228
-  #   command: ['yarn', 'workspace', '@gamerbot/music', '_docker']
+  music:
+    user: '1000'
+    volumes:
+      - ./:/app
+    ports:
+      - 127.0.0.1:9228:9228
+    environment:
+      NODE_ARGS: --inspect=0.0.0.0:9228
+    command: ['yarn', 'workspace', '@gamerbot/music', '_docker']

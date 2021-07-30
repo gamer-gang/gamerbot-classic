@@ -18,12 +18,13 @@ export class CommandQueue extends Command {
     const tracks = _.cloneDeep(queue.tracks);
     if (!tracks.length) return event.reply(Embed.info('Nothing in queue'));
 
+    const playing = await queue.playing;
+    const remainingTime = await queue.remainingTime();
+
     const queueLines = tracks.map(
       (track, i) =>
         `${i + 1}. **${track.titleMarkup}** (${track.durationString})${
-          queue.playing && queue.index === i
-            ? ` **(${formatDuration(queue.remainingTime)} remaining)**`
-            : ''
+          playing && queue.index === i ? ` **(${formatDuration(remainingTime)} remaining)**` : ''
         }`
     );
 

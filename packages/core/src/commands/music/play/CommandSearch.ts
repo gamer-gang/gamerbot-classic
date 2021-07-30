@@ -90,7 +90,7 @@ export class CommandSearch extends Command {
     }
 
     queue.voiceChannel = event.guild.members.resolve(event.user.id)!.voice.channel!;
-    const position = queue.queueTracks(tracks, event.user.id) + 1;
+    const position = (await queue.queueTracks(tracks, event.user.id)) + 1;
 
     event.editReply({
       embeds: [

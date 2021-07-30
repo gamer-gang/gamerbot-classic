@@ -25,7 +25,7 @@ export class CommandPrevious extends Command {
   async execute(event: CommandEvent): Promise<void | Message> {
     const queue = client.queues.get(event.guild.id);
 
-    if (!queue.playing) return event.reply(Embed.error('Not playing').ephemeral());
+    if (!(await queue.playing)) return event.reply(Embed.error('Not playing').ephemeral());
 
     const voice = event.guild.members.cache.get(event.user.id)?.voice;
     if (!voice?.channel || voice.channel.id !== queue.voiceChannel?.id)
@@ -56,7 +56,7 @@ export class CommandPrevious extends Command {
       // break out of looping if looping one
       if (queue.loop === 'one') queue.index--;
 
-      queue.audioPlayer.stop();
+      queue.adapter.send('end');
     } catch (err) {
       return event.reply(Embed.error(codeBlock(err)).ephemeral());
     }

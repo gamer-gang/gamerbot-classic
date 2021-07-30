@@ -1,3 +1,4 @@
+import { PlayableType } from '@gamerbot/common';
 import { formatDuration } from '@gamerbot/util';
 import { Duration } from 'luxon';
 import { Track } from './Track';
@@ -39,7 +40,7 @@ export class FileTrack extends Track {
     return this.data.duration;
   }
 
-  async getPlayable(): Promise<string> {
-    return this.data.url;
+  async getPlayable(): Promise<[type: PlayableType, url: string]> {
+    return ['url', this.data.url];
   }
 }

@@ -25,7 +25,8 @@ export const onInteractionCreate = async (interaction: Interaction): Promise<voi
   if (interaction.user.bot && !interaction.user.tag.endsWith('#0000')) return;
   if (interaction.user.id == client.user.id) return;
 
-  client.queues.setIfUnset(interaction.guild.id, new Queue(interaction.guild.id));
+  !client.queues.has(interaction.guild.id) &&
+    client.queues.set(interaction.guild.id, new Queue(interaction.guild.id));
 
   const orm = await getORM();
 

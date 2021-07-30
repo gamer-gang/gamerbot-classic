@@ -4,11 +4,11 @@ import { Command, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandPlaying extends Command {
-  cmd = ['playing', 'np'];
+export class CommandNowPlaying extends Command {
+  cmd = ['nowplaying', 'playing', 'np'];
   docs: CommandDocs = [
     {
-      usage: 'playing',
+      usage: 'nwplaying',
       description: 'show now playing embed',
     },
   ];
@@ -18,7 +18,7 @@ export class CommandPlaying extends Command {
   async execute(event: CommandEvent): Promise<void | Message> {
     const queue = client.queues.get(event.guild.id);
 
-    if (!queue.playing) return event.reply(Embed.error('not playing').ephemeral());
+    if (!(await queue.playing)) return event.reply(Embed.error('Not playing').ephemeral());
 
     queue.embed?.delete();
     delete queue.embed;

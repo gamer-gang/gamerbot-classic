@@ -1,4 +1,4 @@
-import { canvasStyle as s } from '@gamerbot/config';
+import { canvasStyle as s } from '@gamerbot/common';
 import { byteSize, insertUuidDashes } from '@gamerbot/util';
 import { Canvas, Image } from 'canvas';
 import { Player } from 'hypixel-types';

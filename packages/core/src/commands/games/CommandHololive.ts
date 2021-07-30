@@ -44,7 +44,7 @@ export class CommandHololive extends Command {
     return text;
   }
   async execute(event: CommandEvent): Promise<void | Message> {
-    const subcommand = event.isInteraction() ? event.options.getSubCommand() : event.argv[0];
+    const subcommand = event.isInteraction() ? event.options.getSubcommand() : event.argv[0];
 
     if (subcommand !== 'schedule')
       return event.reply(Embed.error('Invalid subcommand', 'Valid commands: schedule').ephemeral());

@@ -122,7 +122,7 @@ export class CommandConfig extends Command {
   };
   async execute(event: CommandEvent): Promise<void | Message> {
     const subcommand = _.camelCase(
-      event.isInteraction() ? event.options.getSubCommand() : event.argv[0] ?? ''
+      event.isInteraction() ? event.options.getSubcommand() : event.argv[0] ?? ''
     );
 
     const handlerName = Object.keys(configHandlers).find(

@@ -25,7 +25,7 @@ export class CommandNext extends Command {
   async execute(event: CommandEvent): Promise<void | Message> {
     const queue = client.queues.get(event.guild.id);
 
-    if (!queue.playing) return event.reply(Embed.error('Not playing').ephemeral());
+    if (!(await queue.playing)) return event.reply(Embed.error('Not playing').ephemeral());
 
     const voice = event.guild.members.cache.get(event.user.id)?.voice;
     if (!voice?.channel || voice.channel.id !== queue.voiceChannel?.id)
@@ -35,16 +35,15 @@ export class CommandNext extends Command {
         ).ephemeral()
       );
 
-    const input = event.isInteraction()
-      ? event.options.getInteger('count')
-      : parseInt(event.argv[0]);
+    const input =
+      (event.isInteraction() ? event.options.getInteger('count') : parseInt(event.argv[0])) ?? 1;
 
     try {
       if (input != undefined) {
         if (!input || isNaN(input) || input <= 0 || input >= queue.tracks.length)
           return event.reply(Embed.error('Invalid skip amount').ephemeral());
 
-        queue.index = (queue.index + input) % queue.tracks.length;
+        queue.index = (queue.index + input - 1) % queue.tracks.length;
 
         event.reply(Embed.success(`Skipped **${input}** tracks`));
       } else {
@@ -55,7 +54,7 @@ export class CommandNext extends Command {
       // break out of looping if looping one
       if (queue.loop === 'one') queue.index++;
 
-      queue.audioPlayer.stop();
+      queue.adapter.send('end');
     } catch (err) {
       return event.reply(Embed.error(codeBlock(err)).ephemeral());
     }

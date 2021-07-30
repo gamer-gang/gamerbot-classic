@@ -1,4 +1,4 @@
-import { PresenceManager, resolvePath, Store } from '@gamerbot/util';
+import { PresenceManager, resolvePath } from '@gamerbot/util';
 import { Client, ClientOptions, ClientUser, Guild, GuildEmoji, Snowflake } from 'discord.js';
 import fse from 'fs-extra';
 import { google } from 'googleapis';
@@ -32,6 +32,12 @@ export interface CachedUsername {
   discriminator: string;
 }
 
+class NonNullableMap<K, V> extends Map<K, V> {
+  get(key: K): V {
+    return super.get(key) as V;
+  }
+}
+
 export class Gamerbot extends Client {
   readonly commands: Command[] = [];
   readonly presenceManager: PresenceManager;
@@ -58,7 +64,7 @@ export class Gamerbot extends Client {
   spotifyTimeouts = [5, 10, 30, 60, 60 * 2, 60 * 5, 60 * 10];
   spotifyDisabled = false;
 
-  readonly queues = new Store<Queue>();
+  readonly queues = new NonNullableMap<string, Queue>();
 
   constructor(
     opts: GamerbotOptions = {
