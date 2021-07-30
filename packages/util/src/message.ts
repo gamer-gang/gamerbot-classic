@@ -88,3 +88,66 @@ export const insertUuidDashes = (uuid: string): string =>
     16,
     20
   )}-${uuid.slice(20, 32)}`;
+
+const CONTROL =
+  '(?:' + ['\\|\\|', '\\&\\&', ';;', '\\|\\&', '\\<\\(', '>>', '>\\&', '[&;()|<>]'].join('|') + ')';
+// const META = '|&;()<> \\t';
+const META = '';
+const BAREWORD = '(\\\\[\'"' + META + ']|[^\\s\'"' + META + '])+';
+const SINGLE_QUOTE = '"((\\\\"|[^"])*?)"';
+const DOUBLE_QUOTE = "'((\\\\'|[^'])*?)'";
+
+export const parseQuotes = (s: string): string[] => {
+  const chunker = new RegExp(
+    [
+      // '(' + CONTROL + ')', // control chars
+      '(' + BAREWORD + '|' + SINGLE_QUOTE + '|' + DOUBLE_QUOTE + ')*',
+    ].join('|'),
+    'g'
+  );
+  const chunks = s.match(chunker)?.filter(Boolean);
+
+  if (!chunks) return [];
+  return (
+    chunks
+      .map<string>((s: string, index: number) => {
+        const singleQuote = "'";
+        const doubleQuote = '"';
+        const backslash = '\\';
+        let quote: boolean | string = false;
+        let escaped = false;
+        let output = '';
+        // let isGlob = false;
+
+        for (let chunkIndex = 0; chunkIndex < s.length; chunkIndex++) {
+          let char = s.charAt(chunkIndex);
+
+          if (escaped) {
+            output += char;
+            escaped = false;
+          } else if (quote) {
+            if (char === quote) quote = false;
+            else if (quote == singleQuote) output += char;
+            else {
+              // Double quote
+              if (char === backslash) {
+                chunkIndex += 1;
+                char = s.charAt(chunkIndex);
+                if (char === doubleQuote || char === backslash) output += char;
+                else output += backslash + char;
+              } else output += char;
+            }
+          } else if (char === doubleQuote || char === singleQuote) quote = char;
+          else if (char === backslash) escaped = true;
+          else output += char;
+        }
+
+        return output;
+      })
+      // finalize parsed aruments
+      .reduce((prev: string[], arg: undefined | string) => {
+        if (arg === undefined) return prev;
+        return [...prev, arg];
+      }, [] as string[])
+  );
+};

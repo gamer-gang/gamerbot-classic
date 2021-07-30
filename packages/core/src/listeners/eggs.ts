@@ -32,16 +32,16 @@ class EggCooldown {
 
 const cooldowns: Record<string, EggCooldown> = {};
 
-const getEggsFromDB = async () => {
+const getEggsFromDB = async (): Promise<bigint> => {
   const orm = await getORM();
 
   const builder = (orm.em as EntityManager).createQueryBuilder(EggLeaderboard);
-  const eggsObjects: { eggs: number }[] = await builder.select('eggs').execute();
+  const eggsObjects: { collected: bigint }[] = await builder.select('collected').execute();
 
-  return eggsObjects.reduce((a, b) => ({ eggs: a.eggs + b.eggs }), { eggs: 0 }).eggs;
+  return eggsObjects.reduce((a, b) => a + BigInt(b.collected), 0n);
 };
 
-let eggCount: number;
+let eggCount: bigint;
 
 const getLeaderboardEntry = async (user: User) => {
   const orm = await getORM();
@@ -61,7 +61,7 @@ const getLeaderboardEntry = async (user: User) => {
   return entry;
 };
 
-export const get = async (client: Gamerbot): Promise<number> => {
+export const get = async (client: Gamerbot): Promise<BigInt> => {
   return (eggCount ??= await getEggsFromDB());
 };
 
@@ -73,7 +73,8 @@ const grantEgg = async (msg: Message | PartialMessage) => {
   setPresence();
 
   const lb = await getLeaderboardEntry(msg.author as User);
-  lb.eggs++;
+  lb.collected = BigInt(lb.collected) + 1n;
+  lb.balance = BigInt(lb.balance) + 1n;
   orm.em.flush();
 };
 

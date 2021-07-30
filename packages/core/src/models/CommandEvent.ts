@@ -1,4 +1,4 @@
-import { Embed } from '@gamerbot/util';
+import { Embed, parseQuotes } from '@gamerbot/util';
 import { Connection, IDatabaseDriver, MikroORM } from '@mikro-orm/core';
 import {
   CommandInteraction,
@@ -15,7 +15,6 @@ import {
   ThreadChannel,
   User,
 } from 'discord.js';
-import { parse } from 'shell-quote';
 import { Command } from '../commands';
 import { Config } from '../entities/Config';
 import { client } from '../providers';
@@ -118,12 +117,7 @@ class MessageCommandEvent extends BaseCommandEvent {
     this.command = command as Command;
     this.valid = !!command;
 
-    this.argv = parse(args).map(entry => {
-      if (typeof entry === 'string') return entry;
-      else if ((entry as any).pattern) return (entry as any).pattern as string;
-      else if ((entry as any).op) return (entry as any).op as string;
-      else return (entry as any).comment as string;
-    });
+    this.argv = parseQuotes(args);
 
     this.options = new CommandMessageOptionResolver(this.command, this.argv);
   }

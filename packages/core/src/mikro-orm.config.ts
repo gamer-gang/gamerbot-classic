@@ -5,7 +5,7 @@ import c from 'ansi-colors';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import { getLogger } from 'log4js';
-import { basename } from 'path';
+import path, { basename } from 'path';
 
 dotenv.config({ path: resolvePath('.env') });
 
@@ -16,7 +16,7 @@ const getEntities = () => {
     modules = context.keys().map(r => context(r));
   } else {
     modules = fs
-      .readdirSync(resolvePath('src/entities'))
+      .readdirSync(path.resolve(__dirname, './entities'))
       .map(file => require(`./entities/${file}`));
   }
 
@@ -34,7 +34,7 @@ const getMigrations = () => {
       );
   } else {
     const modules = fs
-      .readdirSync(resolvePath('src/migrations'))
+      .readdirSync(path.resolve(__dirname, './migrations'))
       .map(file => require(`./migrations/${file}`));
 
     return Object.keys(modules).map(

@@ -29,6 +29,15 @@ export class CommandEggLeaderboard extends Command {
     description: 'Show egg leaders',
     options: [
       {
+        name: 'type',
+        description: 'Leaderboard type',
+        type: 'STRING',
+        choices: [
+          { name: 'collected', value: 'collected' },
+          { name: 'balance', value: 'balance' },
+        ],
+      },
+      {
         name: 'user',
         description: 'User to show rankings for (leave blank for top eggers)',
         type: 'USER',
@@ -36,22 +45,35 @@ export class CommandEggLeaderboard extends Command {
     ],
   };
   async execute(event: CommandEvent): Promise<void | Message> {
+    let type = ((event.isInteraction() ? event.options.getString('type') : event.argv[0]) ??
+      'balance') as 'balance' | 'collected';
+
+    if (type && /^\w+$/.test(type) && type !== 'balance' && type !== 'collected')
+      return event.reply(Embed.error('Invalid type', 'Valid options: collected, balance'));
+
+    let userInput = event.isInteraction()
+      ? event.options.getUser('user')
+      : (event.argv[1]?.replace(/^<@!?(\d{18})>$/g, '$1') as Snowflake);
+
+    if (/^<@!?(\d{18})>$/g.test(type)) {
+      userInput = type.replace(/^<@!?(\d{18})>$/g, '$1') as Snowflake;
+      type = 'balance';
+    }
+
     const orm = await getORM();
-    const eggers: Pick<EggLeaderboard, 'eggs' | 'userTag' | 'userId'>[] = await (
+    const eggers: Pick<EggLeaderboard, 'collected' | 'balance' | 'userTag' | 'userId'>[] = await (
       orm.em as EntityManager
     )
       .createQueryBuilder(EggLeaderboard)
-      .select(['eggs', 'userTag', 'userId'])
+      .select(['collected', 'balance', 'userTag', 'userId'])
       .execute();
 
-    eggers.sort((a, b) => b.eggs - a.eggs);
+    eggers.sort((a, b) =>
+      BigInt(a[type]) < BigInt(b[type]) ? 1 : BigInt(a[type]) > BigInt(b[type]) ? -1 : 0
+    );
 
-    const input = event.isInteraction()
-      ? event.options.getUser('user')
-      : (event.args.replace(/^<@!?(\d{18})>$/g, '$1') as Snowflake);
-
-    if (input) {
-      const user = client.users.resolve(input);
+    if (userInput) {
+      const user = client.users.resolve(userInput);
 
       if (!user) return event.reply(Embed.error('Invalid user').ephemeral());
 
@@ -62,30 +84,28 @@ export class CommandEggLeaderboard extends Command {
 
       if (ranking === -1) return event.reply(Embed.error('No data/invalid user', 'get egging!!'));
 
-      const eggs = eggers[ranking].eggs;
+      const eggs = BigInt(eggers[ranking][type]);
 
       return event.reply(
         Embed.info(
           `**${eggers[ranking].userTag}** is ranked **#${
             ranking + 1
-          }** out of **${eggers.length.toLocaleString()}** in the world with **${eggs.toLocaleString()}** egg${
-            eggs > 1 ? 's' : ''
-          }`
+          }** out of **${eggers.length.toLocaleString()}** in the world for ${
+            type === 'collected' ? 'lifetime collected eggs' : 'egg balance'
+          } with **${eggs.toLocaleString()}** egg${eggs > 1 ? 's' : ''}`
         )
       );
     }
 
     const totalEggers = eggers.length.toLocaleString();
-    const totalEggs = eggers
-      .reduce((a, b) => ({ eggs: a.eggs + b.eggs }), { eggs: 0 })
-      .eggs.toLocaleString();
+    const totalEggs = eggers.reduce((a, b) => a + BigInt(b[type]), 0n).toLocaleString();
 
     const pages = _.chunk(eggers, 20);
 
     let pageNumber = 0;
 
     if (pages.length === 1) {
-      await event.reply(this.makeEmbed({ pages, totalEggers, totalEggs, pageNumber }));
+      await event.reply(this.makeEmbed({ pages, totalEggers, totalEggs, pageNumber, type }));
     } else {
       const row = new MessageActionRow({
         components: [
@@ -95,7 +115,7 @@ export class CommandEggLeaderboard extends Command {
       });
 
       await event.reply({
-        embeds: [this.makeEmbed({ pages, totalEggers, totalEggs, pageNumber })],
+        embeds: [this.makeEmbed({ pages, totalEggers, totalEggs, pageNumber, type })],
         components: [row],
       });
 
@@ -117,13 +137,13 @@ export class CommandEggLeaderboard extends Command {
           }
 
           interaction.update({
-            embeds: [this.makeEmbed({ pages, totalEggers, totalEggs, pageNumber })],
+            embeds: [this.makeEmbed({ pages, totalEggers, totalEggs, pageNumber, type })],
             components: [row],
           });
         })
         .on('end', () => {
           reply.edit({
-            embeds: [this.makeEmbed({ pages, totalEggers, totalEggs, pageNumber })],
+            embeds: [this.makeEmbed({ pages, totalEggers, totalEggs, pageNumber, type })],
             components: [],
           });
         });
@@ -135,25 +155,27 @@ export class CommandEggLeaderboard extends Command {
     pageNumber,
     totalEggers,
     totalEggs,
+    type,
   }: {
-    pages: Pick<EggLeaderboard, 'eggs' | 'userTag' | 'userId'>[][];
+    pages: Pick<EggLeaderboard, 'collected' | 'balance' | 'userTag' | 'userId'>[][];
     pageNumber: number;
     totalEggers: string;
     totalEggs: string;
+    type: 'collected' | 'balance';
   }): Embed {
     const page = pages[pageNumber];
 
     const formattedList = page
       .map(
         (lb, index) =>
-          `${pageNumber * 20 + index + 1}. **${
-            lb.userTag
-          }** with **${lb.eggs.toLocaleString()}** egg${lb.eggs > 1 ? 's' : ''}`
+          `${pageNumber * 20 + index + 1}. **${lb.userTag}** with **${lb[
+            type
+          ].toLocaleString()}** egg${BigInt(lb[type]) > 1n ? 's' : ''}`
       )
       .join('\n');
 
     const embed = Embed.info(
-      '🥚 Top eggers',
+      `🥚 Top eggers (${type})`,
       page.length
         ? `Total eggers: **${totalEggers}**
 Total eggs: **${totalEggs}**

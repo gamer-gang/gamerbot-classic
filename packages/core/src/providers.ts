@@ -27,7 +27,7 @@ const levelFilter = (name: string) => ({
 
 log4js.configure({
   appenders: {
-    _fileTrace: { ...fileAppender, filename: resolvePath(`logs/tcore-race.log`) },
+    _fileTrace: { ...fileAppender, filename: resolvePath(`logs/core-trace.log`) },
     fileTrace: { ...levelFilter('_fileTrace'), level: 'trace' },
 
     _fileDebug: { ...fileAppender, filename: resolvePath(`logs/core-debug.log`) },

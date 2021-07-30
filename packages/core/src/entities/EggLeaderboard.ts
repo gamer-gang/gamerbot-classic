@@ -1,4 +1,4 @@
-import { Entity, PrimaryKey, Property } from '@mikro-orm/core';
+import { BigIntType, Entity, PrimaryKey, Property } from '@mikro-orm/core';
 import { Snowflake } from 'discord.js';
 
 @Entity()
@@ -18,6 +18,9 @@ export class EggLeaderboard {
   @Property({ type: 'string' })
   userTag!: string;
 
-  @Property({ type: 'number', default: 0 })
-  eggs!: number;
+  @Property({ type: BigIntType, default: 0 })
+  collected!: bigint | string;
+
+  @Property({ type: BigIntType, default: 0 })
+  balance!: bigint | string;
 }
