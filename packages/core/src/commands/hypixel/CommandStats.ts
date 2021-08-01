@@ -119,7 +119,7 @@ export class CommandStats extends Command {
 
     const timeStart = process.hrtime();
 
-    const subcommand =
+    let subcommand =
       (event.isInteraction() ? event.options.getSubcommand() : event.argv[0]) ?? 'get';
 
     if (
@@ -127,13 +127,19 @@ export class CommandStats extends Command {
       subcommand !== 'set-username' &&
       subcommand !== 'clear-username' &&
       subcommand !== 'get'
-    )
-      return event.reply(
-        Embed.error(
-          'Invalid subcommand',
-          'Valid commands: find-username, set-username, clear-username, get'
-        )
-      );
+    ) {
+      if (event.isMessage() && event.argv.length === 1) {
+        event.argv[2] = subcommand;
+        event.argv[1] = 'bedwars';
+        subcommand = 'get';
+      } else
+        return event.reply(
+          Embed.error(
+            'Invalid subcommand',
+            'Valid commands: find-username, set-username, clear-username, get'
+          )
+        );
+    }
 
     if (!process.env.HYPIXEL_API_KEY) {
       return event.reply(
