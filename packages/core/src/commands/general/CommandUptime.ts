@@ -1,18 +1,18 @@
 import { Embed, normalizeDuration } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { Duration } from 'luxon';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
-export class CommandUptime extends Command {
-  cmd = ['uptime'];
-  docs = [
+export class CommandUptime extends ChatCommand {
+  name = ['uptime'];
+  help = [
     {
       usage: 'uptime',
       description: 'check bot uptime',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Show instance uptime',
   };
   async execute(event: CommandEvent): Promise<void | Message> {

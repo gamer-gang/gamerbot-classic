@@ -1,18 +1,18 @@
 import { codeBlock, Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandPrevious extends Command {
-  cmd = ['back', 'previous', 'prev'];
-  docs: CommandDocs = [
+export class CommandPrevious extends ChatCommand {
+  name = ['back', 'previous', 'prev'];
+  help: CommandDocs = [
     {
       usage: 'previous [number]',
       description: 'skip back one or more tracks',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Skip back in the queue',
     options: [
       {

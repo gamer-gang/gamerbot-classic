@@ -1,20 +1,20 @@
 import { codeBlock, Embed, parseDiscohookJSON } from '@gamerbot/util';
 import { Message } from 'discord.js';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
 // eslint-disable-next-line no-useless-escape
 // const urlRegExp = /^(https?|attachment):\/\/[a-z0-9\.\-\_]+\.[a-z0-9]+(\/[a-z0-9\/\.\-\_\$]+)?$/i;
 
-export class CommandApiMessage extends Command {
-  cmd = ['apimessage'];
-  docs = [
+export class CommandApiMessage extends ChatCommand {
+  name = ['apimessage'];
+  help = [
     {
       usage: 'apimessage <json data>',
       description: 'create a message from api data',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Create a message from API data',
     options: [
       {

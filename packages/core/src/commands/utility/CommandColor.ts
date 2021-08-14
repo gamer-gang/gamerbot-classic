@@ -2,12 +2,12 @@ import { canvasStyle as s } from '@gamerbot/common';
 import { Color, Embed, HslTriple, RgbTriple } from '@gamerbot/util';
 import { Canvas } from 'canvas';
 import { Message } from 'discord.js';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
-export class CommandColor extends Command {
-  cmd = ['color'];
-  docs: CommandDocs = [
+export class CommandColor extends ChatCommand {
+  name = ['color'];
+  help: CommandDocs = [
     {
       usage: 'color <hex|rgb|hsl>',
       description: `get info about color
@@ -20,7 +20,7 @@ example colors:
 `,
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Get information about a color',
     options: [
       {

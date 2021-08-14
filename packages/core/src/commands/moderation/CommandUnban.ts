@@ -1,12 +1,12 @@
 import { codeBlock, Embed } from '@gamerbot/util';
 import { Message, PermissionString, Snowflake } from 'discord.js';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandUnban extends Command {
-  cmd = ['unban'];
-  docs = [
+export class CommandUnban extends ChatCommand {
+  name = ['unban'];
+  help = [
     {
       usage: 'unban <user>',
       description: 'unbans',
@@ -14,7 +14,7 @@ export class CommandUnban extends Command {
   ];
   userPermissions: PermissionString[] = ['BAN_MEMBERS'];
   botPermissions: PermissionString[] = ['BAN_MEMBERS'];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Unban a user',
     options: [
       {

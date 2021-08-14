@@ -1,18 +1,18 @@
 import { codeBlock, Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandResume extends Command {
-  cmd = ['resume'];
-  docs: CommandDocs = [
+export class CommandResume extends ChatCommand {
+  name = ['resume'];
+  help: CommandDocs = [
     {
       usage: 'resume',
       description: 'resumes playback',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Resume playback',
   };
   async execute(event: CommandEvent): Promise<void | Message> {

@@ -1,18 +1,18 @@
 import { Embed, getDateStringFromSnowflake } from '@gamerbot/util';
 import { Guild, Message } from 'discord.js';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandServerInfo extends Command {
-  cmd = ['serverinfo', 'guildinfo', 'server', 'guild'];
-  docs: CommandDocs = [
+export class CommandServerInfo extends ChatCommand {
+  name = ['serverinfo', 'guildinfo', 'server', 'guild'];
+  help: CommandDocs = [
     {
       usage: 'serverinfo [id]',
       description: 'get information about a server (no id for current server)',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Show server info',
     options: [
       {
@@ -40,7 +40,9 @@ export class CommandServerInfo extends Command {
 
     const inGuild = guild === event.guild;
 
-    const bots = (await guild.members.fetch()).array().filter(member => member.user.bot).length;
+    const bots = [...(await guild.members.fetch()).values()].filter(
+      member => member.user.bot
+    ).length;
     let icon = guild.iconURL({ dynamic: true, size: 4096 });
     if (icon?.includes('.webp')) icon = guild.iconURL({ format: 'png', size: 4096 });
 

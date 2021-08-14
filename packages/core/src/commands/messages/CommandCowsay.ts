@@ -1,11 +1,11 @@
 import { codeBlock, Embed } from '@gamerbot/util';
 import { say } from '@wiisportsresorts/cowsay';
 import { Message } from 'discord.js';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
-export class CommandCowsay extends Command {
-  cmd = ['cowsay'];
+export class CommandCowsay extends ChatCommand {
+  name = ['cowsay'];
   // yargs: yargsParser.Options = {
   //   boolean: ['delete', 'list'],
   //   string: ['cow'],
@@ -19,13 +19,13 @@ export class CommandCowsay extends Command {
   //   },
   // };
 
-  docs = [
+  help = [
     {
       usage: 'cowsay [-d, --delete] <...msg>',
       description: 'you know what it does (`--delete` deletes source command)',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Cow says stuff',
     options: [
       {

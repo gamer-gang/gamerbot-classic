@@ -9,7 +9,7 @@ import { LogHandlers } from './_constants';
 
 const fetchInvite = async (guild: Guild) => {
   try {
-    const invites = (await guild.invites.fetch()).array();
+    const invites = (await guild.invites.fetch()).values();
 
     const trackedInvites: string[] = [];
 
@@ -36,9 +36,9 @@ const fetchInvite = async (guild: Guild) => {
 client.on('ready', async () => {
   const orm = await getORM();
 
-  const inviteFetchers = client.guilds.cache
-    .array()
-    .map((guild, index) => delay(index * 2500)(undefined).then(() => fetchInvite(guild)));
+  const inviteFetchers = [...client.guilds.cache.values()].map((guild, index) =>
+    delay(index * 2500)(undefined).then(() => fetchInvite(guild))
+  );
 
   Promise.all(inviteFetchers).then(() => orm.em.flush());
 });

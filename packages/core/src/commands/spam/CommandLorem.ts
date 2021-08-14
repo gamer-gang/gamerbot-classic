@@ -1,23 +1,23 @@
 import { Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { LoremIpsum } from 'lorem-ipsum';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
-export class CommandLorem extends Command {
-  cmd = ['lorem'];
+export class CommandLorem extends ChatCommand {
+  name = ['lorem'];
   // yargs: yargsParser.Options = {
   //   number: ['messages'],
   //   alias: { messages: 'm' },
   //   default: { messages: 1 },
   // };
-  docs: CommandDocs = [
+  help: CommandDocs = [
     {
       usage: 'lorem',
       description: 'Lorem ipsum dolor amet',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Lorem ipsum dolor amet',
   };
   async execute(event: CommandEvent): Promise<void | Message> {

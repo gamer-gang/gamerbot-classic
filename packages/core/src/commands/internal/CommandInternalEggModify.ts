@@ -6,8 +6,8 @@ import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
 export class CommandInternalEggModify extends InternalCommand {
-  cmd = ['eggmodify'];
-  docs: CommandDocs = [
+  name = ['eggmodify'];
+  help: CommandDocs = [
     {
       usage: 'eggmodify <user> (balance|collected) [+-]?<amnt>',
       description: 'add, subtract, or set egg balance',

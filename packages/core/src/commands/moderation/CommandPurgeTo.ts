@@ -1,14 +1,14 @@
 import { Embed, getDateFromSnowflake } from '@gamerbot/util';
 import { Message, PermissionString, Snowflake, TextChannel } from 'discord.js';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
-export class CommandPurgeTo extends Command {
-  cmd = ['purgeto'];
-  docs = [{ usage: 'purgeto <id>', description: 'delete given message and all after' }];
+export class CommandPurgeTo extends ChatCommand {
+  name = ['purgeto'];
+  help = [{ usage: 'purgeto <id>', description: 'delete given message and all after' }];
   userPermissions: PermissionString[] = ['MANAGE_MESSAGES'];
   botPermissions: PermissionString[] = ['MANAGE_MESSAGES'];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Purge all messages after a given message',
     options: [
       {
@@ -44,9 +44,9 @@ export class CommandPurgeTo extends Command {
     if (getDateFromSnowflake(input).diffNow().as('days') > 14)
       return event.reply(Embed.error('Start of range is older than 14 days').ephemeral());
 
-    const messageArray = messages
-      .array()
-      .sort((a, b) => (a.id as unknown as number) - (b.id as unknown as number));
+    const messageArray = [...messages.values()].sort(
+      (a, b) => (a.id as unknown as number) - (b.id as unknown as number)
+    );
     const startIndex = messageArray.indexOf(startMessage);
     if (startIndex === -1) throw new Error('Start index is -1');
 

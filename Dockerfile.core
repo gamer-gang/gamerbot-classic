@@ -1,6 +1,6 @@
 FROM gamerbot_build:latest as build
 
-FROM node:14-buster
+FROM node:16-buster
 
 # install yarn + dependencies
 RUN curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -

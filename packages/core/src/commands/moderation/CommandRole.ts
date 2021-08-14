@@ -1,10 +1,10 @@
 import { Message, PermissionString } from 'discord.js';
-import { Command, CommandDocs } from '..';
+import { ChatCommand, CommandDocs } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
 // TODO; fix and improve
-export class Disabled_CommandRole extends Command {
-  cmd = ['role'];
+export class Disabled_CommandRole extends ChatCommand {
+  name = ['role'];
   // yargs: yargsParser.Options = {
   //   array: ['role'],
   //   boolean: ['list'],
@@ -16,7 +16,7 @@ export class Disabled_CommandRole extends Command {
   //     list: false,
   //   },
   // };
-  docs: CommandDocs = [
+  help: CommandDocs = [
     {
       usage: 'role <roleId>,<emoji> [...<roleId>,<emoji>]',
       description: 'create a role distributor given an emoji',

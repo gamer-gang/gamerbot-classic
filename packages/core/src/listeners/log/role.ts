@@ -60,10 +60,7 @@ export const roleHandlers: LogHandlers = {
     role.members.size &&
       embed.addField(
         `Assigned to (${role.members.size})`,
-        role.members
-          .array()
-          .map(member => `${member.user}`)
-          .join(' ')
+        [...role.members.values()].map(member => `${member.user}`).join(' ')
       );
 
     executor && embed.addField('Deleted by', executor.toString());
@@ -107,8 +104,10 @@ export const roleHandlers: LogHandlers = {
               add('Color', prev.hexColor, next.hexColor);
             break;
           case 'permissions':
-          case 'permissions_new':
-            if (change.old == prev.permissions.bitfield && change.new == next.permissions.bitfield)
+            if (
+              (change.old && BigInt(change.old.toString())) == prev.permissions.bitfield &&
+              (change.new && BigInt(change.new.toString())) == next.permissions.bitfield
+            )
               permissionCheckNeeded = true;
             return;
           case 'hoist':

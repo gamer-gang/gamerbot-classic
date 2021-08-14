@@ -1,7 +1,7 @@
 import { Embed } from '@gamerbot/util';
 import { Message, PermissionString } from 'discord.js';
 import _ from 'lodash';
-import { Command, CommandOptions } from '../..';
+import { ChatCommand, CommandOptions } from '../..';
 import { CommandEvent } from '../../../models/CommandEvent';
 import { allowSpam } from './allowspam';
 import { egg } from './egg';
@@ -21,16 +21,16 @@ const configHandlers: Record<string, (event: CommandEvent, newValue: any) => Pro
   logEvents,
 };
 
-export class CommandConfig extends Command {
-  cmd = ['config'];
-  docs = [
+export class CommandConfig extends ChatCommand {
+  name = ['config'];
+  help = [
     {
       usage: 'config <option> [newValue]',
       description: 'get/set a config value',
     },
   ];
   userPermissions: PermissionString[] = ['ADMINISTRATOR'];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Get/set configuration values',
     options: [
       {

@@ -4,7 +4,7 @@ import {
   CommandInteraction,
   EmojiIdentifierResolvable,
   Guild,
-  InteractionDeferOptions,
+  InteractionDeferReplyOptions,
   InteractionReplyOptions,
   Message,
   MessageComponentInteraction,
@@ -15,10 +15,9 @@ import {
   ThreadChannel,
   User,
 } from 'discord.js';
-import { Command } from '../commands';
+import { ChatCommand } from '../commands';
 import { Config } from '../entities/Config';
 import { client } from '../providers';
-import { CommandMessageOptionResolver, CommandOptionsParser } from './CommandMessageOptionResolver';
 
 export type InitiatorType = 'message' | 'interaction';
 export type NormalTextChannel = TextChannel | ThreadChannel | NewsChannel;
@@ -74,16 +73,15 @@ export abstract class BaseCommandEvent {
   }
 
   // abstract options: CommandInteraction['options'];
-  abstract command: Command;
+  abstract command: ChatCommand;
   abstract get member(): Exclude<CommandInteraction['member'], null>;
   abstract get user(): User;
   abstract get id(): Snowflake;
   abstract get commandName(): string;
-  abstract get options(): CommandOptionsParser;
   abstract get guild(): Guild;
   abstract get channel(): NormalTextChannel;
   abstract get deferred(): boolean;
-  abstract defer(options?: InteractionDeferOptions): Promise<void | Message | APIMessage>;
+  abstract defer(options?: InteractionDeferReplyOptions): Promise<void | Message | APIMessage>;
   abstract editReply(options: ReplyOptions): Promise<Message | APIMessage>;
   abstract deleteReply(): Promise<void>;
   abstract fetchReply(): Promise<Message | APIMessage>;
@@ -95,13 +93,12 @@ class MessageCommandEvent extends BaseCommandEvent {
   type = 'message' as const;
 
   // options;
-  command: Command;
+  command: ChatCommand;
   message: DetailedMessage;
   #initialReply?: Message;
   #commandName;
   args: string;
   argv: string[];
-  options: CommandMessageOptionResolver;
   readonly valid: boolean;
 
   constructor({ msg, args, cmd }: MessageContext, details: InitiatorDetails) {
@@ -111,15 +108,15 @@ class MessageCommandEvent extends BaseCommandEvent {
     this.#commandName = cmd;
     this.args = args;
 
-    const command = client.commands.find(v =>
-      v.cmd.some(c => c.toLowerCase() === cmd.toLowerCase())
+    const command = client.commands.find(
+      command =>
+        command.type === 'CHAT_INPUT' &&
+        command.name.some(c => c.toLowerCase() === cmd.toLowerCase())
     );
-    this.command = command as Command;
+    this.command = command as ChatCommand;
     this.valid = !!command;
 
     this.argv = parseQuotes(args);
-
-    this.options = new CommandMessageOptionResolver(this.command, this.argv);
   }
 
   get member() {
@@ -187,7 +184,7 @@ class MessageCommandEvent extends BaseCommandEvent {
 class InteractionCommandEvent extends BaseCommandEvent {
   type = 'interaction' as const;
 
-  command: Command;
+  command: ChatCommand;
 
   constructor(public interaction: CommandInteraction, details: InitiatorDetails) {
     super(details);
@@ -196,10 +193,15 @@ class InteractionCommandEvent extends BaseCommandEvent {
     if (!this.interaction.channel || this.interaction.channel.type === 'DM')
       throw new Error('Interaction in a non-text or DM channel');
 
-    const command = client.commands.find(v =>
-      v.cmd.some(c => c.toLowerCase() === interaction.commandName)
+    const command = client.commands.find(
+      command =>
+        command.type === 'CHAT_INPUT' &&
+        command.name.some(c => c.toLowerCase() === interaction.commandName)
     );
     if (!command) throw new Error('Could not find command class for interaction');
+
+    // cannot happen
+    if (command.type !== 'CHAT_INPUT') throw new Error();
 
     this.command = command;
   }
@@ -229,10 +231,10 @@ class InteractionCommandEvent extends BaseCommandEvent {
     return this.interaction.deferred;
   }
 
-  defer(options?: InteractionDeferOptions & { fetchReply: true }): Promise<Message>;
-  defer(options?: InteractionDeferOptions): Promise<void>;
-  defer(options?: InteractionDeferOptions) {
-    return this.interaction.defer(options) as Promise<void | Message>;
+  defer(options?: InteractionDeferReplyOptions & { fetchReply: true }): Promise<Message>;
+  defer(options?: InteractionDeferReplyOptions): Promise<void>;
+  defer(options?: InteractionDeferReplyOptions) {
+    return this.interaction.deferReply(options) as Promise<void | Message>;
   }
   editReply(options: ReplyOptions): Promise<Message | APIMessage> {
     if (options instanceof Embed) return options.edit(this.interaction);

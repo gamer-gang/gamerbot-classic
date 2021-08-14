@@ -1,17 +1,17 @@
 import { Message } from 'discord.js';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandPing extends Command {
-  cmd = ['ping'];
-  docs = [
+export class CommandPing extends ChatCommand {
+  name = ['ping'];
+  help = [
     {
       usage: 'ping',
       description: 'server to gateway roundtrip time',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Test server ping',
   };
   async execute(event: CommandEvent): Promise<void | Message> {

@@ -2,19 +2,19 @@ import { Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import _ from 'lodash';
 import { DateTime } from 'luxon';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandTrackInfo extends Command {
-  cmd = ['trackinfo'];
-  docs: CommandDocs = [
+export class CommandTrackInfo extends ChatCommand {
+  name = ['trackinfo'];
+  help: CommandDocs = [
     {
       usage: 'trackinfo',
       description: 'show current track details',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Show details for current track',
   };
   async execute(event: CommandEvent): Promise<void | Message> {

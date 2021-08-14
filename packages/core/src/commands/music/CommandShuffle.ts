@@ -1,19 +1,19 @@
 import { codeBlock, Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import _ from 'lodash';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandShuffle extends Command {
-  cmd = ['shuffle', 'shuf'];
-  docs: CommandDocs = [
+export class CommandShuffle extends ChatCommand {
+  name = ['shuffle', 'shuf'];
+  help: CommandDocs = [
     {
       usage: 'shuffle',
       description: 'shuffle queue, moving current to top',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Shuffles queue',
   };
   async execute(event: CommandEvent): Promise<void | Message> {

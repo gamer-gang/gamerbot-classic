@@ -1,18 +1,18 @@
 import { codeBlock, Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandNext extends Command {
-  cmd = ['skip', 'next'];
-  docs: CommandDocs = [
+export class CommandNext extends ChatCommand {
+  name = ['skip', 'next'];
+  help: CommandDocs = [
     {
       usage: 'skip [number]',
       description: 'skip one or more tracks',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Skip forward in the queue',
     options: [
       {

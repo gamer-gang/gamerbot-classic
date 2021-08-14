@@ -5,7 +5,7 @@ import { Message, MessageAttachment } from 'discord.js';
 import { Player } from 'hypixel-types';
 import { getLogger } from 'log4js';
 import { DateTime } from 'luxon';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
@@ -19,9 +19,9 @@ const userRegex =
 type Gamemode = 'bedwars';
 export type StatsData = [image: Buffer, metadata?: (string | boolean)[]];
 
-export class CommandStats extends Command {
-  cmd = ['stats', 's'];
-  docs: CommandDocs = [
+export class CommandStats extends ChatCommand {
+  name = ['stats', 's'];
+  help: CommandDocs = [
     {
       usage: 'stats <username|uuid> [game] [-f, --fast]',
       description:
@@ -44,7 +44,7 @@ export class CommandStats extends Command {
       description: 'show user info',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Show Hypixel stats',
     options: [
       {
@@ -189,7 +189,7 @@ export class CommandStats extends Command {
 
       const displayName = client.users.resolve(userId)?.tag ?? userId;
 
-      const entity = await event.em.findOne(HypixelPlayer, { userId });
+      const entity = await event.em.findOne(HypixelPlayer, { userId: userId.toString() });
       if (!entity)
         return event.reply(
           Embed.info(

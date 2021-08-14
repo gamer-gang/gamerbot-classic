@@ -1,6 +1,7 @@
 import { codeBlock, dbFindOneError, Embed } from '@gamerbot/util';
 import { CommandInteraction, Interaction, Message } from 'discord.js';
 import { getLogger } from 'log4js';
+import { MessageCommand, UserCommand } from '../../commands';
 import { ongoingTriviaQuestions } from '../../commands/games/CommandTrivia';
 import { Config } from '../../entities/Config';
 import { BaseCommandEvent, NormalTextChannel } from '../../models/CommandEvent';
@@ -9,7 +10,30 @@ import { client, directORM, getORM } from '../../providers';
 import { logCommandEvents, verifyPermissions } from './utils';
 
 export const onInteractionCreate = async (interaction: Interaction): Promise<void | Message> => {
+  if (interaction.isContextMenu()) {
+    const logger = getLogger(`Client!messageCreate[type=${interaction.type}]`);
+
+    const { commandName } = interaction;
+    const command = client.commands
+      .filter(c => c.type !== 'CHAT_INPUT')
+      .find(c => c.name === commandName) as UserCommand | MessageCommand | undefined;
+    if (!command) return;
+
+    try {
+      await command.execute(interaction);
+    } catch (err) {
+      logger.error(err);
+      const embed = Embed.error(codeBlock(err));
+      if (interaction.deferred) interaction.editReply({ embeds: [embed] });
+      else if (interaction.replied) interaction.followUp({ embeds: [embed], ephemeral: true });
+      else interaction.reply({ embeds: [embed], ephemeral: true });
+    }
+
+    return;
+  }
+
   if (!interaction.isCommand()) return;
+
   if (!interaction.channel) return;
   if (interaction.channel.type === 'DM')
     // TODO:

@@ -2,7 +2,7 @@ import { resolvePath, sanitize } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import fse from 'fs-extra';
 import yaml from 'js-yaml';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
 const replacements = (
@@ -11,15 +11,15 @@ const replacements = (
   }
 ).replacements;
 
-export class CommandEz extends Command {
-  cmd = ['ez'];
-  docs = [
+export class CommandEz extends ChatCommand {
+  name = ['ez'];
+  help = [
     {
       usage: 'ez',
       description: 'ez',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'ez',
   };
   async execute(event: CommandEvent): Promise<void | Message> {

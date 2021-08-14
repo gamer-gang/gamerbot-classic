@@ -1,12 +1,12 @@
 import { codeBlock, Embed, sanitize } from '@gamerbot/util';
 import { Message, PermissionString, Snowflake, User } from 'discord.js';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandKick extends Command {
-  cmd = ['kick'];
-  docs: CommandDocs = [
+export class CommandKick extends ChatCommand {
+  name = ['kick'];
+  help: CommandDocs = [
     {
       usage: 'kick <user> <...reason>',
       description: 'bans',
@@ -14,7 +14,7 @@ export class CommandKick extends Command {
   ];
   userPermissions: PermissionString[] = ['KICK_MEMBERS'];
   botPermissions: PermissionString[] = ['KICK_MEMBERS'];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Kick a user',
     options: [
       {

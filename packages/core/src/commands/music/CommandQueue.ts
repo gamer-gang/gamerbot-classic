@@ -1,15 +1,15 @@
 import { Embed, formatDuration } from '@gamerbot/util';
 import { Message, MessageActionRow, MessageButton, MessageComponentInteraction } from 'discord.js';
 import _ from 'lodash';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { Queue } from '../../models/Queue';
 import { client } from '../../providers';
 
-export class CommandQueue extends Command {
-  cmd = ['queue', 'q'];
-  docs = [{ usage: 'queue', description: 'list the things!!!!!' }];
-  commandOptions: CommandOptions = {
+export class CommandQueue extends ChatCommand {
+  name = ['queue', 'q'];
+  help = [{ usage: 'queue', description: 'list the things!!!!!' }];
+  data: CommandOptions = {
     description: 'List tracks currently in queue',
   };
   async execute(event: CommandEvent): Promise<void | Message> {

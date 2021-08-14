@@ -1,7 +1,7 @@
 import { Embed } from '@gamerbot/util';
 import { Message, TextChannel } from 'discord.js';
 import { getLogger } from 'log4js';
-import { Command, CommandDocs, CommandOptions } from '../..';
+import { ChatCommand, CommandDocs, CommandOptions } from '../..';
 import { APIMessage, CommandEvent } from '../../../models/CommandEvent';
 import { Track } from '../../../models/Track';
 import { client } from '../../../providers';
@@ -52,9 +52,9 @@ const sortAliases = {
   random: ['random', 'shuffle'],
 };
 
-export class CommandPlay extends Command {
-  cmd = ['play', 'p'];
-  docs: CommandDocs = [
+export class CommandPlay extends ChatCommand {
+  name = ['play', 'p'];
+  help: CommandDocs = [
     {
       usage: ['play <url> [--sort <type>]'],
       description:
@@ -66,7 +66,7 @@ export class CommandPlay extends Command {
       description: 'search for a video and choose from the top 5 results',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description:
       'Play a Youtube video/playlist/channel, a Spotify track/playlist/album, or search Youtube for a video',
     options: [

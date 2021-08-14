@@ -2,7 +2,7 @@ import { Embed } from '@gamerbot/util';
 import axios, { AxiosResponse } from 'axios';
 import { Message, MessageActionRow, MessageButton, MessageComponentInteraction } from 'discord.js';
 import _ from 'lodash';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
 const BASE_URL = 'https://pointercrate.com/api';
@@ -32,15 +32,15 @@ class DemonlistManager {
 
 const demonlistManager = new DemonlistManager();
 
-export class CommandDemonlist extends Command {
-  cmd = ['demonlist', 'dlist'];
-  docs: CommandDocs = [
+export class CommandDemonlist extends ChatCommand {
+  name = ['demonlist', 'dlist'];
+  help: CommandDocs = [
     {
       usage: 'demonlist',
       description: 'get top demons',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Get top demons',
     options: [
       {

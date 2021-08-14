@@ -1,18 +1,18 @@
 import { codeBlock, Embed, listify } from '@gamerbot/util';
 import { Message } from 'discord.js';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { APIMessage, CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandRemove extends Command {
-  cmd = ['remove', 'rm'];
-  docs = [
+export class CommandRemove extends ChatCommand {
+  name = ['remove', 'rm'];
+  help = [
     {
       usage: 'remove <index> [removeCount]',
       description: 'Remove one or more tracks from the queue',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Remove one or more tracks from the queue',
     options: [
       {

@@ -60,7 +60,7 @@ export const verifyPermissions = (event: CommandEvent): boolean => {
 export const logCommandEvents = (event: CommandEvent): void => {
   const { command } = event;
 
-  const logEvent = `gamerbotCommand${_.capitalize(command.cmd[0].toLowerCase())}` as LogEventName;
+  const logEvent = `gamerbotCommand${_.capitalize(command.name[0].toLowerCase())}` as LogEventName;
   const handlerName = `on${logEvent[0].toUpperCase()}${logEvent.substr(1)}` as LogEventHandler;
 
   const logHandler = getLogHandler(handlerName);

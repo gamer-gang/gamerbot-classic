@@ -113,7 +113,7 @@ export class Gamerbot extends Client {
 
       if (!this.getCustomEmoji('worksonmymachine')) {
         logger.warn(`media server missing 'worksonmymachine' emoji! disabling $techsupport`);
-        this.commands.splice(this.commands.findIndex(c => c.cmd.includes('techsupport')));
+        this.commands.splice(this.commands.findIndex(c => c.name.includes('techsupport')));
       }
 
       this.crypto = new CryptoManager();
@@ -188,7 +188,7 @@ export class Gamerbot extends Client {
       const exports = Object.keys(module).map(name => name.toString());
       const commandClasses = exports.filter(name => {
         logger.debug(`    - discovered export ${name}`);
-        if (/^Command.+/.test(name)) {
+        if (/^(User|Message)?Command.+/.test(name)) {
           logger.debug(`      - name looks like possibly a command; adding to list`);
           return true;
         }
@@ -203,24 +203,28 @@ export class Gamerbot extends Client {
       logger.debug(`  - beginning command verification`);
 
       for (const command of commandClasses) {
-        logger.debug(`  - testing ${command}`);
         const instance = new module[command]();
-        if (!instance.cmd) {
-          logger.warn('       - missing cmd field');
-          continue;
+        if (instance.type === 'CHAT_INPUT') {
+          logger.debug(`  - testing ${command}`);
+          if (!instance.name) {
+            logger.warn('       - missing cmd field');
+            continue;
+          }
+          if (!instance.help) {
+            logger.warn('       - missing docs field');
+            continue;
+          }
+          if (!instance.execute) {
+            logger.warn('       - missing execute method');
+            continue;
+          }
+          if (!instance.data) {
+            logger.debug('      - missing data field (continuing anyway)');
+          }
+          logger.debug(`    - ${command} passed, adding to command list`);
+        } else {
+          logger.debug(`  - ${command} is not a chat command, skipping verification`);
         }
-        if (!instance.docs) {
-          logger.warn('       - missing docs field');
-          continue;
-        }
-        if (!instance.execute) {
-          logger.warn('       - missing execute method');
-          continue;
-        }
-        if (!instance.commandOptions) {
-          logger.debug('      - missing commandOptions field (continuing anyway)');
-        }
-        logger.debug(`    - ${command} passed, adding to command list`);
         this.commands.push(instance);
       }
 
@@ -230,8 +234,8 @@ export class Gamerbot extends Client {
 
     logger.debug(`sorting commands by name`);
     this.commands.sort((a, b) => {
-      const cmdA = a.cmd[0].toLowerCase();
-      const cmdB = b.cmd[0].toLowerCase();
+      const cmdA = a.name[0].toLowerCase();
+      const cmdB = b.name[0].toLowerCase();
       return cmdA < cmdB ? -1 : cmdA > cmdB ? 1 : 0;
     });
   }

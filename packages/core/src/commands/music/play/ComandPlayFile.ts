@@ -4,15 +4,15 @@ import _ from 'lodash';
 import { Duration } from 'luxon';
 import miniget from 'miniget';
 import * as mm from 'music-metadata';
-import { Command, CommandOptions } from '../..';
+import { ChatCommand, CommandOptions } from '../..';
 import { CommandEvent } from '../../../models/CommandEvent';
 import { FileTrack } from '../../../models/FileTrack';
 import { client } from '../../../providers';
 
-export class CommandPlayFile extends Command {
-  cmd = ['playfile'];
-  docs = [{ usage: 'playfile', description: 'play an audio file' }];
-  commandOptions: CommandOptions = {
+export class CommandPlayFile extends ChatCommand {
+  name = ['playfile'];
+  help = [{ usage: 'playfile', description: 'play an audio file' }];
+  data: CommandOptions = {
     description: 'Play an audio file',
   };
   async execute(event: CommandEvent): Promise<void | Message> {
@@ -48,7 +48,7 @@ export class CommandPlayFile extends Command {
   }
 
   async #queue(event: CommandEvent, message: Message): Promise<void> {
-    const attachment = message.attachments.array()[0];
+    const attachment = message.attachments.first()!;
     const metadata = await mm.parseStream(miniget(attachment.url));
 
     const queue = client.queues.get(event.guild.id);

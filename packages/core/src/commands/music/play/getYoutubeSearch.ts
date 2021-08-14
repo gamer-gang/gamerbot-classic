@@ -95,7 +95,7 @@ export const getYoutubeSearch = async ({
       });
 
       collector.on('end', async collected => {
-        const interaction = collected.array()[0];
+        const interaction = collected.first()!;
         if (!interaction) return void reply.delete();
 
         if (!interaction.isSelectMenu()) return;

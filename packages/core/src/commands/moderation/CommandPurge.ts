@@ -1,11 +1,11 @@
 import { Embed } from '@gamerbot/util';
 import { Message, PermissionString, TextChannel } from 'discord.js';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
-export class CommandPurge extends Command {
-  cmd = ['purge'];
-  docs: CommandDocs = [
+export class CommandPurge extends ChatCommand {
+  name = ['purge'];
+  help: CommandDocs = [
     {
       usage: 'purge <number>',
       description:
@@ -16,7 +16,7 @@ export class CommandPurge extends Command {
   ];
   userPermissions: PermissionString[] = ['MANAGE_MESSAGES'];
   botPermissions: PermissionString[] = ['MANAGE_MESSAGES'];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Purge all messages after a given message',
     options: [
       {

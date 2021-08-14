@@ -2,13 +2,13 @@ import { Embed } from '@gamerbot/util';
 import axios from 'axios';
 import { Message } from 'discord.js';
 import { DateTime } from 'luxon';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
-export class CommandHololive extends Command {
-  cmd = ['hololive'];
-  docs = [{ usage: 'hololive schedule', description: 'show live and upcoming streams' }];
-  commandOptions: CommandOptions = {
+export class CommandHololive extends ChatCommand {
+  name = ['hololive'];
+  help = [{ usage: 'hololive schedule', description: 'show live and upcoming streams' }];
+  data: CommandOptions = {
     description: 'Hololive related stuff (WIP)',
     options: [
       {

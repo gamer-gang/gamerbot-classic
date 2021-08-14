@@ -39,7 +39,9 @@ export class M2CMessageAdapter extends EventEmitter {
   send(command: string, guildId: bigint | string, ...args: string[]): bigint {
     const [id, buffer] = makeMessage(command, guildId, ...args);
     this.txLogger.trace(`m2c ${id} ${guildId} ${command} ${args.join(' ')} [${buffer.length}]`);
-    this.channel.sendToQueue(m2c, buffer);
+    this.channel.assertQueue(m2c).then(({ queue }) => {
+      this.channel.sendToQueue(queue, buffer);
+    });
     return id;
   }
 

@@ -1,9 +1,15 @@
 import { codeBlock, Embed } from '@gamerbot/util';
 import didYouMean from 'didyoumean';
-import { Message, MessageActionRow, MessageButton, MessageComponentInteraction } from 'discord.js';
+import {
+  Message,
+  MessageActionRow,
+  MessageButton,
+  MessageComponentInteraction,
+  Util,
+} from 'discord.js';
 import { DateTime } from 'luxon';
 import { zones } from 'tzdata';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
 didYouMean.threshold = 0.9;
@@ -13,9 +19,9 @@ const luxonValidTimezones = Object.entries(zones)
   .map(([zoneName, v]) => zoneName)
   .filter(tz => DateTime.local().setZone(tz).isValid);
 
-export class CommandTime extends Command {
-  cmd = ['time', 'tz'];
-  docs: CommandDocs = [
+export class CommandTime extends ChatCommand {
+  name = ['time', 'tz'];
+  help: CommandDocs = [
     {
       usage: 'time [zone]',
       description:
@@ -26,7 +32,7 @@ export class CommandTime extends Command {
       description: 'list supported time zones',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Get time and time zone information',
     options: [
       {
@@ -90,10 +96,13 @@ export class CommandTime extends Command {
         regions[region].push(city.join('/'));
       });
 
-      const pages = Object.entries(regions)
-        .map(([region, cities]) => `${region}\n===========\n${cities.sort().join(', ')}`)
-        .join('\n\n')
-        .match(/(?:.|\n){1,1000}([\n, ]|$)/g)!;
+      const pages = Util.splitMessage(
+        Object.entries(regions)
+          .map(([region, cities]) => `${region}\n===========\n${cities.sort().join(', ')}`)
+          .join('\n\n'),
+        { maxLength: 1000, char: ['\n', ',', ' '] }
+      );
+      // .match(/(?:.|\n){1,1000}([\n, ]|$)/g)!;
 
       const parsedPageNumber = event.isInteraction()
         ? event.options.getInteger('page') ?? 1

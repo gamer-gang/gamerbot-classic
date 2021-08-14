@@ -4,7 +4,7 @@ import { Message, MessageActionRow, MessageButton } from 'discord.js';
 import he from 'he';
 import _ from 'lodash';
 import { getLogger } from 'log4js';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { APIMessage, CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
@@ -71,13 +71,13 @@ const alphabet = 'abcdefghijklmnopqrstuvwxyz';
 
 export const ongoingTriviaQuestions = new Set<string>();
 
-export class CommandTrivia extends Command {
-  cmd = ['trivia', 'triv', 'tr'];
+export class CommandTrivia extends ChatCommand {
+  name = ['trivia', 'triv', 'tr'];
   // yargs: yargsParser.Options = {
   //   alias: { categories: ['c', 'category'], difficulty: 'd', type: 't' },
   //   string: ['categories', 'difficulty', 'type'],
   // };
-  docs: CommandDocs = [
+  help: CommandDocs = [
     {
       usage: 'trivia [-c, --category <id>] [-d, --difficulty <difficulty>] [-t, --type <type>] ',
       description: 'play trivia, optional category',
@@ -88,7 +88,7 @@ export class CommandTrivia extends Command {
     },
   ];
 
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Answer a trivia question',
   };
 
@@ -307,7 +307,7 @@ export class CommandTrivia extends Command {
     });
 
     collector.on('end', (collected, reason) => {
-      const id = _.capitalize(collected.array()[0]?.customId ?? '');
+      const id = _.capitalize(collected.first()?.customId ?? '');
 
       const formattedId = id === 'T' ? 'True' : id === 'F' ? 'False' : id;
 

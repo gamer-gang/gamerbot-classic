@@ -8,14 +8,14 @@ import {
   Snowflake,
 } from 'discord.js';
 import _ from 'lodash';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { EggLeaderboard } from '../../entities/EggLeaderboard';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client, getORM } from '../../providers';
 
-export class CommandEggLeaderboard extends Command {
-  cmd = ['eggleaderboard', 'egglb'];
-  docs = [
+export class CommandEggLeaderboard extends ChatCommand {
+  name = ['eggleaderboard', 'egglb'];
+  help = [
     {
       usage: 'eggleaderboard',
       description: 'egg leaderboard!! shows top 25 egg leaders.',
@@ -25,7 +25,7 @@ export class CommandEggLeaderboard extends Command {
       description: "show someone else's ranking",
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Show egg leaders',
     options: [
       {

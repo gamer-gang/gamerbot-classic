@@ -1,13 +1,13 @@
 import { codeBlock, Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { APIMessage, CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandClear extends Command {
-  cmd = ['clear'];
-  docs = [{ usage: 'clear', description: 'Clear the queue' }];
-  commandOptions: CommandOptions = { description: 'Clear the queue' };
+export class CommandClear extends ChatCommand {
+  name = ['clear'];
+  help = [{ usage: 'clear', description: 'Clear the queue' }];
+  data: CommandOptions = { description: 'Clear the queue' };
   async execute(event: CommandEvent): Promise<void | Message | APIMessage> {
     const queue = client.queues.get(event.guild.id);
 

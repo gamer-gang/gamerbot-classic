@@ -1,15 +1,15 @@
 import { Embed } from '@gamerbot/util';
 import { Message, TextChannel } from 'discord.js';
-import { Command, CommandOptions } from '../..';
+import { ChatCommand, CommandOptions } from '../..';
 import { APIMessage, CommandEvent } from '../../../models/CommandEvent';
 import { Track } from '../../../models/Track';
 import { client } from '../../../providers';
 import { getYoutubeSearch } from './getYoutubeSearch';
 
-export class CommandSearch extends Command {
-  cmd = ['search'];
-  docs = [{ usage: 'search <...query>', description: 'search yt for video' }];
-  commandOptions: CommandOptions = {
+export class CommandSearch extends ChatCommand {
+  name = ['search'];
+  help = [{ usage: 'search <...query>', description: 'search yt for video' }];
+  data: CommandOptions = {
     description: 'Search Youtube for a video to play',
     options: [
       {

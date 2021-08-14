@@ -163,7 +163,7 @@ export class Queue {
         this.embed?.delete();
         delete this.embed;
 
-        if (this.voiceChannel && this.voiceChannel.members.array().length <= 1) {
+        if (this.voiceChannel && this.voiceChannel.members.size <= 1) {
           // only the bot in the channel
           logger.debug('only the bot in the voice channel, resetting queue');
           this.reset();

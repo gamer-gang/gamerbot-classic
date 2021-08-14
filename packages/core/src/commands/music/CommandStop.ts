@@ -1,18 +1,18 @@
 import { codeBlock, Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandStop extends Command {
-  cmd = ['stop', 'dc', 'disconnect'];
-  docs: CommandDocs = [
+export class CommandStop extends ChatCommand {
+  name = ['stop', 'dc', 'disconnect'];
+  help: CommandDocs = [
     {
       usage: 'stop',
       description: 'stop playback',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Stops playback, disconnects, and resets queue',
   };
   async execute(event: CommandEvent): Promise<void | Message> {
@@ -21,7 +21,7 @@ export class CommandStop extends Command {
     if (!event.guild.me?.voice)
       return event.reply(Embed.error('Not conected to a channel').ephemeral());
 
-    if ((event.guild.me?.voice?.channel?.members?.array().length ?? 0) > 1) {
+    if ((event.guild.me?.voice?.channel?.members?.size ?? 0) > 1) {
       const userVoice = event.guild.members.cache.get(event.user.id)?.voice;
       if (!userVoice?.channel || userVoice.channel.id !== queue.voiceChannel?.id)
         return event.reply(

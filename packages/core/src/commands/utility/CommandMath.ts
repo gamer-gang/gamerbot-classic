@@ -1,19 +1,19 @@
 import { Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { evaluate } from 'mathjs';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
-export class CommandMath extends Command {
-  cmd = ['math', 'calc', 'eval'];
-  docs: CommandDocs = [
+export class CommandMath extends ChatCommand {
+  name = ['math', 'calc', 'eval'];
+  help: CommandDocs = [
     {
       usage: 'math <...expression>',
       description:
         'evalulate a mathematical expression or conversion\nyou can wrap your expression in backticks to avoid having to escape characters',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Evaluate a mathematical expression',
     options: [
       {

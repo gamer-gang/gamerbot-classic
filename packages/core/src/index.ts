@@ -44,14 +44,17 @@ export const setPresence = async (): Promise<void> => {
 
 // keep member caches up-to-date
 const fetchMemberCache = async (): Promise<void> => {
-  const guilds = client.guilds.cache.array();
+  const guilds = [...client.guilds.cache.values()];
 
   const members = (
     await Promise.all(
       guilds.map(
         (guild, index) =>
           new Promise<GuildMember[]>(resolve => {
-            setTimeout(() => guild.members.fetch().then(c => resolve(c.array())), index * 2500);
+            setTimeout(
+              () => guild.members.fetch().then(c => resolve([...c.values()])),
+              index * 2500
+            );
           })
       )
     )
@@ -106,7 +109,7 @@ const eventHooks: {
   guildMemberAdd: {
     pre: (guild: Guild) => async () => {
       // figure out which invite was just used
-      const newInvites = (await guild.invites.fetch()).array();
+      const newInvites = (await guild.invites.fetch()).values();
 
       let usedCached: CachedInvite | undefined;
       let usedNew: Invite | undefined;

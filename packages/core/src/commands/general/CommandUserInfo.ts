@@ -1,18 +1,52 @@
 import { Embed, getDateStringFromSnowflake, getProfileImageUrl } from '@gamerbot/util';
-import { Message, Snowflake, User } from 'discord.js';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ContextMenuInteraction, Guild, Message, Snowflake, User } from 'discord.js';
+import { ChatCommand, CommandDocs, CommandOptions, UserCommand } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandUserInfo extends Command {
-  cmd = ['userinfo', 'user'];
-  docs: CommandDocs = [
+const makeEmbed = (user: User, guild: Guild | null): Embed => {
+  const icon = getProfileImageUrl(user);
+
+  const inGuild = guild?.members.cache.get(user.id);
+
+  const embed = new Embed({
+    author: {
+      iconURL: icon ?? undefined,
+      name: user.tag + (user.bot ? ' (bot)' : ''),
+    },
+    title: 'User info',
+    description: inGuild ? user.toString() : undefined,
+  })
+    .addField('Account creation', getDateStringFromSnowflake(user.id).join('; '))
+    .addField('ID', user.id)
+    .setTimestamp();
+
+  if (inGuild) {
+    const guildMember = guild!.members.cache.get(user.id)!;
+
+    const roles = [...guildMember.roles.cache.values()].filter(
+      r => r.id !== guild!.roles.everyone.id
+    );
+    embed.addField(
+      `Roles (${roles?.length ?? 0})`,
+      roles?.map(r => r.toString()).join(' ') || 'None'
+    );
+  }
+
+  icon && embed.setThumbnail(icon);
+
+  return embed;
+};
+
+export class CommandUserInfo extends ChatCommand {
+  name = ['userinfo', 'user'];
+  help: CommandDocs = [
     {
       usage: 'userinfo [id]',
       description: 'get information about a user (no id for you)',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Show user info',
     options: [
       {
@@ -41,36 +75,28 @@ export class CommandUserInfo extends Command {
         );
     }
 
-    const icon = getProfileImageUrl(user);
+    event.reply(makeEmbed(user, event.guild));
+  }
+}
 
-    const inGuild = event.guild.members.cache.get(user.id);
+export class UserCommandUserInfo extends UserCommand {
+  name = 'User info';
+  async execute(interaction: ContextMenuInteraction): Promise<void | Message> {
+    if (interaction.targetType !== 'USER') return;
 
-    const embed = new Embed({
-      author: {
-        iconURL: icon ?? undefined,
-        name: user.tag + (user.bot ? ' (bot)' : ''),
-      },
-      title: 'User info',
-      description: inGuild ? user.toString() : undefined,
-    })
-      .addField('Account creation', getDateStringFromSnowflake(user.id).join('; '))
-      .addField('ID', user.id)
-      .setTimestamp();
+    const user = client.users.resolve(interaction.targetId);
 
-    if (inGuild) {
-      const guildMember = event.guild.members.cache.get(user.id);
+    if (!user)
+      return interaction.reply({
+        embeds: [
+          Embed.error(
+            'Could not resolve user',
+            'Check if the user is valid and that gamerbot shares a server with the user.'
+          ),
+        ],
+        ephemeral: true,
+      });
 
-      const roles = guildMember?.roles.cache
-        .array()
-        .filter(r => r.id !== event.guild.roles.everyone.id);
-      embed.addField(
-        `Roles (${roles?.length ?? 0})`,
-        roles?.map(r => r.toString()).join(' ') || 'None'
-      );
-    }
-
-    icon && embed.setThumbnail(icon);
-
-    event.reply(embed);
+    interaction.reply({ embeds: [makeEmbed(user, interaction.guild)], ephemeral: true });
   }
 }

@@ -5,8 +5,8 @@ import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
 export class CommandInternalDeploy extends InternalCommand {
-  cmd = ['deploy'];
-  docs: CommandDocs = [
+  name = ['deploy'];
+  help: CommandDocs = [
     {
       usage: 'deploy',
       description: 'deploy slash commands',
@@ -26,35 +26,54 @@ export class CommandInternalDeploy extends InternalCommand {
         internalCommands++;
         return [];
       }
-      if (!command.commandOptions) {
-        nonSlashCommands.push(command.cmd[0]);
-        return [];
-      }
+      if (command.type === 'CHAT_INPUT') {
+        if (!command.data) {
+          nonSlashCommands.push(command.name[0]);
+          return [];
+        }
 
-      return {
-        name: command.cmd[0],
-        ...command.commandOptions,
-      };
+        return {
+          name: command.name[0],
+          ...command.data,
+        };
+      } else {
+        return {
+          name: command.name,
+          type: command.type,
+        };
+      }
     });
 
     try {
-      const commands = (
-        client.devMode
+      const commands = [
+        ...(client.devMode
           ? await event.guild.commands.set(data)
           : await client.application!.commands.set(data)
-      ).array();
+        ).values(),
+      ];
 
       Embed.success(
         `Deployed **${commands.length}** commands ${
           client.devMode ? `to **${msg.guild.name}**` : '**globally**'
         }, overwriting previous deployment`,
-        `**Commands**: ${commands.map(command => command.name).join(', ')}
+        `**Chat commands**: ${commands
+          .filter(c => c.type === 'CHAT_INPUT')
+          .map(c => c.name)
+          .join(', ')}
+**User commands**: ${commands
+          .filter(c => c.type === 'USER')
+          .map(c => c.name)
+          .join(', ')}
+**Message commands**: ${commands
+          .filter(c => c.type === 'MESSAGE')
+          .map(c => c.name)
+          .join(', ')}
 
-Excluded **${internalCommands}** internal command${internalCommands === 1 ? '' : 's'}${
+Excluded **${internalCommands}** internal chat command${internalCommands === 1 ? '' : 's'}${
           nonSlashCommands.length
             ? `
 
-**Excluded commands without slash command data (${
+**Excluded chat commands without slash command data (${
                 nonSlashCommands.length
               })**: ${nonSlashCommands.join(', ')}`
             : ''

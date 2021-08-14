@@ -1,18 +1,18 @@
 import { Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandTechSupport extends Command {
-  cmd = ['techsupport', 'support'];
-  docs = [
+export class CommandTechSupport extends ChatCommand {
+  name = ['techsupport', 'support'];
+  help = [
     {
       usage: 'techsupport',
       description: 'request tech help (--delete or -d to delete)',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Request technical support',
   };
   async execute(event: CommandEvent): Promise<void | Message> {

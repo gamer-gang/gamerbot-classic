@@ -1,17 +1,17 @@
 import { Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
-export class CommandEcho extends Command {
-  cmd = ['echo'];
-  docs = [
+export class CommandEcho extends ChatCommand {
+  name = ['echo'];
+  help = [
     {
       usage: 'echo <...msg>',
       description: 'tells you what you just said (`-d` deletes source message)',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Tells you what you just said',
     options: [
       {

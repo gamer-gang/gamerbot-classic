@@ -1,17 +1,17 @@
 import { Embed, getDateFromSnowflake, getDateStringFromSnowflake } from '@gamerbot/util';
 import { Message } from 'discord.js';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
-export class CommandTimestamp extends Command {
-  cmd = ['timestamp'];
-  docs = [
+export class CommandTimestamp extends ChatCommand {
+  name = ['timestamp'];
+  help = [
     {
       usage: 'timestamp <snowflake>',
       description: 'extract timestamp from snowflake',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Get the timestamp of a snowflake',
     options: [
       {

@@ -1,19 +1,19 @@
 import { codeBlock, Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { LoopMode } from '../../models/Queue';
 import { client } from '../../providers';
 
-export class CommandSkip extends Command {
-  cmd = ['loop'];
-  docs: CommandDocs = [
+export class CommandSkip extends ChatCommand {
+  name = ['loop'];
+  help: CommandDocs = [
     {
       usage: 'loop [none|one|all]',
       description: 'cycle loop mode',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Set the loop mode',
     options: [
       {

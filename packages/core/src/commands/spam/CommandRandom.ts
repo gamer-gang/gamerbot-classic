@@ -1,23 +1,23 @@
 import { Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import randomWords from 'random-words';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
-export class CommandRandom extends Command {
-  cmd = ['random'];
+export class CommandRandom extends ChatCommand {
+  name = ['random'];
   // yargs: yargsParser.Options = {
   //   number: ['messages'],
   //   alias: { messages: 'm' },
   //   default: { messages: 1 },
   // };
-  docs: CommandDocs = [
+  help: CommandDocs = [
     {
       usage: 'random',
       description: 'ok',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Random English',
   };
   async execute(event: CommandEvent): Promise<void | Message> {

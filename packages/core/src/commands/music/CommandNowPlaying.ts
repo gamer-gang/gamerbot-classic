@@ -1,18 +1,18 @@
 import { Embed } from '@gamerbot/util';
 import { Message, TextChannel } from 'discord.js';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandNowPlaying extends Command {
-  cmd = ['nowplaying', 'playing', 'np'];
-  docs: CommandDocs = [
+export class CommandNowPlaying extends ChatCommand {
+  name = ['nowplaying', 'playing', 'np'];
+  help: CommandDocs = [
     {
       usage: 'nwplaying',
       description: 'show now playing embed',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Show currently playing track',
   };
   async execute(event: CommandEvent): Promise<void | Message> {

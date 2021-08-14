@@ -1,18 +1,18 @@
 import { Embed } from '@gamerbot/util';
 import { Guild, Message } from 'discord.js';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandServericon extends Command {
-  cmd = ['servericon', 'serverpfp', 'serveravatar', 'guildicon', 'guildpfp'];
-  docs: CommandDocs = [
+export class CommandServericon extends ChatCommand {
+  name = ['servericon', 'serverpfp', 'serveravatar', 'guildicon', 'guildpfp'];
+  help: CommandDocs = [
     {
       usage: 'servericon [id]',
       description: 'get icon for a server (no id for current server)',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Show icon for a server',
     options: [
       {

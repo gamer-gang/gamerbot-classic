@@ -1,12 +1,12 @@
 import { codeBlock, Embed } from '@gamerbot/util';
 import axios from 'axios';
 import { Message } from 'discord.js';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
-export class CommandJoke extends Command {
-  cmd = ['joke'];
-  docs = [
+export class CommandJoke extends ChatCommand {
+  name = ['joke'];
+  help = [
     {
       usage: 'joke',
       description: 'get a joke (https://jokeapi.dev/); add -u or --unsafe to get the naughty jokes',
@@ -16,7 +16,7 @@ export class CommandJoke extends Command {
       description: 'get a programming joke (https://jokeapi.dev/)',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Display a joke',
     options: [
       {

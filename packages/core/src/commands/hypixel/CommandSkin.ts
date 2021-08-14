@@ -2,7 +2,7 @@ import { codeBlock, Embed } from '@gamerbot/util';
 import axios, { AxiosRequestConfig } from 'axios';
 import { Message } from 'discord.js';
 import { Player } from 'hypixel-types';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
 import { APIMessage, CommandEvent } from '../../models/CommandEvent';
 import { client, getORM } from '../../providers';
@@ -22,15 +22,15 @@ const skinTypeDisplayNames = {
   skins: 'texture',
 };
 
-export class CommandSkin extends Command {
-  cmd = ['skin'];
-  docs: CommandDocs = [
+export class CommandSkin extends ChatCommand {
+  name = ['skin'];
+  help: CommandDocs = [
     {
       usage: 'skin [username|uuid]',
       description: 'show minecraft skin (specify --type for types)',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Get Minecraft skins',
     options: [
       {

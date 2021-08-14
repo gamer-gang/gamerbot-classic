@@ -1,18 +1,18 @@
 import { codeBlock, Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandPause extends Command {
-  cmd = ['pause'];
-  docs: CommandDocs = [
+export class CommandPause extends ChatCommand {
+  name = ['pause'];
+  help: CommandDocs = [
     {
       usage: 'pause',
       description: 'pauses playback',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Pause playback',
   };
   async execute(event: CommandEvent): Promise<void | Message> {

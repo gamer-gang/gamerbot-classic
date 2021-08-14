@@ -2,7 +2,7 @@ import { Embed } from '@gamerbot/util';
 import { GuildEmoji, Message } from 'discord.js';
 import _ from 'lodash';
 import { DateTime } from 'luxon';
-import { Command, CommandDocs, CommandOptions } from '..';
+import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
@@ -10,9 +10,9 @@ let upArrow: GuildEmoji | string;
 let downArrow: GuildEmoji | string;
 const randomSymbol = () => client.crypto.symbols[_.random(client.crypto.symbols.length)];
 
-export class CommandCrypto extends Command {
-  cmd = ['crypto'];
-  docs: CommandDocs = [
+export class CommandCrypto extends ChatCommand {
+  name = ['crypto'];
+  help: CommandDocs = [
     {
       usage: 'crypto get <symbol>',
       description: 'get data for a specific crypto',
@@ -22,7 +22,7 @@ export class CommandCrypto extends Command {
       description: 'list available cryptocurrencies',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Cryptocurrency stuff',
     options: [
       {

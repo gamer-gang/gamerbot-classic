@@ -1,10 +1,10 @@
 import { Embed, hasMentions } from '@gamerbot/util';
 import { Message } from 'discord.js';
-import { Command, CommandOptions } from '..';
+import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
-export class CommandSpam extends Command {
-  cmd = ['spam'];
+export class CommandSpam extends ChatCommand {
+  name = ['spam'];
   // yargs: yargsParser.Options = {
   //   alias: {
   //     repetitions: 'r',
@@ -22,13 +22,13 @@ export class CommandSpam extends Command {
   //   },
   // };
   // [-r, --repetitions <int>] [-m, --messages <int>] [-f, --fill] [-t, --tts]
-  docs = [
+  help = [
     {
       usage: 'spam <...text>',
       description: 'make the words appear on the screen',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Make the words appear on the screen',
     options: [
       {

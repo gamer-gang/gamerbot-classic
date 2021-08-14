@@ -35,7 +35,9 @@ export class C2MMessageAdapter extends EventEmitter {
     this.txLogger.trace(
       `c2m ${id} ${this.guildId} ${command} ${args.join(' ')} [${buffer.length}]`
     );
-    this.channel.sendToQueue(c2m, buffer);
+    this.channel.assertQueue(c2m).then(({ queue }) => {
+      this.channel.sendToQueue(queue, buffer);
+    });
     return id;
   }
 

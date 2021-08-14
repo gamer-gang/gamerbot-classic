@@ -9,7 +9,7 @@ import {
   Role,
   VoiceState,
 } from 'discord.js';
-import { ChannelTypes } from 'discord.js/typings/enums';
+import type { ChannelTypes } from 'discord.js/typings/enums';
 import { getClient } from './_client';
 
 const guildChannelTypes: (keyof typeof ChannelTypes)[] = [
@@ -58,8 +58,10 @@ export const findGuild = (handle: GuildHandle): Guild | undefined => {
   }
 
   if (isChannel(handle)) {
-    // try to find a guild with this channel
-    const guild = client.guilds.cache.array().find(guild => guild.channels.cache.get(handle.id));
+    // try to find a guild with this channelarray
+    const guild = [...client.guilds.cache.values()].find(guild =>
+      guild.channels.cache.get(handle.id)
+    );
 
     return guild;
   }

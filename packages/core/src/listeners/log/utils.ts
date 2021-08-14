@@ -22,7 +22,7 @@ export const getConfig = async (source: GuildHandle): Promise<Config> => {
 
 export const getLatestAuditEvent = async (guild: Guild): Promise<GuildAuditLogsEntry> => {
   const auditLogs = await guild.fetchAuditLogs();
-  const event = auditLogs.entries.array()[0];
+  const event = auditLogs.entries.first()!;
 
   if (client.devMode) {
     const logger = getLogger(' ');

@@ -1,18 +1,18 @@
 import { Embed, getProfileImageUrl } from '@gamerbot/util';
-import { Message, Snowflake, User } from 'discord.js';
-import { Command, CommandDocs, CommandOptions } from '..';
-import { CommandEvent } from '../../models/CommandEvent';
+import { ContextMenuInteraction, Message, Snowflake, User } from 'discord.js';
+import { ChatCommand, CommandDocs, CommandOptions, UserCommand } from '..';
+import { APIMessage, CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
-export class CommandAvatar extends Command {
-  cmd = ['avatar', 'av'];
-  docs: CommandDocs = [
+export class CommandAvatar extends ChatCommand {
+  name = ['avatar', 'av'];
+  help: CommandDocs = [
     {
       usage: 'avatar [user]',
       description: 'get avatar for a user (no id for you)',
     },
   ];
-  commandOptions: CommandOptions = {
+  data: CommandOptions = {
     description: 'Show avatar for a user',
     options: [
       {
@@ -53,5 +53,43 @@ export class CommandAvatar extends Command {
     });
 
     event.reply(embed);
+  }
+}
+
+export class UserCommandAvatar extends UserCommand {
+  name = 'Avatar';
+  async execute(interaction: ContextMenuInteraction): Promise<void | Message | APIMessage> {
+    if (interaction.targetType !== 'USER') return;
+
+    const user = client.users.resolve(interaction.targetId);
+
+    if (!user)
+      return interaction.reply({
+        embeds: [
+          Embed.error(
+            'Could not resolve user',
+            'Check if the user is valid and that gamerbot shares a server with the user.'
+          ),
+        ],
+        ephemeral: true,
+      });
+
+    const icon = getProfileImageUrl(user);
+    if (!icon)
+      return interaction.reply({
+        embeds: [Embed.error('Could not get avatar for ' + user)],
+        ephemeral: true,
+      });
+
+    const embed = new Embed({
+      author: {
+        iconURL: icon ?? undefined,
+        name: user.tag,
+      },
+      title: 'Avatar',
+      image: { url: icon },
+    });
+
+    interaction.reply({ embeds: [embed], ephemeral: true });
   }
 }
