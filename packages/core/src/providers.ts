@@ -63,7 +63,7 @@ getLogger('').mark('\n' + execSync('figlet -f small gamerbot').toString());
 export const storage = new AsyncLocalStorage<EntityManager>();
 let orm: MikroORM<IDatabaseDriver<Connection>>;
 
-let initORM = new Promise<void>(resolve => {
+const initORM = new Promise<void>(resolve => {
   MikroORM.init({
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     ...require('./mikro-orm.config').default,
