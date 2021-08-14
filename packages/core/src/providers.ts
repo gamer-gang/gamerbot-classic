@@ -63,30 +63,24 @@ getLogger('').mark('\n' + execSync('figlet -f small gamerbot').toString());
 export const storage = new AsyncLocalStorage<EntityManager>();
 let orm: MikroORM<IDatabaseDriver<Connection>>;
 
-let initORM: Promise<void>;
+let initORM = new Promise<void>(resolve => {
+  MikroORM.init({
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    ...require('./mikro-orm.config').default,
+    context: () => storage.getStore(),
+  }).then(tempORM => {
+    tempORM
+      .getMigrator()
+      .up()
+      .then(() => {
+        orm = tempORM;
+        resolve();
+      });
+  });
+});
 
 export const getORM = async (): Promise<typeof orm> => {
-  if (!orm) {
-    if (!initORM)
-      initORM = new Promise(resolve => {
-        MikroORM.init({
-          // eslint-disable-next-line @typescript-eslint/no-var-requires
-          ...require('./mikro-orm.config').default,
-          context: () => storage.getStore(),
-        }).then(tempORM => {
-          tempORM
-            .getMigrator()
-            .up()
-            .then(() => {
-              orm = tempORM;
-              resolve();
-            });
-        });
-      });
-
-    await initORM;
-  }
-
+  if (!orm) await initORM;
   return orm;
 };
 
