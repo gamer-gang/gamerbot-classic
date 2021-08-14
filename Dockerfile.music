@@ -19,8 +19,9 @@ RUN apt update && apt -y install \
 WORKDIR /app
 
 COPY --from=build /app/assets assets
-COPY --from=build /app/package.json /app/.yarnrc.yml /app/yarn.lock /app/.pnp.js ./
+COPY --from=build /app/package.json /app/.yarnrc.yml /app/yarn.lock /app/.pnp.cjs ./
 COPY --from=build /app/.yarn .yarn
-COPY --from=build /app/packages/music packages/music
+COPY --from=build /app/packages/music/package.json /app/packages/music/package.json
+COPY --from=build /app/packages/music/dist /app/packages/music/dist
 
 CMD [ "yarn", "workspace", "@gamerbot/music", "prod" ]
