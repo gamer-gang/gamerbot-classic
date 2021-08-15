@@ -92,6 +92,7 @@
     "@types/yargs-parser": "^20.2.1",
     "@types/yt-search": "^2.3.2",
     "fork-ts-checker-webpack-plugin": "^6.3.2",
+    "hypixel-cache": "https://github.com/wiisportsresort/hypixel-cache.git",
     "hypixel-types": "https://github.com/wiisportsresort/hypixel-types.git#commit=cddb69ce1166744a72be48f56f03feb526bb852c",
     "mathjs": "^9.4.4",
     "nodemon": "^2.0.12",

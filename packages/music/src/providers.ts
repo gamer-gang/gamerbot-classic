@@ -22,17 +22,21 @@ log4js.levels.DEBUG.colour = 'magenta';
 
 log4js.configure({
   appenders: {
-    _fileTrace: { ...fileAppender, filename: resolvePath(`logs/music-trace.log`) },
-    fileTrace: { ...levelFilter('_fileTrace'), level: 'trace' },
+    ...(!devMode
+      ? {
+          _fileTrace: { ...fileAppender, filename: resolvePath(`logs/music-trace.log`) },
+          fileTrace: { ...levelFilter('_fileTrace'), level: 'trace' },
 
-    _fileDebug: { ...fileAppender, filename: resolvePath(`logs/music-debug.log`) },
-    fileDebug: { ...levelFilter('_fileDebug'), level: 'debug' },
+          _fileDebug: { ...fileAppender, filename: resolvePath(`logs/music-debug.log`) },
+          fileDebug: { ...levelFilter('_fileDebug'), level: 'debug' },
 
-    _fileInfo: { ...fileAppender, filename: resolvePath(`logs/music-info.log`) },
-    fileInfo: { ...levelFilter('_fileInfo'), level: 'info' },
+          _fileInfo: { ...fileAppender, filename: resolvePath(`logs/music-info.log`) },
+          fileInfo: { ...levelFilter('_fileInfo'), level: 'info' },
 
-    _fileWarn: { ...fileAppender, filename: resolvePath(`logs/music-warn.log`) },
-    fileWarn: { ...levelFilter('_fileWarn'), level: 'warn' },
+          _fileWarn: { ...fileAppender, filename: resolvePath(`logs/music-warn.log`) },
+          fileWarn: { ...levelFilter('_fileWarn'), level: 'warn' },
+        }
+      : {}),
 
     _console: { type: 'console', layout: { type: 'colored' } },
     console: {

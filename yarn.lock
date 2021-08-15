@@ -253,6 +253,7 @@ __metadata:
     fs-extra: ^10.0.0
     googleapis: ^84.0.0
     he: ^1.2.0
+    hypixel-cache: "https://github.com/wiisportsresort/hypixel-cache.git"
     hypixel-types: "https://github.com/wiisportsresort/hypixel-types.git#commit=cddb69ce1166744a72be48f56f03feb526bb852c"
     js-yaml: ^4.1.0
     libsodium-wrappers: ^0.7.9
@@ -4535,6 +4536,13 @@ fsevents@~2.3.2:
   dependencies:
     ms: ^2.0.0
   checksum: 9c7a74a2827f9294c009266c82031030eae811ca87b0da3dceb8d6071b9bde22c9f3daef0469c3c533cc67a97d8a167cd9fc0389350e5f415f61a79b171ded16
+  languageName: node
+  linkType: hard
+
+"hypixel-cache@https://github.com/wiisportsresort/hypixel-cache.git":
+  version: 0.0.0
+  resolution: "hypixel-cache@https://github.com/wiisportsresort/hypixel-cache.git#commit=02e598a3d069b2c19936eb971def131aa7e8a505"
+  checksum: a28ff62d06ffd7140fd72377d4817ab77ef5c40330872e12cb9c67f69cbd468d57caef425982c98eaad55771e5c33188e9419933cd4c613b1f6478ddad1d0dd1
   languageName: node
   linkType: hard
 

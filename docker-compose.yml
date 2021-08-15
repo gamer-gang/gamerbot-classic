@@ -12,6 +12,8 @@ services:
   redis:
     restart: unless-stopped
     image: redis:6
+    volumes:
+      - redis-data:/data
   crafatar:
     restart: unless-stopped
     image: crafatar/crafatar:latest
@@ -60,4 +62,5 @@ volumes:
   logs: {}
   crafatar-images: {}
   db-data: {}
+  redis-data: {}
   rabbitmq-data: {}

@@ -2,6 +2,7 @@ import { codeBlock, Embed, insertUuidDashes } from '@gamerbot/util';
 import axios from 'axios';
 import { Image } from 'canvas';
 import { Message, MessageAttachment } from 'discord.js';
+import { HypixelCacheResponse } from 'hypixel-cache';
 import { Player } from 'hypixel-types';
 import { getLogger } from 'log4js';
 import { DateTime } from 'luxon';
@@ -10,11 +11,10 @@ import { HypixelPlayer } from '../../entities/HypixelPlayer';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 import { makeBedwarsStats } from './makeBedwarsStats';
-import { statsProvider } from './util/cache';
 import { getNetworkLevel } from './util/leveling';
 
-const userRegex =
-  /^([A-Za-z0-9_]{3,16}|[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})$/;
+const userRegex = /^[A-Za-z0-9_]{3,16}$/;
+const uuidRegex = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i;
 
 type Gamemode = 'bedwars';
 export type StatsData = [image: Buffer, metadata?: (string | boolean)[]];
@@ -141,9 +141,12 @@ export class CommandStats extends ChatCommand {
         );
     }
 
-    if (!process.env.HYPIXEL_API_KEY) {
+    if (!process.env.HYPIXEL_CACHE_URL) {
       return event.reply(
-        Embed.error('Hypixel stats disabled', 'No API key specified in environment').ephemeral()
+        Embed.error(
+          'Hypixel stats disabled',
+          'No cache server specified in environment'
+        ).ephemeral()
       );
     }
 
@@ -155,11 +158,9 @@ export class CommandStats extends ChatCommand {
 
       return event.reply(Embed.success(`Cleared username/UUID **${entity.hypixelUsername}**`));
     } else if (subcommand === 'set-username') {
-      const username = event.isInteraction()
-        ? event.options.getString('new-username')
-        : event.argv[1];
-      if (!username) return event.reply(Embed.error('No username/UUID provided').ephemeral());
-      if (!userRegex.test(username))
+      const input = event.isInteraction() ? event.options.getString('new-username') : event.argv[1];
+      if (!input) return event.reply(Embed.error('No username/UUID provided').ephemeral());
+      if (!userRegex.test(input) && !uuidRegex.test(input))
         return event.reply(Embed.error('Invalid username/UUID').ephemeral());
 
       const entity = await event.em.findOne(HypixelPlayer, { userId: event.user.id });
@@ -167,17 +168,17 @@ export class CommandStats extends ChatCommand {
         event.em.persistAndFlush(
           event.em.create(HypixelPlayer, {
             userId: event.user.id,
-            hypixelUsername: username,
+            hypixelUsername: input,
           })
         );
-        return event.reply(Embed.success(`Set your minecraft username/UUID to **${username}**`));
+        return event.reply(Embed.success(`Set your minecraft username/UUID to **${input}**`));
       } else {
         const existingUsername = entity.hypixelUsername;
-        entity.hypixelUsername = username;
+        entity.hypixelUsername = input;
         event.em.flush();
         return event.reply(
           Embed.success(
-            `Set your minecraft username/UUID to **${username}**`,
+            `Set your minecraft username/UUID to **${input}**`,
             `Overwrote previous username/UUID of **${existingUsername}**`
           )
         );
@@ -211,9 +212,9 @@ export class CommandStats extends ChatCommand {
         Embed.error('Invalid gamemode', 'Valid options: bedwars, network').ephemeral()
       );
 
-    let username = event.isInteraction() ? event.options.getString('username') : event.argv[2];
+    let input = event.isInteraction() ? event.options.getString('username') : event.argv[2];
 
-    if (!username) {
+    if (!input) {
       const entity = await event.em.findOne(HypixelPlayer, { userId: event.user.id });
       if (!entity)
         return event.reply(
@@ -222,10 +223,10 @@ export class CommandStats extends ChatCommand {
             `Pro tip: use \`${event.guildConfig.prefix}stats set-username <username|uuid>\` to skip typing your username every time time`
           ).ephemeral()
         );
-      username = entity.hypixelUsername;
+      input = entity.hypixelUsername;
     }
 
-    if (username === '-') {
+    if (input === '-') {
       const entity = await event.em.findOne(HypixelPlayer, { userId: event.user.id });
       if (!entity)
         return event.reply(
@@ -235,7 +236,7 @@ export class CommandStats extends ChatCommand {
           )
         );
 
-      username = entity.hypixelUsername;
+      input = entity.hypixelUsername;
     }
 
     await event.defer();
@@ -245,11 +246,25 @@ export class CommandStats extends ChatCommand {
     const dataStart = process.hrtime();
 
     let player: Player;
+    let cached: boolean;
+    let responseTime: string;
 
     try {
-      const tempPlayer = await statsProvider.get(username);
-      if (!tempPlayer) throw new Error('Player is unexpectedly undefined');
-      player = tempPlayer;
+      const type = uuidRegex.test(input) ? 'uuid' : 'name';
+      const response = await axios.get(`${process.env.HYPIXEL_CACHE_URL}/${type}/${input}`, {
+        headers: { 'X-Secret': process.env.HYPIXEL_CACHE_SECRET },
+        validateStatus: () => true,
+      });
+
+      const data = response.data as HypixelCacheResponse;
+
+      if (response.status === 429) throw new Error('% Ratelimited, try again later');
+      if (!data.success) throw new Error('% ' + data.error);
+
+      ({ player, cached } = data);
+      responseTime = Math.round(parseFloat(response.headers['x-response-time'].replace(/ms/g, '')))
+        .toString()
+        .padStart(4);
     } catch (err) {
       if (err.message.startsWith('% '))
         return event.reply(Embed.error(err.message.slice(2)).ephemeral());
@@ -261,7 +276,7 @@ export class CommandStats extends ChatCommand {
 
     const avatarSize = 165;
 
-    const avatarStart = process.hrtime();
+    const avStart = process.hrtime();
 
     const avatar = await axios.get(
       `${process.env.CRAFATAR_URL}/avatars/${player.uuid}?size=${avatarSize}&overlay`,
@@ -276,8 +291,8 @@ export class CommandStats extends ChatCommand {
       throw new Error(`Avatar fetch failed with no data and status code ${avatar.status}`);
     }
 
-    const avatarEnd = process.hrtime(avatarStart);
-    const avatarDuration = Math.round((avatarEnd![0] * 1e9 + avatarEnd![1]) / 1e6);
+    const avEnd = process.hrtime(avStart);
+    const avDuration = Math.round((avEnd![0] * 1e9 + avEnd![1]) / 1e6);
 
     if (gamemode === 'network') {
       const embed = new Embed({ title: player.displayname })
@@ -305,8 +320,8 @@ export class CommandStats extends ChatCommand {
       debug &&
         embed.setFooter(
           [
-            `${dataDuration < 10 ? 'data cached' : `data ${dataDuration}ms`}`,
-            `${avatarDuration < 10 ? 'avatar cached' : `avatar ${avatarDuration}ms`}`,
+            `${cached ? 'data cached' : `data ${dataDuration}ms`}`,
+            `${avDuration < 50 ? 'avatar cached' : `avatar ${avDuration}ms`}`,
           ].join('   ')
         );
 
@@ -346,18 +361,18 @@ export class CommandStats extends ChatCommand {
       const file = new MessageAttachment(image);
 
       const timeEnd = process.hrtime(timeStart);
-      const totalDuration = Math.round((timeEnd![0] * 1e9 + timeEnd![1]) / 1e6);
+      const totalDuration = Math.round((timeEnd![0] * 1e9 + timeEnd![1]) / 1e6)
+        .toString()
+        .padStart(4);
 
-      const debugInfo = [
-        `${dataDuration < 10 ? 'data cached' : `data ${dataDuration}ms`}`,
-        `${avatarDuration < 30 ? 'avatar cached' : `avatar ${avatarDuration}ms`}`,
-        `${imageDuration < 20 ? 'image cached' : `image ${imageDuration}ms`}`,
-        `total ${totalDuration}ms`,
-        ...(info?.filter(v => !!v) ?? []),
-      ].join('   ');
+      // prettier-ignore
+      const debugInfo = `\
+data   ${responseTime}ms${cached ? ' cached' : '       '}    image  ${imageDuration.toString().padStart(4)}ms${imageDuration < 40 ? ' cached' : ''}
+avatar ${avDuration.toString().padStart(4)}ms${avDuration < 30 ? ' cached' : '       '}    total  ${totalDuration}ms
+${info ? info?.filter(v => !!v).join(', ') : ''}`;
 
       const content =
-        (warnings.length ? `${warnings.join('\n')}\n` : '') + (debug ? `\`${debugInfo}\`` : '');
+        (warnings.length ? `${warnings.join('\n')}\n` : '') + (debug ? codeBlock(debugInfo) : '');
       event.editReply({ content: content.length ? content : undefined, files: [file] });
     } catch (err) {
       if ((err.toString() as string).includes('no data'))
