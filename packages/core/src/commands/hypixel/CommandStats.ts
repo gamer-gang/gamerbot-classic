@@ -89,6 +89,7 @@ export class CommandStats extends ChatCommand {
             type: 'STRING',
             choices: [
               { name: 'bedwars', value: 'bedwars' },
+              { name: 'bedwars dream', value: 'bwdream' },
               { name: 'network stats', value: 'network' },
             ],
           },
