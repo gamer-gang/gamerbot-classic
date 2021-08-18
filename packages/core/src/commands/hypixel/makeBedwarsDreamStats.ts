@@ -31,28 +31,23 @@ const columns = {
 };
 
 const rows = {
-  Solos: 'eight_one_',
-  Doubles: 'eight_two_',
-  '3v3v3v3': 'four_three_',
-  '4v4v4v4': 'four_four_',
-  '4v4': 'two_four_',
-  // 'Rush Solo': 'eight_one_rush_',
-  // 'Rush Doubles': 'eight_two_rush_',
-  // 'Rush 4v4v4v4': 'four_four_rush_',
-  // 'Ultimate Solo': 'eight_one_ultimate_',
-  // 'Ultimate Doubles': 'eight_two_ultimate_',
-  // 'Ultimate 4v4v4v4': 'eight_two_ultimate_',
-  // 'Armed Doubles': 'eight_two_armed_',
-  // 'Armed 4v4v4v4': 'four_four_armed_',
-  // 'Voidless Doubles': 'eight_two_voidless_',
-  // 'Voidless 4v4v4v4': 'four_four_voidless_',
-  // 'Lucky Doubles': 'eight_two_lucky_',
-  // 'Lucky 4v4v4v4': 'four_four_lucky_',
-  // 'Castle 40v40': 'castle_',
-  Overall: '',
+  'Rush Solo': 'eight_one_rush_',
+  'Rush Doubles': 'eight_two_rush_',
+  'Rush 4v4v4v4': 'four_four_rush_',
+  'Ultimate Solo': 'eight_one_ultimate_',
+  'Ultimate Doubles': 'eight_two_ultimate_',
+  'Ultimate 4v4v4v4': 'eight_two_ultimate_',
+  'Armed Doubles': 'eight_two_armed_',
+  'Armed 4v4v4v4': 'four_four_armed_',
+  'Voidless Doubles': 'eight_two_voidless_',
+  'Voidless 4v4v4v4': 'four_four_voidless_',
+  'Lucky Doubles': 'eight_two_lucky_',
+  'Lucky 4v4v4v4': 'four_four_lucky_',
+  'Castle 40v40': 'castle_',
+  // Overall: '',
 };
 
-export const makeBedwarsStats = (data?: Player, avatar?: Image): StatsData => {
+export const makeBedwarsDreamStats = (data?: Player, avatar?: Image): StatsData => {
   if (!data?.stats?.Bedwars) throw new Error('no data');
 
   const argHash = hash(
@@ -123,25 +118,17 @@ export const makeBedwarsStats = (data?: Player, avatar?: Image): StatsData => {
 
   const leftHeader = data.displayname;
 
-  const rightHeader = [
-    `${(data.stats.Bedwars.winstreak ?? 0).toLocaleString()} ws`,
-    `${(data.stats.Bedwars.coins ?? 0).toLocaleString()} coins  `,
-  ].join('  ');
+  const rightHeader = [`${(data.stats.Bedwars.coins ?? 0).toLocaleString()} coins  `].join('  ');
 
   const leftSubheaders = [
     insertUuidDashes(data.uuid),
-    `bedwars stats by ${client.user.tag}`,
+    `bwdream stats by ${client.user.tag}`,
     `generated ${new Date().toISOString()}`,
   ];
 
   const rightSubheaders = [
     `§b${Math.floor(((level % 1) * levelExp) / 10) * 10}§r/§a${levelExp}§r to next level`,
-    [
-      `Games Played: ${data.stats.Bedwars.games_played_bedwars}`,
-      `BBLR: ${s.round(
-        (data.stats.Bedwars.beds_broken_bedwars ?? 0) / (data.stats.Bedwars.beds_lost_bedwars ?? 0)
-      )}`,
-    ].join('  '),
+    [`Games Played: ${data.stats.Bedwars.games_played_bedwars}`].join('  '),
   ];
 
   // very ugly and complicated but it works

@@ -10,6 +10,7 @@ import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
+import { makeBedwarsDreamStats } from './makeBedwarsDreamStats';
 import { makeBedwarsStats } from './makeBedwarsStats';
 import { getNetworkLevel } from './util/leveling';
 
@@ -204,12 +205,23 @@ export class CommandStats extends ChatCommand {
       );
     }
 
-    const gamemode =
+    let gamemode =
       (event.isInteraction() ? event.options.getString('gamemode') : event.argv[1]) ?? 'bedwars';
 
-    if (gamemode !== 'bedwars' && gamemode !== 'network')
+    gamemode = gamemode.toLowerCase();
+
+    if (
+      gamemode !== 'bedwars' &&
+      gamemode !== 'bw' &&
+      gamemode !== 'bwdream' &&
+      gamemode !== 'bedwarsdream' &&
+      gamemode !== 'network'
+    )
       return event.reply(
-        Embed.error('Invalid gamemode', 'Valid options: bedwars, network').ephemeral()
+        Embed.error(
+          'Invalid gamemode',
+          'Valid options: bedwars/bw, bedwarsdream/bwdream, network'
+        ).ephemeral()
       );
 
     let input = event.isInteraction() ? event.options.getString('username') : event.argv[2];
@@ -340,6 +352,16 @@ export class CommandStats extends ChatCommand {
       //     `Supported types: ${codeBlock(Object.keys(this.gamemodes).join('\n'))}`
       //   ).reply(msg);
 
+      const gamemodes: Record<
+        typeof gamemode,
+        (data?: Player | undefined, avatar?: Image | undefined) => StatsData
+      > = {
+        bedwars: makeBedwarsStats,
+        bw: makeBedwarsStats,
+        bedwarsdream: makeBedwarsDreamStats,
+        bwdream: makeBedwarsDreamStats,
+      };
+
       const avatarImage = new Image();
       if (avatar) {
         avatarImage.src = avatar.data;
@@ -353,7 +375,7 @@ export class CommandStats extends ChatCommand {
       };
 
       const imageStart = process.hrtime();
-      const [image, info] = makeBedwarsStats(player, avatar ? avatarImage : undefined);
+      const [image, info] = gamemodes[gamemode](player, avatar ? avatarImage : undefined);
       const imageEnd = process.hrtime(imageStart);
       const imageDuration = Math.round((imageEnd![0] * 1e9 + imageEnd![1]) / 1e6);
       if (!image) throw new Error('Invalid state: attatchment is null after regexp exec');
