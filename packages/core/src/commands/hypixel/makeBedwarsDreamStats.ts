@@ -36,7 +36,7 @@ const rows = {
   'Rush 4v4v4v4': 'four_four_rush_',
   'Ultimate Solo': 'eight_one_ultimate_',
   'Ultimate Doubles': 'eight_two_ultimate_',
-  'Ultimate 4v4v4v4': 'eight_two_ultimate_',
+  'Ultimate 4v4v4v4': 'four_four_ultimate_',
   'Armed Doubles': 'eight_two_armed_',
   'Armed 4v4v4v4': 'four_four_armed_',
   'Voidless Doubles': 'eight_two_voidless_',
