@@ -1,4 +1,5 @@
-import { codeBlock, Embed, sanitize } from '@gamerbot/util';
+import { codeBlock } from '@discordjs/builders';
+import { Embed, sanitize } from '@gamerbot/util';
 import axios from 'axios';
 import { Message, MessageActionRow, MessageButton } from 'discord.js';
 import he from 'he';

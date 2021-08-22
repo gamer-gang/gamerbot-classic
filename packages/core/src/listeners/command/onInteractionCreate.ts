@@ -1,4 +1,5 @@
-import { codeBlock, dbFindOneError, Embed } from '@gamerbot/util';
+import { codeBlock } from '@discordjs/builders';
+import { dbFindOneError, Embed } from '@gamerbot/util';
 import { CommandInteraction, Interaction, Message } from 'discord.js';
 import { getLogger } from 'log4js';
 import { MessageCommand, UserCommand } from '../../commands';

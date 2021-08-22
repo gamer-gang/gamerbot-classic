@@ -1,4 +1,5 @@
-import { codeBlock, dbFindOneError, Embed } from '@gamerbot/util';
+import { codeBlock } from '@discordjs/builders';
+import { dbFindOneError, Embed } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { getLogger } from 'log4js';
 import { ongoingTriviaQuestions } from '../../commands/games/CommandTrivia';

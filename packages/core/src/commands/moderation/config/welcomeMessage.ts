@@ -1,4 +1,5 @@
-import { codeBlock, Embed, parseDiscohookJSON } from '@gamerbot/util';
+import { codeBlock } from '@discordjs/builders';
+import { Embed, parseDiscohookJSON } from '@gamerbot/util';
 import { Message, MessageActionRow, MessageButton } from 'discord.js';
 import { Config } from '../../../entities/Config';
 import { CommandEvent } from '../../../models/CommandEvent';

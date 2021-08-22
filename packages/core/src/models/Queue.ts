@@ -1,6 +1,7 @@
+import { codeBlock } from '@discordjs/builders';
 import { AudioPlayerStatus } from '@discordjs/voice';
 import { C2MMessageAdapter, M2CEvents } from '@gamerbot/common';
-import { codeBlock, delay, Embed, formatDuration } from '@gamerbot/util';
+import { delay, Embed, formatDuration } from '@gamerbot/util';
 import { Message, Snowflake, StageChannel, TextChannel, VoiceChannel } from 'discord.js';
 import { getLogger } from 'log4js';
 import { Track } from './Track';

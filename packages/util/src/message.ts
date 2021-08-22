@@ -19,13 +19,13 @@ export const sanitize = (content?: string): string =>
     .replace(/`/g, '\\`') ?? '';
 
 // eslint-disable-next-line
-export const codeBlock = (content?: unknown, language?: string): string => {
-  let cont: unknown;
-  if (((m => !!(m as Error).stack) as (m: unknown) => m is Error)(content))
-    cont = content.stack ?? content.toString();
-  else cont = content;
-  return `\`\`\`${language ?? ''}\n${cont}\n\`\`\``;
-};
+// export const codeBlock = (content?: unknown, language?: string): string => {
+//   let cont: unknown;
+//   if (((m => !!(m as Error).stack) as (m: unknown) => m is Error)(content))
+//     cont = content.stack ?? content.toString();
+//   else cont = content;
+//   return `\`\`\`${language ?? ''}\n${cont}\n\`\`\``;
+// };
 
 export const listify = (array: unknown[]): string => {
   switch (array.length) {

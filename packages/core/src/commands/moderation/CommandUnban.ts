@@ -1,4 +1,5 @@
-import { codeBlock, Embed } from '@gamerbot/util';
+import { codeBlock } from '@discordjs/builders';
+import { Embed } from '@gamerbot/util';
 import { Message, PermissionString, Snowflake } from 'discord.js';
 import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';

@@ -1,12 +1,16 @@
-import { codeBlock, Embed } from '@gamerbot/util';
+import { codeBlock } from '@discordjs/builders';
+import { Embed } from '@gamerbot/util';
 import axios, { AxiosRequestConfig } from 'axios';
 import { Message } from 'discord.js';
+import { HypixelCacheResponse } from 'hypixel-cache';
 import { Player } from 'hypixel-types';
 import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
 import { APIMessage, CommandEvent } from '../../models/CommandEvent';
 import { client, getORM } from '../../providers';
-import { statsProvider } from './util/cache';
+
+const userRegex = /^[A-Za-z0-9_]{3,16}$/;
+const uuidRegex = /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i;
 
 const skinTypeAliases = {
   'renders/body': ['body'],
@@ -47,8 +51,8 @@ export class CommandSkin extends ChatCommand {
     const timeStart = process.hrtime();
 
     let providedName = event.isInteraction()
-      ? event.interaction.options.getString('username')
-      : event.argv[0];
+      ? event.interaction.options.getString('username')?.trim()
+      : event.argv[0]?.trim();
 
     if (!providedName) {
       const entity = await orm.em.findOne(HypixelPlayer, { userId: event.user.id });
@@ -97,9 +101,18 @@ export class CommandSkin extends ChatCommand {
 
     let player: Player;
     try {
-      const tempPlayer = await statsProvider.get(providedName);
-      if (!tempPlayer) throw new Error('Player is unexpectedly undefined');
-      player = tempPlayer;
+      const type = uuidRegex.test(providedName) ? 'uuid' : 'name';
+      const response = await axios.get(`${process.env.HYPIXEL_CACHE_URL}/${type}/${providedName}`, {
+        headers: { 'X-Secret': process.env.HYPIXEL_CACHE_SECRET },
+        validateStatus: () => true,
+      });
+
+      const data = response.data as HypixelCacheResponse;
+
+      if (response.status === 429) throw new Error('% Ratelimited, try again later');
+      if (!data.success) throw new Error('% ' + data.error);
+
+      ({ player } = data);
     } catch (err) {
       if (err.message.startsWith('% '))
         return event.editReply(Embed.error(err.message.slice(2)).ephemeral());

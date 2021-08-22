@@ -24,7 +24,7 @@ export class CommandEmoji extends ChatCommand {
   };
   async execute(event: CommandEvent): Promise<void | Message | APIMessage> {
     const input = event.isInteraction()
-      ? event.options.getString('emoji', true)
+      ? event.options.getString('emoji', true).trim()
       : event.args.trim();
     const customEmojiRegex = /^<a?:?[a-z_]+:(\d+)>$/;
     let emoji: GuildEmoji;

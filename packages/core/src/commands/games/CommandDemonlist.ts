@@ -1,3 +1,4 @@
+import { bold } from '@discordjs/builders';
 import { Embed } from '@gamerbot/util';
 import axios, { AxiosResponse } from 'axios';
 import { Message, MessageActionRow, MessageButton, MessageComponentInteraction } from 'discord.js';
@@ -60,7 +61,9 @@ export class CommandDemonlist extends ChatCommand {
     await event.defer();
 
     const demons = await demonlistManager.get();
-    const demonLines = demons.map(d => `${d.position}. **${d.name}** by **${d.publisher.name}**`);
+    const demonLines = demons.map(
+      d => `${d.position}. ${bold(d.name)} by ${bold(d.publisher.name)}`
+    );
 
     const pages = _.chunk(demonLines, 10);
 

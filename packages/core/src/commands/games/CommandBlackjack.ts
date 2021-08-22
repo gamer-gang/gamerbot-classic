@@ -1,4 +1,5 @@
 import { Colors, delay, Embed, getProfileImageUrl } from '@gamerbot/util';
+import { stripIndent } from 'common-tags';
 import { Message, MessageActionRow, MessageButton, Snowflake } from 'discord.js';
 import _ from 'lodash';
 import { ChatCommand, CommandDocs, CommandOptions } from '..';
@@ -168,12 +169,13 @@ export class CommandBlackjack extends ChatCommand {
       return new Embed({
         author: { iconURL: getProfileImageUrl(event.user), name: event.user.tag },
         title: 'Blackjack',
-        description: `${bet ? `Bet: **${bet}🥚**\n` : ''}
-**Dealer's Hand (${firstTurn ? dealerHand.get(0).weight : dealerHand.total})**
-${firstTurn ? dealerHand.get(0).text + ' ?' : dealerHand.text}
+        description: stripIndent`
+          ${bet ? `Bet: **${bet}🥚**\n` : ''}
+          **Dealer's Hand (${firstTurn ? dealerHand.get(0).weight : dealerHand.total})**
+          ${firstTurn ? dealerHand.get(0).text + ' ?' : dealerHand.text}
 
-**Your hand (${playerHand.total})**
-${playerHand.text}`,
+          **Your hand (${playerHand.total})**
+          ${playerHand.text}`,
         footer: { text: 'Select an option below.' },
       });
     };

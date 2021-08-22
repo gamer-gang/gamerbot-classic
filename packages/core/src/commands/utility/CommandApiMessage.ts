@@ -1,4 +1,5 @@
-import { codeBlock, Embed, parseDiscohookJSON } from '@gamerbot/util';
+import { codeBlock } from '@discordjs/builders';
+import { Embed, parseDiscohookJSON } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';

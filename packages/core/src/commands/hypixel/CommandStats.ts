@@ -1,4 +1,5 @@
-import { codeBlock, Embed, insertUuidDashes } from '@gamerbot/util';
+import { codeBlock } from '@discordjs/builders';
+import { Embed, insertUuidDashes } from '@gamerbot/util';
 import axios from 'axios';
 import { Image } from 'canvas';
 import { Message, MessageAttachment } from 'discord.js';

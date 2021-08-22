@@ -1,4 +1,5 @@
-import { codeBlock, Embed, listify } from '@gamerbot/util';
+import { codeBlock } from '@discordjs/builders';
+import { Embed, listify } from '@gamerbot/util';
 import { Message } from 'discord.js';
 import { ChatCommand, CommandOptions } from '..';
 import { APIMessage, CommandEvent } from '../../models/CommandEvent';

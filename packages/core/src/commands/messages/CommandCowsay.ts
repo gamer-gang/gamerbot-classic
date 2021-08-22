@@ -1,4 +1,5 @@
-import { codeBlock, Embed } from '@gamerbot/util';
+import { codeBlock } from '@discordjs/builders';
+import { Embed } from '@gamerbot/util';
 import { say } from '@wiisportsresorts/cowsay';
 import { Message } from 'discord.js';
 import { ChatCommand, CommandOptions } from '..';
