@@ -23,7 +23,7 @@ fse.mkdirp(resolvePath('data'));
 
 // register fonts for canvas
 const fonts: Record<string, { family: string; weight?: string; style?: string }> = {
-  'RobotoMono-Regular-NF.ttf': { family: 'Roboto Mono' },
+  'RobotoMono-Regular-NF.ttf': { family: 'Roboto Mono NF' },
 };
 
 Object.keys(fonts).forEach(filename =>

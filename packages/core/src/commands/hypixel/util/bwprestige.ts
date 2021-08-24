@@ -2,6 +2,7 @@
 
 import { canvasStyle as s } from '@gamerbot/common';
 import { Color } from '@gamerbot/util';
+import { NodeCanvasRenderingContext2D } from 'canvas';
 import { Player } from 'hypixel-types';
 import _ from 'lodash';
 import { getRank, rankPrefixes } from './rank';
@@ -159,14 +160,14 @@ export const drawPrestige = (c: CanvasRenderingContext2D, player: Player): numbe
 };
 
 export const drawRank = (
-  c: CanvasRenderingContext2D,
+  c: NodeCanvasRenderingContext2D,
   player: Player,
   x = s.padding,
   y = s.padding + s.headerHeight
 ): [width: number, nameColor: Color] => {
   c.save();
 
-  const charWidth = s.getCharWidth(+c.font.split('px')[0]);
+  const charWidth = s.getCharWidth(c);
 
   const split = parseFormattedText(rankPrefixes[getRank(player)]).map(segment => {
     if (/^\*+$/.test(segment.text)) {
@@ -181,7 +182,9 @@ export const drawRank = (
     c.fillStyle = segment.color.hex;
     c.fillText(segment.text, offset - charWidth * 0.2, y);
 
-    return offset + charWidth * segment.text.length;
+    const adjustedCharWidth = segment.text.includes('⚝') ? s.getCharWidth(c, '⚝') : charWidth;
+
+    return offset + adjustedCharWidth * segment.text.length;
   }, x);
 
   c.restore();

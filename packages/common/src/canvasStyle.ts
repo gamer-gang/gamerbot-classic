@@ -11,18 +11,23 @@ export const fgAltColor = '#a8abb5';
 export const bgColor = '#1e2024';
 
 let fontLoaded = false;
-const assertFontLoaded = () => {
-  if (fontLoaded) return;
+/**
+ * @returns false when font was already present, otherwise true
+ */
+export const assertFontLoaded = (): boolean => {
+  if (fontLoaded) return false;
   fontLoaded = true;
   require('canvas').registerFont(resolvePath('assets/fonts/RobotoMono-Regular-NF.ttf'), {
-    family: 'Roboto Mono',
+    family: 'Roboto Mono NF',
   });
+  return true;
 };
 
-export const font = (px: number): string => px + 'px Roboto Mono';
+export const font = (px: number): string => px + 'px Roboto Mono NF';
 export const round = (num: number): number => Math.round((num + Number.EPSILON) * 100) / 100;
 export const getCharWidth = (
-  measure: number | import('canvas').CanvasRenderingContext2D
+  measure: number | import('canvas').CanvasRenderingContext2D,
+  char = 'A'
 ): number => {
   assertFontLoaded();
   if (typeof measure === 'number') {
@@ -33,6 +38,6 @@ export const getCharWidth = (
     c.strokeStyle = fgColor;
     c.textAlign = 'left';
     c.font = font(measure);
-    return c.measureText('A').width;
+    return c.measureText(char).width;
   } else return getCharWidth(+measure.font.split('px')[0]);
 };
