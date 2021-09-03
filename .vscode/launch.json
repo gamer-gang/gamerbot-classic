@@ -1,0 +1,12 @@
+{
+  "configurations": [
+    {
+      "name": "dev",
+      "request": "attach",
+      "type": "node",
+      "sourceMaps": true,
+      "remoteRoot": "/app",
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"]
+    }
+  ]
+}

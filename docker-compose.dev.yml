@@ -1,0 +1,30 @@
+version: '3.9'
+
+services:
+  db:
+    ports:
+      - 127.0.0.1:5432:5432
+  redis:
+    ports:
+      - 127.0.0.1:6379:6379
+  crafatar:
+    ports:
+      - 127.0.0.1:3000:3000
+  core:
+    user: '1000'
+    volumes:
+      - ./:/app
+    ports:
+      - 127.0.0.1:9229:9229
+    environment:
+      NODE_ARGS: --inspect=0.0.0.0:9229
+    command: ['yarn', 'workspace', '@gamerbot/core', '_docker']
+  music:
+    user: '1000'
+    volumes:
+      - ./:/app
+    ports:
+      - 127.0.0.1:9228:9228
+    environment:
+      NODE_ARGS: --inspect=0.0.0.0:9228
+    command: ['yarn', 'workspace', '@gamerbot/music', '_docker']

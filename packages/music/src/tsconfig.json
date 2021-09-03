@@ -1,0 +1,22 @@
+{
+  "include": ["."],
+  "compilerOptions": {
+    "target": "es2020",
+    "module": "commonjs",
+    "lib": ["ESNext"],
+    "incremental": true,
+    "sourceMap": true,
+    "outDir": "../dist",
+    "strict": true,
+    "noImplicitAny": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "useUnknownInCatchVariables": false,
+    "downlevelIteration": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  }
+}
