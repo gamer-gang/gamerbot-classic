@@ -51,19 +51,27 @@ export class Queue {
   }
 
   #getStatus(): Promise<AudioPlayerStatus | 'not-connected'> {
+    const logger = getLogger('Queue##getStatus');
+
     return new Promise(resolve => {
       const statusListener = (
         id: bigint,
         guildId: bigint,
         ...[eventId, status]: M2CEvents['status']
       ) => {
-        if (requestId.toString() !== eventId) return;
+        if (requestId.toString().replace(/n$/g, '') !== eventId.toString().replace(/n$/g, ''))
+          return logger.debug(
+            `${requestId}: ignoring status event that references event ${eventId}`
+          );
         this.adapter.off('status', statusListener);
+
+        logger.debug(`resolving with ${status}`);
         resolve(status);
       };
 
       this.adapter.on('status', statusListener);
 
+      logger.debug('requesting status');
       const requestId = this.adapter.send('status');
     });
   }
@@ -106,7 +114,7 @@ export class Queue {
   }
 
   async queueTracks(tracks: Track[], requesterId: Snowflake): Promise<number> {
-    const logger = getLogger(`CommandPlay#queueTracks[guild=${this.guildId}]`);
+    const logger = getLogger(`Queue#queueTracks[guild=${this.guildId}]`);
     tracks.forEach(t => (t.requesterId = requesterId));
 
     const length = this.tracks.push(...tracks);
@@ -125,7 +133,7 @@ export class Queue {
   // as of now, the audio player may freeze/lag for a bit when running other intensive bot commands
 
   async playNext(): Promise<void> {
-    const logger = getLogger(`CommandPlay#playNext[guild=${this.guildId}]`);
+    const logger = getLogger(`Queue#playNext[guild=${this.guildId}]`);
 
     logger.debug('begin playNext');
 
