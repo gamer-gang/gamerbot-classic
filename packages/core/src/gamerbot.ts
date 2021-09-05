@@ -159,7 +159,7 @@ export class Gamerbot extends Client {
   }
 
   private async initCommands() {
-    const logger = getLogger('Gamerbot#initCommands');
+    const logger = { debug: (...args: any[]) => true, warn: (...args: any[]) => true }; // getLogger('Gamerbot#initCommands');
 
     logger.debug(`starting command discovery`);
 

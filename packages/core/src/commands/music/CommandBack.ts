@@ -51,7 +51,7 @@ export class CommandPrevious extends ChatCommand {
       } else {
         queue.index -= 2;
         if (event.isMessage()) event.react('⏮️');
-        else event.reply('Skipped back 1 track');
+        else event.reply(Embed.success('Skipped back 1 track'));
       }
 
       // break out of looping if looping one

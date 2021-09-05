@@ -1,5 +1,5 @@
-import { delay } from '@gamerbot/util';
 import amqplib from 'amqplib';
+import { getLogger } from 'log4js';
 
 export const assertAmqp = (): void => {
   if (!process.env.AMQP_URL) throw new Error('Expected environment variable AMQP_URL');
@@ -10,9 +10,11 @@ const connect = async () => {
   let connection;
   while (!connection) {
     try {
-      connection = amqplib.connect(process.env.AMQP_URL!);
+      const tempConnection = await amqplib.connect(process.env.AMQP_URL!);
+      connection = tempConnection;
     } catch (err) {
-      await delay(1000)(0);
+      getLogger('amqpConnect').info('connection refused, retrying...');
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
   return connection;
