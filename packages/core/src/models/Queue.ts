@@ -127,6 +127,8 @@ export class Queue {
   async playNext(): Promise<void> {
     const logger = getLogger(`CommandPlay#playNext[guild=${this.guildId}]`);
 
+    logger.debug('begin playNext');
+
     const track = this.tracks[this.index];
 
     if (!track) {
@@ -138,8 +140,11 @@ export class Queue {
     if (!this.voiceChannel) throw new Error('No voice channel set');
 
     if ((await this.#getStatus()) === 'not-connected') {
+      logger.debug('connection to voice channel');
       this.adapter.send('join', this.voiceChannel.id);
       await delay(500)(0);
+    } else {
+      logger.debug('already connected, continuing');
     }
 
     // if (!getVoiceConnection(this.guildId)) {
@@ -160,6 +165,7 @@ export class Queue {
     this.updateNowPlaying();
 
     const callback = async () => {
+      logger.debug('callback called');
       try {
         this.embed?.delete();
         delete this.embed;
@@ -217,7 +223,7 @@ export class Queue {
 
       this.adapter.on('end', endListener);
 
-      console.log(this.adapter.listeners('end'));
+      logger.debug('attached end listener, sending play message');
 
       this.adapter.send('play', ...(await track.getPlayable()));
 
@@ -229,6 +235,7 @@ export class Queue {
 
       // this.audioPlayer.on('error', err => logger.error(err)).once(AudioPlayerStatus.Idle, callback);
     } catch (err) {
+      logger.error('playing track errored');
       logger.error(err);
       this.textChannel && Embed.error(err.message).send(this.textChannel);
       return callback();
