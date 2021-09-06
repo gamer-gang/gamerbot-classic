@@ -119,20 +119,23 @@ export class Queue {
     return formatDuration(isNaN(totalDurationSeconds) ? 0 : totalDurationSeconds);
   }
 
-  async queueTracks(tracks: Track[], requesterId: Snowflake): Promise<number> {
+  async queueTracks(tracks: Track[], requesterId: Snowflake, next = false): Promise<number> {
     const logger = getLogger(`Queue#queueTracks[guild=${this.guildId}]`);
     tracks.forEach(t => (t.requesterId = requesterId));
 
-    const length = this.tracks.push(...tracks);
-    const startOfSegment = length - tracks.length;
+    if (next) this.tracks.splice(this.index + 1, 0, ...tracks);
+    else this.tracks.push(...tracks);
+
+    const end = next ? this.index + 1 + tracks.length : this.tracks.length;
+    const start = end - tracks.length;
 
     if (!(await this.playing)) {
       logger.debug('not playing, calling playNext');
-      this.index = startOfSegment;
+      this.index = start;
       this.playNext();
     }
 
-    return startOfSegment;
+    return start;
   }
 
   // TODO: run voice connections and audio players in a separate process for better performance
