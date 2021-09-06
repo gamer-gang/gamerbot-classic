@@ -54,6 +54,8 @@ export class Queue {
     const logger = getLogger('Queue##getStatus');
 
     return new Promise(resolve => {
+      let requestId: bigint;
+
       const statusListener = (
         id: bigint,
         guildId: bigint,
@@ -71,8 +73,12 @@ export class Queue {
 
       this.adapter.on('status', statusListener);
 
-      logger.debug('requesting status');
-      const requestId = this.adapter.send('status');
+      logger.trace(this.adapter.listeners('status'));
+
+      setTimeout(() => {
+        logger.debug('requesting status');
+        requestId = this.adapter.send('status');
+      }, 50);
     });
   }
 
@@ -231,9 +237,13 @@ export class Queue {
 
       this.adapter.on('end', endListener);
 
+      logger.trace(this.adapter.listeners('end'));
+
       logger.debug('attached end listener, sending play message');
 
-      this.adapter.send('play', ...(await track.getPlayable()));
+      setTimeout(async () => {
+        this.adapter.send('play', ...(await track.getPlayable()));
+      }, 50);
 
       // setInterval(() => console.log(this.adapter.listeners('end')), 5000);
 
