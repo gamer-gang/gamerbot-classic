@@ -78,7 +78,7 @@ export class Queue {
       setTimeout(() => {
         logger.debug('requesting status');
         requestId = this.adapter.send('status');
-      }, 50);
+      }, 150);
     });
   }
 
@@ -243,7 +243,7 @@ export class Queue {
 
       setTimeout(async () => {
         this.adapter.send('play', ...(await track.getPlayable()));
-      }, 50);
+      }, 150);
 
       // setInterval(() => console.log(this.adapter.listeners('end')), 5000);
 
