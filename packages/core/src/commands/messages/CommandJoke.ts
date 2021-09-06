@@ -73,7 +73,7 @@ export class CommandJoke extends ChatCommand {
       );
 
     try {
-      await event.defer();
+      await event.deferReply();
 
       const joke =
         type === 'dark'

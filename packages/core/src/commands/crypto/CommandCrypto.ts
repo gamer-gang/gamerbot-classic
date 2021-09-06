@@ -87,7 +87,7 @@ export class CommandCrypto extends ChatCommand {
       );
     const quote = data.quote.USD;
 
-    await event.defer();
+    await event.deferReply();
 
     // get custom emojis
     upArrow ??= client.getCustomEmoji('up_arrow') ?? '📈';

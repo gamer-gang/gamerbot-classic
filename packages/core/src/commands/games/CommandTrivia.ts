@@ -152,7 +152,7 @@ export class CommandTrivia extends ChatCommand {
     //   options.difficulty = normalizedDiff;
     // }
 
-    await event.defer();
+    await event.deferReply();
 
     try {
       const question = await this.fetchQuestion();

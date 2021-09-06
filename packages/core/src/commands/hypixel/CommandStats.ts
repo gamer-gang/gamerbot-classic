@@ -253,7 +253,7 @@ export class CommandStats extends ChatCommand {
       input = entity.hypixelUsername;
     }
 
-    await event.defer();
+    await event.deferReply();
 
     const warnings: string[] = [];
 

@@ -73,7 +73,7 @@ export class CommandSkin extends ChatCommand {
       providedName = entity.hypixelUsername;
     }
 
-    await event.defer();
+    await event.deferReply();
 
     // if (args.type !== undefined) {
     //   if (!args.type)

@@ -29,7 +29,7 @@ export class CommandEmoji extends ChatCommand {
     const customEmojiRegex = /^<a?:?[a-z_]+:(\d+)>$/;
     let emoji: GuildEmoji;
 
-    await event.defer();
+    await event.deferReply();
 
     if (customEmojiRegex.test(input)) {
       const [, id] = customEmojiRegex.exec(input)!;

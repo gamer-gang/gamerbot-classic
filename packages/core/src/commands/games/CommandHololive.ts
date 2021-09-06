@@ -50,7 +50,7 @@ export class CommandHololive extends ChatCommand {
       return event.reply(Embed.error('Invalid subcommand', 'Valid commands: schedule').ephemeral());
 
     if (subcommand === 'schedule') {
-      await event.defer();
+      await event.deferReply();
 
       const text = await this.fetch();
 
