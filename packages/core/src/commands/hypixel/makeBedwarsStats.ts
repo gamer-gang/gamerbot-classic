@@ -78,9 +78,9 @@ export const makeBedwarsStats = (data?: Player, avatar?: Image): StatsData => {
 
     const obj = {
       ...raw,
-      KDR: s.round(raw.K / raw.D),
-      FKDR: s.round(raw.FK / raw.FD),
-      'W/L': s.round(raw.W / raw.L),
+      KDR: s.round(raw.K / Math.max(raw.D, 1)),
+      FKDR: s.round(raw.FK / Math.max(raw.FD, 1)),
+      'W/L': s.round(raw.W / Math.max(raw.L, 1)),
     };
 
     stats[game] = {} as any;
