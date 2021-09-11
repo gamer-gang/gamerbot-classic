@@ -63,6 +63,7 @@
     "source-map-support": "^0.5.20",
     "spotify-web-api-node": "^5.0.2",
     "tzdata": "^1.0.25",
+    "unicode": "^13.0.0",
     "utf-8-validate": "^5.0.5",
     "uuid": "^8.3.2",
     "yargs-parser": "^20.2.9",

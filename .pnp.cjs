@@ -389,6 +389,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["ts-node", "virtual:790f4aa67817f22d117ea4a7ce2a309e0a65c4feba9ce4eb7b0719bf8ea66ba3ca8f5f2f3233f970c8c56b414f326924a8fbbc9cf2a3829d75f2504f7349a8c2#npm:10.2.1"],
             ["typescript", "patch:typescript@npm%3A4.4.3#~builtin<compat/typescript>::version=4.4.3&hash=f7cc37"],
             ["tzdata", "npm:1.0.25"],
+            ["unicode", "npm:13.0.0"],
             ["utf-8-validate", "npm:5.0.5"],
             ["uuid", "npm:8.3.2"],
             ["webpack", "virtual:0dc3f441387d4b3cf4217c5c8d520e82d74332c0a560a4d426b78c9defa000d30382b4d7978307d98afc6d18a559b14a900d05e7ad30e6fc2b9ac41c76bbc4c6#npm:5.52.1"],
@@ -11331,6 +11332,15 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [
             ["undefsafe", "npm:2.0.3"],
             ["debug", "virtual:2bcc47d217f870e3d52f0e55493dc34fd3da852877f7db32fa2940cc320151746026495daf6a34a974488cf5a949d93be1e2dc1ffba036faf081a9b15fcd2252#npm:2.6.9"]
+          ],
+          "linkType": "HARD",
+        }]
+      ]],
+      ["unicode", [
+        ["npm:13.0.0", {
+          "packageLocation": "./.yarn/cache/unicode-npm-13.0.0-95395ab8b6-cd7de54ebd.zip/node_modules/unicode/",
+          "packageDependencies": [
+            ["unicode", "npm:13.0.0"]
           ],
           "linkType": "HARD",
         }]
