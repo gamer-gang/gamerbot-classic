@@ -1,4 +1,5 @@
 import { Embed } from '@gamerbot/util';
+import { stripIndents } from 'common-tags';
 import { Message } from 'discord.js';
 import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { APIMessage, CommandEvent } from '../../models/CommandEvent';
@@ -27,24 +28,47 @@ export class CommandCharacter extends ChatCommand {
       event.isInteraction() ? event.options.getString('character', true) : event.args
     ).trim();
 
-    if (stringLength(input) !== 1)
-      return event.reply(Embed.error('Input must be exactly one character').ephemeral());
+    const error = () => event.reply(Embed.error('Input must be exactly one character').ephemeral());
 
-    const codePoints = input
-      .split('')
-      .map(char => char.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0'));
+    if (stringLength(input) !== 1) return error();
+
+    let codePoint = '';
+    let charCodes: string[] = [];
+
+    // must use for..of because a .split('').map does not handle UTF-16 surrogate pairs correctly
+    for (const character of input) {
+      // if variable is already truthy, we already have one character already
+      if (codePoint) return error();
+      const number = character.codePointAt(0)!;
+      codePoint = number.toString(16);
+      if (number > 0xffff) {
+        // surrogate pair
+        charCodes = character.split('').map(code => code.charCodeAt(0).toString(16));
+      }
+    }
+
+    // no character
+    if (!codePoint) return error();
 
     const embed = new Embed({
       title: 'Character ' + input,
       description: 'https://graphemica.com/' + input,
-    })
-      .addField('Code points', codePoints.map(codePoint => 'U+' + codePoint).join(', '))
-      .addField(
-        'Input',
-        `JS: ${codePoints.map(c => '\\u' + c.toLowerCase()).join('')}\nURL: ${encodeURIComponent(
-          input
-        )}\nHTML: ${codePoints.map(c => `&#x${c};`).join('')}`
+    }).addField('Code point', `U+${codePoint.toUpperCase()}`);
+
+    if (charCodes.length)
+      embed.addField(
+        'Surrogate pair character codes',
+        charCodes.map(c => 'U+' + c.toUpperCase()).join(', ')
       );
+
+    embed.addField(
+      'Input',
+      stripIndents`
+        JS: \`\\u${!charCodes.length ? codePoint : `{${codePoint}}`}\`
+        URL: \`${encodeURIComponent(input)}\`
+        HTML: \`&#x${codePoint};\` or \`&#${parseInt(codePoint, 16)};\`
+      `
+    );
 
     event.reply(embed);
   }
