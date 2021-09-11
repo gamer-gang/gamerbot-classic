@@ -80,7 +80,7 @@ export class CommandCharacter extends ChatCommand {
     const embed = new Embed({
       author: data ? { name: 'Character ' + input } : undefined,
       title: data
-        ? `${data.name}${data.comment ? ` (${data.comment})` : ''}`
+        ? `${data.name}${data.unicode_name ? ` (${data.unicode_name})` : ''}`
         : 'Character ' + input,
       description: stripIndents`
         ${emojiRegex().test(input) ? input + '\n' : ''}
