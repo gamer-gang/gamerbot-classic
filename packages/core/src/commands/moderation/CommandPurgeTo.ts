@@ -1,5 +1,5 @@
 import { Embed, getDateFromSnowflake } from '@gamerbot/util';
-import { Message, PermissionString, Snowflake, TextChannel } from 'discord.js';
+import { Message, Permissions, PermissionString, Snowflake, TextChannel } from 'discord.js';
 import { ChatCommand, CommandOptions } from '..';
 import { CommandEvent } from '../../models/CommandEvent';
 
@@ -20,6 +20,10 @@ export class CommandPurgeTo extends ChatCommand {
     ],
   };
   async execute(event: CommandEvent): Promise<void | Message> {
+    const user = event.guild.members.resolve(event.user.id);
+    if (!user?.permissions.has(Permissions.FLAGS.MANAGE_MESSAGES))
+      return event.reply(Embed.error('You need the permission `MANAGE_MESSAGES`.').ephemeral());
+
     const messages = await event.channel.messages.fetch();
 
     const input = event.isInteraction()
