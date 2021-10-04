@@ -78,7 +78,7 @@ export class CommandPlay extends ChatCommand {
       },
     ],
   };
-  async execute(event: CommandEvent): Promise<void | Message | APIMessage> {
+  async execute(event: CommandEvent, next = false): Promise<void | Message | APIMessage> {
     const voice = event.guild.members.cache.get(event.user.id)?.voice;
     if (!voice?.channel)
       return event.reply(Embed.error('You are not in a voice channel').ephemeral());
@@ -135,7 +135,7 @@ export class CommandPlay extends ChatCommand {
 
     queue.textChannel = event.channel as TextChannel;
 
-    await event.defer();
+    await event.deferReply();
 
     let tracks: Track[] = [];
 
@@ -160,7 +160,7 @@ export class CommandPlay extends ChatCommand {
     }
 
     queue.voiceChannel = event.guild.members.resolve(event.user.id)!.voice.channel!;
-    const position = (await queue.queueTracks(tracks, event.user.id)) + 1;
+    const position = (await queue.queueTracks(tracks, event.user.id, next)) + 1;
 
     event.editReply(
       Embed.success(

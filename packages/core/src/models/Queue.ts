@@ -51,20 +51,34 @@ export class Queue {
   }
 
   #getStatus(): Promise<AudioPlayerStatus | 'not-connected'> {
+    const logger = getLogger('Queue##getStatus');
+
     return new Promise(resolve => {
+      let requestId: bigint;
+
       const statusListener = (
         id: bigint,
         guildId: bigint,
         ...[eventId, status]: M2CEvents['status']
       ) => {
-        if (requestId.toString() !== eventId) return;
+        if (requestId.toString().replace(/n$/g, '') !== eventId.toString().replace(/n$/g, ''))
+          return logger.debug(
+            `${requestId}: ignoring status event that references event ${eventId}`
+          );
         this.adapter.off('status', statusListener);
+
+        logger.debug(`resolving with ${status}`);
         resolve(status);
       };
 
       this.adapter.on('status', statusListener);
 
-      const requestId = this.adapter.send('status');
+      logger.trace(this.adapter.listeners('status'));
+
+      setTimeout(() => {
+        logger.debug('requesting status');
+        requestId = this.adapter.send('status');
+      }, 150);
     });
   }
 
@@ -105,27 +119,32 @@ export class Queue {
     return formatDuration(isNaN(totalDurationSeconds) ? 0 : totalDurationSeconds);
   }
 
-  async queueTracks(tracks: Track[], requesterId: Snowflake): Promise<number> {
-    const logger = getLogger(`CommandPlay#queueTracks[guild=${this.guildId}]`);
+  async queueTracks(tracks: Track[], requesterId: Snowflake, next = false): Promise<number> {
+    const logger = getLogger(`Queue#queueTracks[guild=${this.guildId}]`);
     tracks.forEach(t => (t.requesterId = requesterId));
 
-    const length = this.tracks.push(...tracks);
-    const startOfSegment = length - tracks.length;
+    if (next) this.tracks.splice(this.index + 1, 0, ...tracks);
+    else this.tracks.push(...tracks);
+
+    const end = next ? this.index + 1 + tracks.length : this.tracks.length;
+    const start = end - tracks.length;
 
     if (!(await this.playing)) {
       logger.debug('not playing, calling playNext');
-      this.index = startOfSegment;
+      this.index = start;
       this.playNext();
     }
 
-    return startOfSegment;
+    return start;
   }
 
   // TODO: run voice connections and audio players in a separate process for better performance
   // as of now, the audio player may freeze/lag for a bit when running other intensive bot commands
 
   async playNext(): Promise<void> {
-    const logger = getLogger(`CommandPlay#playNext[guild=${this.guildId}]`);
+    const logger = getLogger(`Queue#playNext[guild=${this.guildId}]`);
+
+    logger.debug('begin playNext');
 
     const track = this.tracks[this.index];
 
@@ -138,8 +157,11 @@ export class Queue {
     if (!this.voiceChannel) throw new Error('No voice channel set');
 
     if ((await this.#getStatus()) === 'not-connected') {
+      logger.debug('connection to voice channel');
       this.adapter.send('join', this.voiceChannel.id);
       await delay(500)(0);
+    } else {
+      logger.debug('already connected, continuing');
     }
 
     // if (!getVoiceConnection(this.guildId)) {
@@ -160,6 +182,7 @@ export class Queue {
     this.updateNowPlaying();
 
     const callback = async () => {
+      logger.debug('callback called');
       try {
         this.embed?.delete();
         delete this.embed;
@@ -217,9 +240,13 @@ export class Queue {
 
       this.adapter.on('end', endListener);
 
-      console.log(this.adapter.listeners('end'));
+      logger.trace(this.adapter.listeners('end'));
 
-      this.adapter.send('play', ...(await track.getPlayable()));
+      logger.debug('attached end listener, sending play message');
+
+      setTimeout(async () => {
+        this.adapter.send('play', ...(await track.getPlayable()));
+      }, 150);
 
       // setInterval(() => console.log(this.adapter.listeners('end')), 5000);
 
@@ -229,6 +256,7 @@ export class Queue {
 
       // this.audioPlayer.on('error', err => logger.error(err)).once(AudioPlayerStatus.Idle, callback);
     } catch (err) {
+      logger.error('playing track errored');
       logger.error(err);
       this.textChannel && Embed.error(err.message).send(this.textChannel);
       return callback();

@@ -88,7 +88,7 @@ export class GamerbotMusic extends Client {
         );
 
       const resource = createAudioResource(
-        type === 'url' ? url : ytdl(url, { filter: 'audioonly' })
+        type === 'url' ? url : ytdl(url, { filter: 'audioonly', highWaterMark: 1 << 25 })
       );
 
       const player = this.audioPlayers.get(guildId)!;

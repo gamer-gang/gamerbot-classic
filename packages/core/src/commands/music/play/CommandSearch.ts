@@ -77,7 +77,7 @@ export class CommandSearch extends ChatCommand {
 
     queue.textChannel = event.channel as TextChannel;
 
-    await event.defer();
+    await event.deferReply();
 
     let tracks: Track[] = [];
 

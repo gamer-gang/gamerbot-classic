@@ -28,7 +28,7 @@ export class CommandEmoji extends ChatCommand {
       ? event.options.getString('sticker', true)
       : event.args.trim();
 
-    await event.defer();
+    await event.deferReply();
 
     await event.guild.stickers.fetch();
     const sticker =

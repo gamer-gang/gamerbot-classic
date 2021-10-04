@@ -72,7 +72,7 @@ example colors:
       return event.reply(Embed.error(err.message).ephemeral());
     }
 
-    await event.defer();
+    await event.deferReply();
 
     const headerHeight = s.headerHeight + 12;
     const subheaderHeight = s.subheaderHeight + 12;

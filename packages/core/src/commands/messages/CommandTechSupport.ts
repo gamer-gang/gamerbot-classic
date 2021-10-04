@@ -19,7 +19,7 @@ export class CommandTechSupport extends ChatCommand {
     const emoji = client.getCustomEmoji('worksonmymachine');
     if (!emoji) return event.reply(Embed.error('Emoji not found').ephemeral());
 
-    await event.defer();
+    await event.deferReply();
     setTimeout(() => event.editReply(emoji.toString()), 5000);
   }
 }

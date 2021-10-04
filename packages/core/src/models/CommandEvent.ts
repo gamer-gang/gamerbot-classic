@@ -81,7 +81,7 @@ export abstract class BaseCommandEvent {
   abstract get guild(): Guild;
   abstract get channel(): NormalTextChannel;
   abstract get deferred(): boolean;
-  abstract defer(options?: InteractionDeferReplyOptions): Promise<void | Message | APIMessage>;
+  abstract deferReply(options?: InteractionDeferReplyOptions): Promise<void | Message | APIMessage>;
   abstract editReply(options: ReplyOptions): Promise<Message | APIMessage>;
   abstract deleteReply(): Promise<void>;
   abstract fetchReply(): Promise<Message | APIMessage>;
@@ -141,7 +141,7 @@ class MessageCommandEvent extends BaseCommandEvent {
     return false;
   }
 
-  defer() {
+  deferReply() {
     return this.message.channel.sendTyping();
   }
   async editReply(options: ReplyOptions) {
@@ -231,9 +231,9 @@ class InteractionCommandEvent extends BaseCommandEvent {
     return this.interaction.deferred;
   }
 
-  defer(options?: InteractionDeferReplyOptions & { fetchReply: true }): Promise<Message>;
-  defer(options?: InteractionDeferReplyOptions): Promise<void>;
-  defer(options?: InteractionDeferReplyOptions) {
+  deferReply(options?: InteractionDeferReplyOptions & { fetchReply: true }): Promise<Message>;
+  deferReply(options?: InteractionDeferReplyOptions): Promise<void>;
+  deferReply(options?: InteractionDeferReplyOptions) {
     return this.interaction.deferReply(options) as Promise<void | Message>;
   }
   editReply(options: ReplyOptions): Promise<Message | APIMessage> {

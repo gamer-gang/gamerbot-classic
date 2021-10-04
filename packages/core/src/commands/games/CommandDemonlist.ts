@@ -58,7 +58,7 @@ export class CommandDemonlist extends ChatCommand {
   }
 
   async execute(event: CommandEvent): Promise<void | Message> {
-    await event.defer();
+    await event.deferReply();
 
     const demons = await demonlistManager.get();
     const demonLines = demons.map(

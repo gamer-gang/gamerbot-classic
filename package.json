@@ -19,7 +19,8 @@
     "w:core": "yarn workspace @gamerbot/core watch",
     "w:music": "yarn workspace @gamerbot/music watch",
     "w:util": "yarn workspace @gamerbot/util watch",
-    "watch": "concurrently -c 'red,blue,magenta,green' npm:w:common npm:w:core npm:w:music npm:w:util",
+    "_oldwatch": "concurrently -c 'red,blue,magenta,green' npm:w:common npm:w:core npm:w:music npm:w:util",
+    "watch": "yarn workspaces foreach -piv -j 99 --no-private run watch",
     "dev": "docker-compose -f docker-compose.yml -f docker-compose.dev.yml up",
     "build": "docker build . -f Dockerfile.build --tag gamerbot_build:latest"
   },
@@ -28,10 +29,10 @@
   },
   "dependencies": {
     "@discordjs/opus": "^0.6.0",
-    "@mikro-orm/cli": "^4.5.7",
-    "@mikro-orm/core": "^4.5.7",
-    "@mikro-orm/migrations": "^4.5.7",
-    "@mikro-orm/postgresql": "^4.5.7",
+    "@mikro-orm/cli": "^4.5.9",
+    "@mikro-orm/core": "^4.5.9",
+    "@mikro-orm/migrations": "^4.5.9",
+    "@mikro-orm/postgresql": "^4.5.9",
     "@mikro-orm/sql-highlighter": "^1.0.1",
     "bufferutil": "^4.0.3",
     "libsodium-wrappers": "^0.7.9",
@@ -40,13 +41,13 @@
   },
   "devDependencies": {
     "@types/libsodium-wrappers": "^0.7.9",
-    "@types/node": "^16.6.2",
-    "@typescript-eslint/eslint-plugin": "^4.29.2",
-    "@typescript-eslint/parser": "^4.29.2",
+    "@types/node": "^16.9.4",
+    "@typescript-eslint/eslint-plugin": "^4.31.1",
+    "@typescript-eslint/parser": "^4.31.1",
     "concurrently": "^6.2.1",
     "eslint": "^7.32.0",
-    "node-gyp": "^8.1.0",
-    "prettier": "^2.3.2",
-    "typescript": "4.4.1-rc"
+    "node-gyp": "^8.2.0",
+    "prettier": "^2.4.1",
+    "typescript": "4.4.3"
   }
 }
