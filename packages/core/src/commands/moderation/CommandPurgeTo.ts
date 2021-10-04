@@ -2,7 +2,6 @@ import { Embed, getDateFromSnowflake } from '@gamerbot/util';
 import {
   ContextMenuInteraction,
   Message,
-  Permissions,
   PermissionString,
   Snowflake,
   TextBasedChannels,
@@ -94,12 +93,11 @@ export class CommandPurgeTo extends ChatCommand {
 export class MessageCommandPurgeTo extends MessageCommand {
   name = 'Purge to Here';
 
+  userPermissions: PermissionString[] = ['MANAGE_MESSAGES'];
+  botPermissions: PermissionString[] = ['MANAGE_MESSAGES'];
+
   async execute(int: ContextMenuInteraction): Promise<void | APIMessage | Message> {
     if (int.targetType !== 'MESSAGE') return;
-    if ((int.member?.permissions as Permissions).has(Permissions.FLAGS.MANAGE_MESSAGES))
-      return int.editReply({
-        embeds: [Embed.error(`u gay (my sister's friend told me to put it to this)`)],
-      });
 
     try {
       await int.deferReply({ ephemeral: true });
