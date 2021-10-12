@@ -14,7 +14,7 @@ import {
   Snowflake,
   TextChannel,
   ThreadChannel,
-  User
+  User,
 } from 'discord.js';
 import { ChatCommand, MessageCommand, UserCommand } from '../commands';
 import { Config } from '../entities/Config';
@@ -56,10 +56,10 @@ export abstract class BaseCommandEvent {
     initiator: MessageContext | CommandInteraction | ContextMenuInteraction,
     details: InitiatorDetails
   ): CommandEvent {
-    if (initiator instanceof CommandInteraction)
-      return new InteractionCommandEvent(initiator, details);
-    else if (initiator instanceof ContextMenuInteraction)
+    if (initiator instanceof ContextMenuInteraction)
       return new ContextMenuCommandEvent(initiator, details);
+    else if (initiator instanceof CommandInteraction)
+      return new InteractionCommandEvent(initiator, details);
     else return new MessageCommandEvent(initiator, details);
   }
 
@@ -206,10 +206,10 @@ class InteractionCommandEvent extends BaseCommandEvent {
     if (!this.interaction.channel || this.interaction.channel.type === 'DM')
       throw new Error('Interaction in a non-text or DM channel');
 
-    const command = client.commands.find(
-      command =>
-        command.type === 'CHAT_INPUT' &&
-        command.name.some(c => c.toLowerCase() === interaction.commandName)
+    const command = client.commands.find(command =>
+      (Array.isArray(command.name) ? command.name : [command.name]).some(
+        c => c.toLowerCase() === interaction.commandName
+      )
     );
     if (!command) throw new Error('Could not find command class for interaction');
 
