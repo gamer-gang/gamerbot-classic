@@ -5,6 +5,7 @@ import { CommandEvent } from '../../models/CommandEvent';
 // TODO; fix and improve
 export class Disabled_CommandRole extends ChatCommand {
   name = ['role'];
+  logUses = true;
   // yargs: yargsParser.Options = {
   //   array: ['role'],
   //   boolean: ['list'],

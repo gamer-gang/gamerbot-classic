@@ -7,6 +7,7 @@ import { client } from '../../providers';
 
 export class CommandBan extends ChatCommand {
   name = ['ban'];
+  logUses = true;
   help: CommandDocs = [
     {
       usage: 'ban <user> <...reason>',

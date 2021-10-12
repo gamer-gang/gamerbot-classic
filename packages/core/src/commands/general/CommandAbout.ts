@@ -28,7 +28,6 @@ export class CommandAbout extends ChatCommand {
     embed
       .addField('Repository', '[GitHub](https://github.com/gamer-gang/gamerbot)')
       .addField('Issues', '[Issues](https://github.com/gamer-gang/gamerbot/issues)')
-      .addField('nice pfp', 'pfp made by @qqq#0447')
       .addField('Guilds', client.guilds.cache.size.toString(), true)
       .addField('Users', users.length.toString(), true)
       .setThumbnail('attachment://hexagon.png');

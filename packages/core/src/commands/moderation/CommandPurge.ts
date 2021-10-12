@@ -5,6 +5,7 @@ import { CommandEvent } from '../../models/CommandEvent';
 
 export class CommandPurge extends ChatCommand {
   name = ['purge'];
+  logUses = true;
   help: CommandDocs = [
     {
       usage: 'purge <number>',

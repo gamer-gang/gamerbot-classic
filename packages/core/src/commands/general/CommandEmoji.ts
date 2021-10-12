@@ -1,7 +1,9 @@
 import { Embed } from '@gamerbot/util';
 import { GuildEmoji, Message, Snowflake } from 'discord.js';
+import emojiRegex from 'emoji-regex';
 import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { APIMessage, CommandEvent } from '../../models/CommandEvent';
+import { CommandCharacter } from '../utility/CommandCharacter';
 
 export class CommandEmoji extends ChatCommand {
   name = ['emoji', 'emote'];
@@ -28,6 +30,11 @@ export class CommandEmoji extends ChatCommand {
       : event.args.trim();
     const customEmojiRegex = /^<a?:?[a-z_]+:(\d+)>$/;
     let emoji: GuildEmoji;
+
+    if (new RegExp('^' + emojiRegex().source + '$').test(input)) {
+      event.command = new CommandCharacter();
+      return event.command.execute(event);
+    }
 
     await event.deferReply();
 

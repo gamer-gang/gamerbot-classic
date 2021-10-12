@@ -1,7 +1,7 @@
 import { Embed, getDateStringFromSnowflake, getProfileImageUrl } from '@gamerbot/util';
-import { ContextMenuInteraction, Guild, Message, Snowflake, User } from 'discord.js';
+import { Guild, Message, Snowflake, User } from 'discord.js';
 import { ChatCommand, CommandDocs, CommandOptions, UserCommand } from '..';
-import { CommandEvent } from '../../models/CommandEvent';
+import { CommandEvent, ContextMenuCommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
 const makeEmbed = (user: User, guild: Guild | null): Embed => {
@@ -81,7 +81,7 @@ export class CommandUserInfo extends ChatCommand {
 
 export class UserCommandUserInfo extends UserCommand {
   name = 'User info';
-  async execute(interaction: ContextMenuInteraction): Promise<void | Message> {
+  async execute(interaction: ContextMenuCommandEvent): Promise<void | Message> {
     if (interaction.targetType !== 'USER') return;
 
     const user = client.users.resolve(interaction.targetId);

@@ -25,8 +25,6 @@ export class CommandHelp extends ChatCommand {
     ],
   };
   async execute(event: CommandEvent): Promise<void | Message> {
-    const prefix = event.guildConfig.prefix;
-
     const requestedCommand = event.isInteraction()
       ? event.options.getString('command')
       : event.args;
@@ -38,7 +36,7 @@ export class CommandHelp extends ChatCommand {
       if (command) {
         if (command.internal) return;
 
-        const [name, desc] = this.makeField(prefix, command);
+        const [name, desc] = this.makeField(command);
         const embed = new Embed({ title: 'Help: ' + name, description: desc });
 
         return event.reply(embed);
@@ -46,12 +44,12 @@ export class CommandHelp extends ChatCommand {
     } else {
       const embed = new Embed({
         title: 'Help',
-        description: `Prefix for ${event.guild.name} is \`${prefix}\`\n\`${prefix}help <cmd>\` or \`/help <cmd>\` will show \`cmd\`'s help text`,
+        description: `\`/help <cmd>\` will show \`cmd\`'s help text`,
       }).setDefaultAuthor();
 
       for (const command of client.commands.filter(c => !c.internal && c.type === 'CHAT_INPUT'))
-        embed.addField(...this.makeField(prefix, command as ChatCommand, true));
-      embed.addField(...this.makeField(prefix, _.last(client.commands) as ChatCommand));
+        embed.addField(...this.makeField(command as ChatCommand, true));
+      embed.addField(...this.makeField(_.last(client.commands) as ChatCommand));
 
       try {
         const dm = await event.user?.createDM();
@@ -64,11 +62,10 @@ export class CommandHelp extends ChatCommand {
   }
 
   makeField(
-    prefix: string,
     command: ChatCommand,
     trailingNewline = false
   ): [name: string, value: string, inline: boolean] {
-    const fieldName = command.name.map(cmd => `\`${prefix}${cmd}\``).join(', ');
+    const fieldName = command.name.map(cmd => `\`/${cmd}\``).join(', ');
 
     const fieldValue = command.help.map(this.formatFieldValue).join('\n');
 

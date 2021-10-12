@@ -2,6 +2,7 @@ import { Embed, parseQuotes } from '@gamerbot/util';
 import { Connection, IDatabaseDriver, MikroORM } from '@mikro-orm/core';
 import {
   CommandInteraction,
+  ContextMenuInteraction,
   EmojiIdentifierResolvable,
   Guild,
   InteractionDeferReplyOptions,
@@ -13,13 +14,13 @@ import {
   Snowflake,
   TextChannel,
   ThreadChannel,
-  User,
+  User
 } from 'discord.js';
-import { ChatCommand } from '../commands';
+import { ChatCommand, MessageCommand, UserCommand } from '../commands';
 import { Config } from '../entities/Config';
 import { client } from '../providers';
 
-export type InitiatorType = 'message' | 'interaction';
+export type InitiatorType = 'message' | 'interaction' | 'context-menu';
 export type NormalTextChannel = TextChannel | ThreadChannel | NewsChannel;
 export type ReplyOptions = string | MessagePayload | InteractionReplyOptions | Embed;
 export type APIMessage = Exclude<MessageComponentInteraction['message'], Message>;
@@ -40,17 +41,25 @@ export interface InitiatorDetails {
   em: MikroORM<IDatabaseDriver<Connection>>['em'];
 }
 
-export type CommandEvent = MessageCommandEvent | InteractionCommandEvent;
+export type CommandEvent = MessageCommandEvent | InteractionCommandEvent | ContextMenuCommandEvent;
 
 export abstract class BaseCommandEvent {
   abstract type: InitiatorType;
 
+  static from(initiator: MessageContext, details: InitiatorDetails): MessageCommandEvent;
   static from(
-    initiator: MessageContext | CommandInteraction,
+    initiator: ContextMenuInteraction,
+    details: InitiatorDetails
+  ): ContextMenuCommandEvent;
+  static from(initiator: CommandInteraction, details: InitiatorDetails): InteractionCommandEvent;
+  static from(
+    initiator: MessageContext | CommandInteraction | ContextMenuInteraction,
     details: InitiatorDetails
   ): CommandEvent {
     if (initiator instanceof CommandInteraction)
       return new InteractionCommandEvent(initiator, details);
+    else if (initiator instanceof ContextMenuInteraction)
+      return new ContextMenuCommandEvent(initiator, details);
     else return new MessageCommandEvent(initiator, details);
   }
 
@@ -68,12 +77,16 @@ export abstract class BaseCommandEvent {
     return this.type === 'message';
   }
 
-  isInteraction(): this is InteractionCommandEvent {
-    return this.type === 'interaction';
+  isInteraction(): this is InteractionCommandEvent | ContextMenuCommandEvent {
+    return this.type === 'interaction' || this.type === 'context-menu';
+  }
+
+  isContextMenuInteraction(): this is ContextMenuCommandEvent {
+    return this.type === 'context-menu';
   }
 
   // abstract options: CommandInteraction['options'];
-  abstract command: ChatCommand;
+  abstract command: ChatCommand | MessageCommand | UserCommand;
   abstract get member(): Exclude<CommandInteraction['member'], null>;
   abstract get user(): User;
   abstract get id(): Snowflake;
@@ -253,5 +266,23 @@ class InteractionCommandEvent extends BaseCommandEvent {
   followUp(options: ReplyOptions): Promise<Message | APIMessage> {
     if (options instanceof Embed) return options.followUp(this.interaction);
     else return this.interaction.followUp(options);
+  }
+}
+
+export class ContextMenuCommandEvent extends InteractionCommandEvent {
+  // @ts-ignore expected behavior
+  command!: UserCommand | MessageCommand;
+  interaction!: ContextMenuInteraction;
+
+  constructor(interaction: ContextMenuInteraction, details: InitiatorDetails) {
+    super(interaction, details);
+  }
+
+  get targetType(): ContextMenuInteraction['targetType'] {
+    return this.interaction.targetType;
+  }
+
+  get targetId(): Snowflake {
+    return this.interaction.targetId;
   }
 }

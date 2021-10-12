@@ -1,8 +1,24 @@
 import { Embed } from '@gamerbot/util';
-import { Guild, TextChannel } from 'discord.js';
+import { CommandInteractionOption, Formatters, Guild, TextChannel } from 'discord.js';
 import { CommandEvent } from '../../models/CommandEvent';
 import { logColorFor } from './utils';
 import { LogEventHandler, LogEventName, LogHandlers } from './_constants';
+
+const getOptions = (options: readonly CommandInteractionOption[], indent = ''): string =>
+  options
+    .map(
+      opt =>
+        indent +
+        `${opt.name} => ${(opt.options?.length
+          ? '\n' + getOptions(opt.options, indent + '  ') + '\n'
+          : opt.channel
+          ? '#' + opt.channel.name
+          : opt.user
+          ? '@' + opt.user.tag
+          : opt.member ?? opt.message ?? opt.role ?? opt.value ?? '(none)'
+        ).toString()}`
+    )
+    .join('\n');
 
 const onCommand =
   (logEvent: LogEventName) =>
@@ -18,16 +34,21 @@ const onCommand =
     })
       .addField(
         'Command',
-        `\`${
-          event.isInteraction()
-            ? JSON.stringify(event.interaction.toJSON())
-            : event.message.cleanContent
-        }\``
+        `${
+          event.isInteraction() ? `/${event.commandName}` : '`' + event.message.cleanContent + '`'
+        }`
       )
-      .addField('User ID', event.user.id)
       .setTimestamp();
 
-    embed.send(logChannel);
+    if (event.isContextMenuInteraction())
+      embed.addField('Target type', event.targetType).addField('Target ID', event.targetId);
+    else if (event.isInteraction())
+      embed.addField('Options', Formatters.codeBlock(getOptions(event.options.data)));
+
+    embed
+      .addField('User ID', event.user.id)
+
+      .send(logChannel);
   };
 
 export const commandHandlers: LogHandlers = {};

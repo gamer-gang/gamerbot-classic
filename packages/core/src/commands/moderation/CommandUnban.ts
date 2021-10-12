@@ -7,6 +7,7 @@ import { client } from '../../providers';
 
 export class CommandUnban extends ChatCommand {
   name = ['unban'];
+  logUses = true;
   help = [
     {
       usage: 'unban <user>',

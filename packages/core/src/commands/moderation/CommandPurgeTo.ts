@@ -1,14 +1,7 @@
 import { Embed, getDateFromSnowflake } from '@gamerbot/util';
-import {
-  ContextMenuInteraction,
-  Message,
-  PermissionString,
-  Snowflake,
-  TextBasedChannels,
-  TextChannel,
-} from 'discord.js';
+import { Message, PermissionString, Snowflake, TextBasedChannels, TextChannel } from 'discord.js';
 import { ChatCommand, CommandDocs, CommandOptions, MessageCommand } from '..';
-import { APIMessage, CommandEvent } from '../../models/CommandEvent';
+import { APIMessage, CommandEvent, ContextMenuCommandEvent } from '../../models/CommandEvent';
 
 const purgeTo = async (
   messageId: Snowflake,
@@ -45,6 +38,7 @@ const purgeTo = async (
 
 export class CommandPurgeTo extends ChatCommand {
   name = ['purgeto'];
+  logUses = true;
   help: CommandDocs = [
     {
       usage: 'purgeto <id>',
@@ -54,11 +48,11 @@ export class CommandPurgeTo extends ChatCommand {
   userPermissions: PermissionString[] = ['MANAGE_MESSAGES'];
   botPermissions: PermissionString[] = ['MANAGE_MESSAGES'];
   data: CommandOptions = {
-    description: 'Purge all messages after a given message',
+    description: 'Purge a message and all messages after',
     options: [
       {
         name: 'message-id',
-        description: 'Message to delete after (this message is also deleted)',
+        description: 'Start of range to delete, inclusive',
         type: 'STRING',
         required: true,
       },
@@ -73,7 +67,7 @@ export class CommandPurgeTo extends ChatCommand {
       return event.reply(
         Embed.error(
           'No start message to delete from',
-          `Either supply the message id (\`${event.guildConfig.prefix}purgeto 123456789012345678\`) or reply to the message while sending the command`
+          `Either supply the message id (\`/purgeto 123456789012345678\`) or reply to the message while sending the command`
         )
       );
 
@@ -92,20 +86,22 @@ export class CommandPurgeTo extends ChatCommand {
 
 export class MessageCommandPurgeTo extends MessageCommand {
   name = 'Purge to Here';
-
-  async execute(int: ContextMenuInteraction): Promise<void | APIMessage | Message> {
-    if (int.targetType !== 'MESSAGE') return;
+  logUses = true;
+  userPermissions: PermissionString[] = ['MANAGE_MESSAGES'];
+  botPermissions: PermissionString[] = ['MANAGE_MESSAGES'];
+  async execute(event: ContextMenuCommandEvent): Promise<void | APIMessage | Message> {
+    if (event.targetType !== 'MESSAGE') return;
 
     try {
-      await int.deferReply({ ephemeral: true });
-      const [deleted, message] = await purgeTo(int.targetId, int.channel!);
+      await event.deferReply({ ephemeral: true });
+      const [deleted, message] = await purgeTo(event.targetId, event.channel!);
 
-      int.editReply({
+      event.editReply({
         embeds: [Embed.success(`Purged ${deleted.toLocaleString()} messages`, message)],
       });
     } catch (err) {
       if (err.message.startsWith('% '))
-        return int.editReply({ embeds: [Embed.error(err.message.slice(2))] });
+        return event.editReply({ embeds: [Embed.error(err.message.slice(2))] });
       else throw err;
     }
   }

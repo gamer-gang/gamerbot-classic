@@ -1,7 +1,7 @@
 import { Embed, getProfileImageUrl } from '@gamerbot/util';
-import { ContextMenuInteraction, Message, Snowflake, User } from 'discord.js';
+import { Message, Snowflake, User } from 'discord.js';
 import { ChatCommand, CommandDocs, CommandOptions, UserCommand } from '..';
-import { APIMessage, CommandEvent } from '../../models/CommandEvent';
+import { APIMessage, CommandEvent, ContextMenuCommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 
 export class CommandAvatar extends ChatCommand {
@@ -58,7 +58,7 @@ export class CommandAvatar extends ChatCommand {
 
 export class UserCommandAvatar extends UserCommand {
   name = 'Avatar';
-  async execute(interaction: ContextMenuInteraction): Promise<void | Message | APIMessage> {
+  async execute(interaction: ContextMenuCommandEvent): Promise<void | Message | APIMessage> {
     if (interaction.targetType !== 'USER') return;
 
     const user = client.users.resolve(interaction.targetId);

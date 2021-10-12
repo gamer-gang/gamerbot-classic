@@ -93,9 +93,9 @@ export class Gamerbot extends Client {
     this.initCommands();
     this.initSpotify();
 
-    if (!process.env.HYPIXEL_API_KEY) {
-      logger.warn('missing hypixel api key! disabling stats support');
-    }
+    // if (!process.env.HYPIXEL_API_KEY) {
+    //   logger.warn('missing hypixel api key! disabling stats support');
+    // }
 
     this.on('ready', () => {
       if (!process.env.MEDIA_SERVER_ID) {
@@ -112,7 +112,7 @@ export class Gamerbot extends Client {
       });
 
       if (!this.getCustomEmoji('worksonmymachine')) {
-        logger.warn(`media server missing 'worksonmymachine' emoji! disabling $techsupport`);
+        logger.warn(`media server missing 'worksonmymachine' emoji! disabling /techsupport`);
         this.commands.splice(this.commands.findIndex(c => c.name.includes('techsupport')));
       }
 

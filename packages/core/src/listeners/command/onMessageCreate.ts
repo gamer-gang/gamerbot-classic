@@ -41,7 +41,7 @@ export const onMessageCreate = async (msg: DetailedMessage): Promise<void | Mess
   if (new RegExp(`^<@!?${client.user.id}>$`).test(msg.content)) {
     Embed.info(
       `Prefix is set to \`${config.prefix}\`\n` +
-        `See \`${config.prefix}help\` or https://gamerbot-dev.web.app for more information`
+        `See \`/help\` or https://gamerbot-dev.web.app for more information`
     )
       .setDefaultAuthor()
       .reply(msg);

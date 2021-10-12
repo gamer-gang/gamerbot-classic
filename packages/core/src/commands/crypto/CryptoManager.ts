@@ -35,7 +35,7 @@ export class CryptoManager {
     const { data } = await axios.get('/v1/cryptocurrency/listings/latest', {
       baseURL: `https://${client.devMode ? 'sandbox' : 'pro'}-api.coinmarketcap.com`,
       headers: {
-        'X-CMC_PRO_API_KEY': client.devMode ? SANDBOX_API_KEY : process.env.CMC_API_KEY,
+        'X-CMC_PRO_API_KEY': client.devMode ? SANDBOX_API_KEY : process.env.CMC_API_KEY!,
       },
       params: {},
     });
@@ -49,7 +49,7 @@ export class CryptoManager {
     const { data } = await axios.get('/v1/cryptocurrency/info', {
       baseURL: `https://${client.devMode ? 'sandbox' : 'pro'}-api.coinmarketcap.com`,
       headers: {
-        'X-CMC_PRO_API_KEY': client.devMode ? SANDBOX_API_KEY : process.env.CMC_API_KEY,
+        'X-CMC_PRO_API_KEY': client.devMode ? SANDBOX_API_KEY : process.env.CMC_API_KEY!,
       },
       params: {
         symbol: this.symbols.join(','),
@@ -65,7 +65,7 @@ export class CryptoManager {
     const { data } = await axios.get('/v1/cryptocurrency/quotes/latest', {
       baseURL: `https://${client.devMode ? 'sandbox' : 'pro'}-api.coinmarketcap.com`,
       headers: {
-        'X-CMC_PRO_API_KEY': client.devMode ? SANDBOX_API_KEY : process.env.CMC_API_KEY,
+        'X-CMC_PRO_API_KEY': client.devMode ? SANDBOX_API_KEY : process.env.CMC_API_KEY!,
       },
       params: {
         symbol: this.symbols.join(','),

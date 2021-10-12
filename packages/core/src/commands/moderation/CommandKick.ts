@@ -7,6 +7,7 @@ import { client } from '../../providers';
 
 export class CommandKick extends ChatCommand {
   name = ['kick'];
+  logUses = true;
   help: CommandDocs = [
     {
       usage: 'kick <user> <...reason>',

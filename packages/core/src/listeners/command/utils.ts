@@ -2,6 +2,7 @@ import { Embed, listify } from '@gamerbot/util';
 import { TextChannel } from 'discord.js';
 import _ from 'lodash';
 import { getLogger } from 'log4js';
+import { ChatCommand, MessageCommand, UserCommand } from '../../commands';
 import { CommandEvent } from '../../models/CommandEvent';
 import { client } from '../../providers';
 import { getLogHandler, intToLogEvents } from '../log';
@@ -26,8 +27,8 @@ export const verifyPermissions = (event: CommandEvent): boolean => {
     if (missingPermissions.length) {
       event.reply(
         Embed.error(
-          `Missing permissions for ${event.guildConfig.prefix}${event.commandName}`,
-          `${event.guildConfig.prefix}${event.commandName} requires ${listify(
+          `Missing permissions for /${event.commandName}`,
+          `/${event.commandName} requires ${listify(
             command.userPermissions.map(v => `\`${v}\``)
           )}, but you are missing ${listify(missingPermissions.map(v => `\`${v}\``))}`
         )
@@ -42,8 +43,8 @@ export const verifyPermissions = (event: CommandEvent): boolean => {
     if (missingPermissions.length) {
       event.reply(
         Embed.error(
-          `gamerbot missing permissions for ${event.guildConfig.prefix}${event.commandName}`,
-          `${event.guildConfig.prefix}${event.commandName} requires ${listify(
+          `gamerbot missing permissions for /${event.commandName}`,
+          `/${event.commandName} requires ${listify(
             command.botPermissions.map(v => `\`${v}\``)
           )}, but gamerbot does not have access to ${listify(
             missingPermissions.map(v => `\`${v}\``)
@@ -58,14 +59,16 @@ export const verifyPermissions = (event: CommandEvent): boolean => {
 };
 
 export const logCommandEvents = (event: CommandEvent): void => {
-  const { command } = event;
+  const isCommand =
+    event instanceof UserCommand || event instanceof MessageCommand || event instanceof ChatCommand;
+  const command = isCommand ? event : event.command;
 
   const logEvent = `gamerbotCommand${_.capitalize(command.name[0].toLowerCase())}` as LogEventName;
   const handlerName = `on${logEvent[0].toUpperCase()}${logEvent.substr(1)}` as LogEventHandler;
 
   const logHandler = getLogHandler(handlerName);
 
-  const logger = getLogger(`Client!${logEvent}[guild=${event.guild.id}]`);
+  const logger = getLogger(`Client!${logEvent}${isCommand ? '' : `[guild=${event.guild.id}]`}`);
 
   if (!intToLogEvents(event.guildConfig.logSubscribedEvents).includes(logEvent)) {
     logger.debug('guild has not subscribed to the event, aborting');

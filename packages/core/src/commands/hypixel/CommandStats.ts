@@ -2,11 +2,10 @@ import { codeBlock } from '@discordjs/builders';
 import { Embed, insertUuidDashes } from '@gamerbot/util';
 import axios from 'axios';
 import { Image } from 'canvas';
-import { Message, MessageAttachment } from 'discord.js';
+import { Formatters, Message, MessageAttachment } from 'discord.js';
 import { HypixelCacheResponse } from 'hypixel-cache';
 import { Player } from 'hypixel-types';
 import { getLogger } from 'log4js';
-import { DateTime } from 'luxon';
 import { ChatCommand, CommandDocs, CommandOptions } from '..';
 import { HypixelPlayer } from '../../entities/HypixelPlayer';
 import { CommandEvent } from '../../models/CommandEvent';
@@ -125,6 +124,8 @@ export class CommandStats extends ChatCommand {
     let subcommand =
       (event.isInteraction() ? event.options.getSubcommand() : event.argv[0]) ?? 'get';
 
+    // TODO move username management to separate command
+
     if (
       subcommand !== 'find-username' &&
       subcommand !== 'set-username' &&
@@ -198,7 +199,7 @@ export class CommandStats extends ChatCommand {
         return event.reply(
           Embed.info(
             `No username/UUID set for **${displayName}**`,
-            userId === event.user.id ? undefined : 'Set with `$stats --set-user <username|uuid>`'
+            userId === event.user.id ? undefined : 'Set with `/stats set-username <username|uuid>`'
           )
         );
 
@@ -234,7 +235,7 @@ export class CommandStats extends ChatCommand {
         return event.reply(
           Embed.error(
             'Expected a username',
-            `Pro tip: use \`${event.guildConfig.prefix}stats set-username <username|uuid>\` to skip typing your username every time time`
+            `Pro tip: use \`/stats set-username <username|uuid>\` to skip typing your username every time time`
           ).ephemeral()
         );
       input = entity.hypixelUsername;
@@ -246,7 +247,7 @@ export class CommandStats extends ChatCommand {
         return event.reply(
           Embed.error(
             "You don't have a username set!",
-            `set with \`${event.guildConfig.prefix}stats set-username <username|uuid>\``
+            `set with \`/stats set-username <username|uuid>\``
           )
         );
 
@@ -266,7 +267,7 @@ export class CommandStats extends ChatCommand {
     try {
       const type = uuidRegex.test(input) ? 'uuid' : 'name';
       const response = await axios.get(`${process.env.HYPIXEL_CACHE_URL}/${type}/${input}`, {
-        headers: { 'X-Secret': process.env.HYPIXEL_CACHE_SECRET },
+        headers: { 'X-Secret': process.env.HYPIXEL_CACHE_SECRET! },
         validateStatus: () => true,
       });
 
@@ -281,12 +282,12 @@ export class CommandStats extends ChatCommand {
         .padStart(4);
     } catch (err) {
       if (err.message.startsWith('% '))
-        return event.reply(Embed.error(err.message.slice(2)).ephemeral());
+        return void event.editReply(Embed.error(err.message.slice(2)).ephemeral());
       else throw err;
     }
 
     const dataEnd = process.hrtime(dataStart);
-    const dataDuration = Math.round((dataEnd![0] * 1e9 + dataEnd![1]) / 1e6);
+    const dataDuration = Math.round((dataEnd[0] * 1e9 + dataEnd[1]) / 1e6);
 
     const avatarSize = 165;
 
@@ -306,23 +307,22 @@ export class CommandStats extends ChatCommand {
     }
 
     const avEnd = process.hrtime(avStart);
-    const avDuration = Math.round((avEnd![0] * 1e9 + avEnd![1]) / 1e6);
+    const avDuration = Math.round((avEnd[0] * 1e9 + avEnd[1]) / 1e6);
 
     if (gamemode === 'network') {
       const embed = new Embed({ title: player.displayname })
         .addField('UUID', insertUuidDashes(player.uuid))
         .addField(
           'First login',
-          player.firstLogin
-            ? DateTime.fromMillis(player.firstLogin).toLocaleString(DateTime.DATETIME_FULL)
-            : 'Unknown'
+          player.firstLogin ? Formatters.time(new Date(player.firstLogin), 'F') : 'Unknown'
         )
         .addField(
           'Last login',
-          player.lastLogin
-            ? DateTime.fromMillis(player.lastLogin).toLocaleString(DateTime.DATETIME_FULL)
-            : 'Unknown'
+          player.lastLogin ? Formatters.time(new Date(player.lastLogin), 'F') : 'Unknown'
         )
+        // .addField('Time played', player)
+        // TODO add online status and current gamemode
+        .addField('Time played', player.timePlaying?.toString() ?? '')
         .addField('Network level', getNetworkLevel(player.networkExp).toFixed(2));
 
       if (avatar) {

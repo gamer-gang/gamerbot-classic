@@ -104,7 +104,7 @@ export class CommandPlay extends ChatCommand {
         Embed.error(
           'Expected a URL or query',
           event.isMessage() && event.message.attachments.size
-            ? `Tip: use ${event.guildConfig.prefix}playfile or /playfile to play an audio file`
+            ? `Tip: use /playfile to play an audio file`
             : ''
         ).ephemeral()
       );

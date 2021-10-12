@@ -69,9 +69,7 @@ export class CommandCrypto extends ChatCommand {
       return event.reply(
         Embed.error(
           'No symbol provided',
-          `Try ${randomSymbol()}, ${randomSymbol()}, or see \`${
-            event.guildConfig.prefix
-          }crypto list\` for all available currencies`
+          `Try ${randomSymbol()}, ${randomSymbol()}, or see \`/crypto list\` for all available currencies`
         ).ephemeral()
       );
     }
@@ -82,7 +80,7 @@ export class CommandCrypto extends ChatCommand {
       return event.reply(
         Embed.error(
           'Invalid/unavailable symbol',
-          `See \`${event.guildConfig.prefix}crypto list\` for available currencies`
+          `See \`/crypto list\` for available currencies`
         ).ephemeral()
       );
     const quote = data.quote.USD;

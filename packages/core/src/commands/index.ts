@@ -4,7 +4,7 @@ import {
   Message,
   PermissionString,
 } from 'discord.js';
-import { APIMessage, CommandEvent } from '../models/CommandEvent';
+import { APIMessage, CommandEvent, ContextMenuCommandEvent } from '../models/CommandEvent';
 
 export type CommandOptions = Omit<ChatInputApplicationCommandData, 'name'>;
 // export interface Command {
@@ -24,44 +24,41 @@ interface Documentation {
 }
 
 export type Command = ChatCommand | UserCommand | MessageCommand;
-export abstract class ChatCommand {
-  readonly type = 'CHAT_INPUT';
+
+export abstract class BaseCommand {
+  abstract type: string;
   readonly internal: boolean = false;
+  readonly logUses: boolean = false;
+
+  userPermissions?: PermissionString[];
+  botPermissions?: PermissionString[];
+}
+
+export abstract class ChatCommand extends BaseCommand {
+  readonly type = 'CHAT_INPUT';
   abstract name: string[];
 
   abstract help: CommandDocs;
-
   data?: CommandOptions;
-  // yargs?: yargsParser.Options;
-  userPermissions?: PermissionString[];
-  botPermissions?: PermissionString[];
+
   abstract execute(event: CommandEvent): Promise<void | Message | APIMessage>;
 }
 
-export abstract class UserCommand {
+export abstract class UserCommand extends BaseCommand {
   readonly type = 'USER';
-  readonly internal: boolean = false;
-
   abstract name: string;
-
-  userPermissions?: PermissionString[];
-  botPermissions?: PermissionString[];
-
-  abstract execute(interaction: ContextMenuInteraction): Promise<void | Message | APIMessage>;
+  help = null;
+  abstract execute(event: ContextMenuCommandEvent): Promise<void | Message | APIMessage>;
 }
 
-export abstract class MessageCommand {
+export abstract class MessageCommand extends BaseCommand {
   readonly type = 'MESSAGE';
-  readonly internal: boolean = false;
-
   abstract name: string;
+  help = null;
 
-  userPermissions?: PermissionString[];
-  botPermissions?: PermissionString[];
-
-  abstract execute(interaction: ContextMenuInteraction): Promise<void | Message | APIMessage>;
+  abstract execute(event: ContextMenuCommandEvent): Promise<void | Message | APIMessage>;
 }
 
 export abstract class InternalCommand extends ChatCommand {
-  readonly internal: boolean = true;
+  readonly internal = true;
 }

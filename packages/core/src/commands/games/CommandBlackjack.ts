@@ -85,7 +85,7 @@ class Hand {
   }
 }
 
-export class CommandBlackjack extends ChatCommand {
+class CommandBlackjack extends ChatCommand {
   name = ['blackjack', 'bj'];
   help: CommandDocs = [
     {

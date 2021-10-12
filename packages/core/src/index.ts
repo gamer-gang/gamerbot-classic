@@ -1,4 +1,4 @@
-import { findGuild, resolvePath } from '@gamerbot/util';
+import { delay, findGuild, resolvePath } from '@gamerbot/util';
 import { registerFont } from 'canvas';
 import { ClientEvents, Guild, GuildMember, Invite, TextChannel } from 'discord.js';
 import dotenv from 'dotenv';
@@ -70,12 +70,46 @@ const fetchMemberCache = async (): Promise<void> => {
   getLogger('fetchMemberCache').debug(`successfully cached ${members.length} users`);
 };
 
-client.on('ready', () => {
+const fetchInvite = async (guild: Guild) => {
+  try {
+    const invites = (await guild.invites.fetch()).values();
+
+    const trackedInvites: string[] = [];
+
+    for (const invite of invites) {
+      client.inviteCache.set(invite.code, {
+        code: invite.code,
+        creatorId: invite.inviter!.id,
+        creatorTag: invite.inviter!.tag,
+        guildId: guild.id,
+        uses: invite.uses ?? 0,
+      });
+
+      trackedInvites.push(invite.code);
+    }
+
+    getLogger(`fetchInvite[guild=${guild.id}]`).debug('successfully cached invites');
+
+    return;
+  } catch (err) {
+    getLogger(`fetchInvite[guild=${guild.id}]`).error(`error caching invites: ${err.message}`);
+  }
+};
+
+client.on('ready', async () => {
   getLogger('Client!ready').info(`${client.user.tag} ready`);
   setPresence();
   setInterval(setPresence, 1000 * 60 * 10);
   fetchMemberCache();
   setInterval(fetchMemberCache, 1000 * 60 * 60);
+
+  const orm = await getORM();
+
+  const inviteFetchers = [...client.guilds.cache.values()].map((guild, index) =>
+    delay(index * 2500)(undefined).then(() => fetchInvite(guild))
+  );
+
+  Promise.all(inviteFetchers).then(() => orm.em.flush());
 });
 
 const usernameCacheUpdates: { [userId: string]: NodeJS.Timeout } = {};

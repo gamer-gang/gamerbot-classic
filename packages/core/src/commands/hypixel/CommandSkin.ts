@@ -103,7 +103,7 @@ export class CommandSkin extends ChatCommand {
     try {
       const type = uuidRegex.test(providedName) ? 'uuid' : 'name';
       const response = await axios.get(`${process.env.HYPIXEL_CACHE_URL}/${type}/${providedName}`, {
-        headers: { 'X-Secret': process.env.HYPIXEL_CACHE_SECRET },
+        headers: { 'X-Secret': process.env.HYPIXEL_CACHE_SECRET! },
         validateStatus: () => true,
       });
 
