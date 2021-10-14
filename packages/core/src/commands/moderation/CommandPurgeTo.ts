@@ -85,7 +85,7 @@ export class CommandPurgeTo extends ChatCommand {
 }
 
 export class MessageCommandPurgeTo extends MessageCommand {
-  name = 'Purge to Here';
+  name = 'purge to here';
   logUses = true;
   userPermissions: PermissionString[] = ['MANAGE_MESSAGES'];
   botPermissions: PermissionString[] = ['MANAGE_MESSAGES'];
