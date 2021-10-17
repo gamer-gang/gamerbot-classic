@@ -169,6 +169,10 @@ export class Gamerbot extends Client {
       const files = requireContext.keys();
       for (const file of files) {
         logger.debug(`  - discovered file ${file}`);
+        if (file.includes('.disabled')) {
+          logger.debug('    - skipped because disabled');
+          continue;
+        }
         modules[file] = await requireContext(file);
       }
     } else {

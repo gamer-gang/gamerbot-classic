@@ -96,7 +96,7 @@
     "@types/yt-search": "^2.3.2",
     "fork-ts-checker-webpack-plugin": "^6.3.3",
     "hypixel-cache": "https://github.com/wiisportsresort/hypixel-cache.git#commit=9bf9f8d5fd1a67845751d2d5d585dc607dfb97c2",
-    "hypixel-types": "https://github.com/wiisportsresort/hypixel-types.git#commit=cddb69ce1166744a72be48f56f03feb526bb852c",
+    "hypixel-types": "https://github.com/wiisportsresort/hypixel-types.git#commit=839190e9cbffeb7bb846fd5e414f36a1554ead4c",
     "mathjs": "^9.5.0",
     "nodemon": "^2.0.13",
     "nodemon-webpack-plugin": "^4.5.2",

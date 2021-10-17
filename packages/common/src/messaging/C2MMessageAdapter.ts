@@ -11,6 +11,7 @@ export class C2MMessageAdapter extends EventEmitter {
     super();
   }
   async connect(): Promise<void> {
+    return;
     assertAmqp();
     this.channel = await (await amqp).createChannel();
     await this.channel.assertQueue(c2m);
@@ -19,6 +20,7 @@ export class C2MMessageAdapter extends EventEmitter {
   }
 
   #listen(): void {
+    return;
     this.channel.consume(m2c, msg => {
       if (!msg) return;
 
@@ -31,6 +33,7 @@ export class C2MMessageAdapter extends EventEmitter {
 
   send<E extends keyof C2MEvents>(command: E, ...args: C2MEvents[E]): bigint;
   send(command: string, ...args: string[]): bigint {
+    return 0n;
     const [id, buffer] = makeMessage(command, this.guildId, ...args);
     this.txLogger.trace(
       `c2m ${id} ${this.guildId} ${command} ${args.join(' ')} [${buffer.length}]`

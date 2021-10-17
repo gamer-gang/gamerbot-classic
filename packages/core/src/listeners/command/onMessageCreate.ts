@@ -10,6 +10,30 @@ import { client, directORM, getORM } from '../../providers';
 import * as eggs from '../eggs';
 import { logCommandEvents, verifyPermissions } from './utils';
 
+const disabled = [
+  'back',
+  'previous',
+  'prev',
+  'clear',
+  'loop',
+  'move',
+  'mv',
+  'nowplaying',
+  'np',
+  'pause',
+  'play',
+  'p',
+  'queue',
+  'q',
+  'resume',
+  'shuffle',
+  'shuf',
+  'skip',
+  'next',
+  'stop',
+  'trackinfo',
+];
+
 export const onMessageCreate = async (msg: DetailedMessage): Promise<void | Message> => {
   const start = process.hrtime();
 
@@ -61,7 +85,11 @@ export const onMessageCreate = async (msg: DetailedMessage): Promise<void | Mess
     { config, startTime: start, em: directORM().em.fork() }
   );
 
-  if (event.isMessage() && !event.valid) return;
+  if (event.isMessage() && !event.valid) {
+    if (disabled.includes(event.commandName.toLowerCase()))
+      event.reply(Embed.error('Music commands have been tempoarily disabled'));
+    return;
+  }
 
   if (event.command.internal) {
     const admins = (process.env.BOT_ADMINISTRATORS ?? '').replace(/\s/g, '').split(',');
