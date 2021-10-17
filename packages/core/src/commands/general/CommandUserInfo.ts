@@ -80,7 +80,7 @@ export class CommandUserInfo extends ChatCommand {
 }
 
 export class UserCommandUserInfo extends UserCommand {
-  name = 'User info';
+  name = 'User Info';
   async execute(interaction: ContextMenuCommandEvent): Promise<void | Message> {
     if (interaction.targetType !== 'USER') return;
 

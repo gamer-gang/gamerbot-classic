@@ -195,7 +195,7 @@ class MessageCommandEvent extends BaseCommandEvent {
 }
 
 abstract class BaseInteractionCommandEvent extends BaseCommandEvent {
-  type = 'interaction' as const;
+  command: ChatCommand | MessageCommand | UserCommand;
 
   constructor(
     public interaction: CommandInteraction | ContextMenuInteraction,
@@ -215,10 +215,6 @@ abstract class BaseInteractionCommandEvent extends BaseCommandEvent {
 
     if (!command) throw new Error('Could not find command class for interaction');
 
-    // cannot happen
-    if (command.type !== 'CHAT_INPUT' && command.type !== 'MESSAGE') throw new Error();
-
-    // @ts-ignore expected behavior
     this.command = command;
   }
 
@@ -275,40 +271,19 @@ abstract class BaseInteractionCommandEvent extends BaseCommandEvent {
 class InteractionCommandEvent extends BaseInteractionCommandEvent {
   type = 'interaction' as const;
 
-  command: ChatCommand;
+  command!: ChatCommand;
 
-  constructor(
-    public interaction: CommandInteraction | ContextMenuInteraction,
-    details: InitiatorDetails
-  ) {
+  constructor(public interaction: CommandInteraction, details: InitiatorDetails) {
     super(interaction, details);
-
-    if (!this.interaction.guild) throw new Error('Interaction must have guild property');
-    if (!this.interaction.channel || this.interaction.channel.type === 'DM')
-      throw new Error('Interaction in a non-text or DM channel');
-
-    const command = client.commands.find(command =>
-      (Array.isArray(command.name) ? command.name : [command.name]).some(
-        c => c.toLowerCase() === interaction.commandName.toLowerCase()
-      )
-    );
-
-    if (!command) throw new Error('Could not find command class for interaction');
-
-    // cannot happen
-    if (command.type !== 'CHAT_INPUT' && command.type !== 'MESSAGE') throw new Error();
-
-    // @ts-ignore expected behavior
-    this.command = command;
   }
 }
 
 export class ContextMenuCommandEvent extends BaseInteractionCommandEvent {
-  // @ts-ignore expected behavior
-  command!: UserCommand | MessageCommand;
-  interaction!: ContextMenuInteraction;
+  type = 'context-menu' as const;
 
-  constructor(interaction: ContextMenuInteraction, details: InitiatorDetails) {
+  command!: UserCommand | MessageCommand;
+
+  constructor(public interaction: ContextMenuInteraction, details: InitiatorDetails) {
     super(interaction, details);
   }
 
