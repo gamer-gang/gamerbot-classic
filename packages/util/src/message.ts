@@ -62,7 +62,7 @@ export const parseDiscohookJSON = (json: string): MessageOptions => {
 };
 
 export const getProfilePicture = (client: Gamerbot): FileOptions => {
-  const dec = DateTime.now().month === 11;
+  const dec = DateTime.now().month === 12;
 
   const path = client.devMode
     ? resolvePath('assets/hexagon-dev.png')
