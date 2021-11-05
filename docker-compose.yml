@@ -43,7 +43,7 @@ services:
     env_file: .env
     environment:
       - POSTGRES_HOST=db
-      - CRAFATAR_URL=http://crafatar:3000
+      - CRAFATAR_URL=https://crafatar.com/
       - AMQP_URL=amqp://rabbitmq
   # music:
   #   build:
