@@ -98,6 +98,11 @@ export class CommandStats extends ChatCommand {
             description: 'Minecraft username of player (leave blank or enter `-` for your own',
             type: 'STRING',
           },
+          {
+            name: 'debug',
+            description: 'Show debug info',
+            type: 'BOOLEAN',
+          },
         ],
       },
     ],
@@ -117,7 +122,7 @@ export class CommandStats extends ChatCommand {
   // };
 
   async execute(event: CommandEvent): Promise<void | Message> {
-    const debug = client.devMode; // !!args.debug;
+    const debug = client.devMode || (event.isInteraction() && event.options.getBoolean('debug'));
 
     const timeStart = process.hrtime();
 
