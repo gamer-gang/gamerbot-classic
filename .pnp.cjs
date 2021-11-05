@@ -368,7 +368,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
             ["googleapis", "npm:88.2.0"],
             ["he", "npm:1.2.0"],
             ["hypixel-cache", "https://github.com/wiisportsresort/hypixel-cache.git#commit=9bf9f8d5fd1a67845751d2d5d585dc607dfb97c2"],
-            ["hypixel-types", "https://github.com/wiisportsresort/hypixel-types.git#commit=cddb69ce1166744a72be48f56f03feb526bb852c"],
+            ["hypixel-types", "https://github.com/wiisportsresort/hypixel-types.git#commit=839190e9cbffeb7bb846fd5e414f36a1554ead4c"],
             ["js-yaml", "npm:4.1.0"],
             ["libsodium-wrappers", "npm:0.7.9"],
             ["lodash", "npm:4.17.21"],
@@ -6833,10 +6833,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]
       ]],
       ["hypixel-types", [
-        ["https://github.com/wiisportsresort/hypixel-types.git#commit=cddb69ce1166744a72be48f56f03feb526bb852c", {
-          "packageLocation": "./.yarn/cache/hypixel-types-https-4d1e5048a7-1575c8c1bc.zip/node_modules/hypixel-types/",
+        ["https://github.com/wiisportsresort/hypixel-types.git#commit=839190e9cbffeb7bb846fd5e414f36a1554ead4c", {
+          "packageLocation": "./.yarn/cache/hypixel-types-https-1343c7927e-02bae3c37c.zip/node_modules/hypixel-types/",
           "packageDependencies": [
-            ["hypixel-types", "https://github.com/wiisportsresort/hypixel-types.git#commit=cddb69ce1166744a72be48f56f03feb526bb852c"]
+            ["hypixel-types", "https://github.com/wiisportsresort/hypixel-types.git#commit=839190e9cbffeb7bb846fd5e414f36a1554ead4c"]
           ],
           "linkType": "HARD",
         }]

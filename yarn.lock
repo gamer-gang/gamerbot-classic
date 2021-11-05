@@ -272,7 +272,7 @@ __metadata:
     googleapis: ^88.2.0
     he: ^1.2.0
     hypixel-cache: "https://github.com/wiisportsresort/hypixel-cache.git#commit=9bf9f8d5fd1a67845751d2d5d585dc607dfb97c2"
-    hypixel-types: "https://github.com/wiisportsresort/hypixel-types.git#commit=cddb69ce1166744a72be48f56f03feb526bb852c"
+    hypixel-types: "https://github.com/wiisportsresort/hypixel-types.git#commit=839190e9cbffeb7bb846fd5e414f36a1554ead4c"
     js-yaml: ^4.1.0
     libsodium-wrappers: ^0.7.9
     lodash: ^4.17.21
@@ -4910,10 +4910,10 @@ fsevents@~2.3.2:
   languageName: node
   linkType: hard
 
-"hypixel-types@https://github.com/wiisportsresort/hypixel-types.git#commit=cddb69ce1166744a72be48f56f03feb526bb852c":
+"hypixel-types@https://github.com/wiisportsresort/hypixel-types.git#commit=839190e9cbffeb7bb846fd5e414f36a1554ead4c":
   version: 0.1.0
-  resolution: "hypixel-types@https://github.com/wiisportsresort/hypixel-types.git#commit=cddb69ce1166744a72be48f56f03feb526bb852c"
-  checksum: 1575c8c1bcac73f7e1b090e5d262b1996edf6360f0a40d1de68654379c2be99904792c9aadc15fa32748f3dfb37db5a533c26a3d09a39711fc0bf5ca8c79d342
+  resolution: "hypixel-types@https://github.com/wiisportsresort/hypixel-types.git#commit=839190e9cbffeb7bb846fd5e414f36a1554ead4c"
+  checksum: 02bae3c37c99ed87b17ea038311400ba3e27e8713341f43234db4cbaaa0bbd7f0d59cd9ed69e4eb2e34e24705b91befa72c726410d359b1ae6aaeacee9dc0cb8
   languageName: node
   linkType: hard
 
