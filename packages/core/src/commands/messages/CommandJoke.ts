@@ -37,6 +37,10 @@ export class CommandJoke extends ChatCommand {
             name: 'dark',
             value: 'dark',
           },
+          {
+            name: 'funny',
+            value: 'funny',
+          },
         ],
       },
     ],
@@ -63,11 +67,15 @@ export class CommandJoke extends ChatCommand {
     return response.data;
   }
 
+  async getFunnyJoke(dark = false): Promise<string> {
+    return 'Man turns himself into a pickle, funniest thing ive ever seen';
+  }
+
   async execute(event: CommandEvent): Promise<void | Message> {
     const type = ((event.isInteraction() ? event.options.getString('type') : event.argv[0]) ??
-      'normal') as 'normal' | 'programming' | 'dark';
+      'normal') as 'normal' | 'programming' | 'dark' | 'funny';
 
-    if (!['normal', 'programming', 'dark'].includes(type))
+    if (!['normal', 'programming', 'dark', 'funny'].includes(type))
       return event.reply(
         Embed.error('Invalid type', 'Valid types: normal, programming, dark').ephemeral()
       );
@@ -80,6 +88,8 @@ export class CommandJoke extends ChatCommand {
           ? this.getGenericJoke(true)
           : type === 'programming'
           ? this.getProgrammingJoke(false)
+          : type === 'funny'
+          ? this.getFunnyJoke(false)
           : this.getGenericJoke(false);
 
       event.editReply(await joke);
