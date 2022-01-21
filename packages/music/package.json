@@ -24,7 +24,7 @@
     "js-yaml": "^4.1.0",
     "libsodium-wrappers": "^0.7.9",
     "lodash": "^4.17.21",
-    "log4js": "^6.3.0",
+    "log4js": "^6.4.0",
     "luxon": "^2.0.2",
     "mime-types": "^2.1.33",
     "miniget": "^4.2.1",
