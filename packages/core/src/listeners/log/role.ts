@@ -92,7 +92,9 @@ export const roleHandlers: LogHandlers = {
     let permissionCheckNeeded = false;
 
     if (
+      // @ts-ignore yup
       auditEvent.action === 'ROLE_UPDATE' &&
+      // @ts-ignore yup
       auditEvent.targetType === 'ROLE' &&
       (auditEvent.target as Role).id === next.id &&
       auditEvent.changes?.length
@@ -129,8 +131,8 @@ export const roleHandlers: LogHandlers = {
     }
 
     if (permissionCheckNeeded) {
-      const prevPerms = prev.permissions.toArray(true);
-      const nextPerms = next.permissions.toArray(true);
+      const prevPerms = prev.permissions.toArray();
+      const nextPerms = next.permissions.toArray();
 
       const added = nextPerms.filter(permission => !prevPerms.includes(permission));
       const removed = prevPerms.filter(permission => !nextPerms.includes(permission));

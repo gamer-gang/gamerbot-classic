@@ -6,7 +6,7 @@
   "repository": {
     "url": "https://github.com/gamer-gang/gamerbot.git"
   },
-  "packageManager": "yarn@3.0.1",
+  "packageManager": "yarn@3.2.4",
   "description": "ae",
   "private": true,
   "workspaces": {
@@ -22,33 +22,31 @@
     "_oldwatch": "concurrently -c 'red,blue,magenta,green' npm:w:common npm:w:core npm:w:music npm:w:util",
     "watch": "yarn workspaces foreach -piv -j 99 --no-private run watch",
     "dev": "docker-compose -f docker-compose.yml -f docker-compose.dev.yml up",
-    "build": "docker build . -f Dockerfile.build --tag gamerbot_build:latest"
+    "build": "docker build . --tag gamerbot_build:latest"
   },
   "engines": {
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@discordjs/opus": "^0.6.0",
-    "@mikro-orm/cli": "^4.5.9",
-    "@mikro-orm/core": "^4.5.9",
-    "@mikro-orm/migrations": "^4.5.9",
-    "@mikro-orm/postgresql": "^4.5.9",
+    "@mikro-orm/cli": "^4.5.10",
+    "@mikro-orm/core": "^4.5.10",
+    "@mikro-orm/migrations": "^4.5.10",
+    "@mikro-orm/postgresql": "^4.5.10",
     "@mikro-orm/sql-highlighter": "^1.0.1",
-    "@typescript-eslint/eslint-plugin": "^4.33.0",
-    "@typescript-eslint/parser": "^4.33.0",
-    "bufferutil": "^4.0.4",
-    "eslint": "^7.32.0",
-    "libsodium-wrappers": "^0.7.9",
-    "utf-8-validate": "^5.0.6",
-    "zlib-sync": "^0.1.7"
+    "@typescript-eslint/eslint-plugin": "^5.42.1",
+    "@typescript-eslint/parser": "^5.42.1",
+    "bufferutil": "^4.0.7",
+    "eslint": "^8.27.0",
+    "libsodium-wrappers": "^0.7.10",
+    "utf-8-validate": "^5.0.10"
   },
   "devDependencies": {
-    "@types/eslint": "^7.28.1",
-    "@types/libsodium-wrappers": "^0.7.9",
-    "@types/node": "^16.10.3",
-    "concurrently": "^6.3.0",
-    "node-gyp": "^8.2.0",
-    "prettier": "^2.4.1",
-    "typescript": "4.4.3"
+    "@types/eslint": "^8.4.10",
+    "@types/libsodium-wrappers": "^0.7.10",
+    "@types/node": "^18.11.9",
+    "concurrently": "^7.5.0",
+    "node-gyp": "^9.3.0",
+    "prettier": "^2.7.1",
+    "typescript": "4.8.4"
   }
 }

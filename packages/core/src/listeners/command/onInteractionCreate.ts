@@ -4,6 +4,7 @@ import { CommandInteraction, ContextMenuInteraction, Interaction, Message } from
 import { getLogger } from 'log4js';
 import { ongoingTriviaQuestions } from '../../commands/games/CommandTrivia';
 import { Config } from '../../entities/Config';
+import { sendMigrationMessage } from '../../gamerbot';
 import { BaseCommandEvent, NormalTextChannel } from '../../models/CommandEvent';
 import { Queue } from '../../models/Queue';
 import { client, directORM, getORM } from '../../providers';
@@ -106,6 +107,7 @@ export const onInteractionCreate = async (interaction: Interaction): Promise<voi
   if (!verifyPermissions(event)) return;
 
   try {
+    sendMigrationMessage(event.channel);
     await event.command.execute(event);
   } catch (err) {
     logger.error(err);

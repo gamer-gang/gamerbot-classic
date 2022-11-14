@@ -51,7 +51,7 @@ export class CommandSkin extends ChatCommand {
     const timeStart = process.hrtime();
 
     let providedName = event.isInteraction()
-      ? event.interaction.options.getString('username')?.trim()
+      ? event.options.getString('username')?.trim()
       : event.argv[0]?.trim();
 
     if (!providedName) {
@@ -112,7 +112,7 @@ export class CommandSkin extends ChatCommand {
       if (response.status === 429) throw new Error('% Ratelimited, try again later');
       if (!data.success) throw new Error('% ' + data.error);
 
-      ({ player } = data);
+      ({ player } = data as { player: Player });
     } catch (err) {
       if (err.message.startsWith('% '))
         return event.editReply(Embed.error(err.message.slice(2)).ephemeral());

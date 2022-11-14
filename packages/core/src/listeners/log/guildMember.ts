@@ -1,4 +1,4 @@
-import { Embed, getDateStringFromSnowflake, resolvePath } from '@gamerbot/util';
+import { Embed, getDateStringFromSnowflake } from '@gamerbot/util';
 import {
   Guild,
   GuildMember,
@@ -8,31 +8,20 @@ import {
   TextChannel,
   User,
 } from 'discord.js';
-import fse from 'fs-extra';
 import { DateTime } from 'luxon';
 import { CachedInvite } from '../../gamerbot';
 import { client } from '../../providers';
 import { formatValue, getLatestAuditEvent, logColorFor } from './utils';
 import { LogHandlers } from './_constants';
 
-fse.ensureFileSync(resolvePath('data/kicks.txt'));
-
-const kicks = new Set<string>(
-  fse
-    .readFileSync(resolvePath('data/kicks.txt'), 'utf-8')
-    .toString()
-    .split('\n')
-    .map(line => line.trim())
-    // ignore lines with not IDs
-    .filter(id => /^\d{18}$/.test(id))
-);
+const kicks = new Set<string>();
 
 const saveKick = (id: string) => {
   kicks.add(id);
-  return fse.writeFile(
-    resolvePath('data/kicks.txt'),
-    'List of recorded kicks. Edits are not saved.\n\n' + Array.from(kicks.values()).join('\n')
-  );
+  // return fse.writeFile(
+  //   resolvePath('data/kicks.txt'),
+  //   'List of recorded kicks. Edits are not saved.\n\n' + Array.from(kicks.values()).join('\n')
+  // );
 };
 
 const changeTable = {
@@ -102,7 +91,9 @@ export const guildMemberHandlers: LogHandlers = {
       .setTimestamp();
 
     if (
+      // @ts-ignore yup
       auditEvent.action === 'MEMBER_KICK' &&
+      // @ts-ignore yup
       auditEvent.targetType === 'USER' &&
       (auditEvent.target as User).id === member.id
     ) {
@@ -159,6 +150,7 @@ export const guildMemberHandlers: LogHandlers = {
         add('nickname', prev.nickname, next.nickname);
 
         if (
+          // @ts-ignore yup
           auditEvent.action === 'MEMBER_UPDATE' &&
           auditEvent.changes?.some(
             change =>
@@ -169,7 +161,9 @@ export const guildMemberHandlers: LogHandlers = {
       }
 
       if (
+        // @ts-ignore yup
         auditEvent.action === 'MEMBER_ROLE_UPDATE' &&
+        // @ts-ignore yup
         auditEvent.targetType === 'USER' &&
         (auditEvent.target as User).id === next.user.id
       ) {

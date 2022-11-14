@@ -1,5 +1,6 @@
 import { canvasStyle } from '@gamerbot/common';
 import { Color } from '@gamerbot/util';
+import { CanvasRenderingContext2D } from 'canvas';
 import _ from 'lodash';
 
 export const colors = {

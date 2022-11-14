@@ -281,8 +281,8 @@ export class CommandStats extends ChatCommand {
       if (response.status === 429) throw new Error('% Ratelimited, try again later');
       if (!data.success) throw new Error('% ' + data.error);
 
-      ({ player, cached } = data);
-      responseTime = Math.round(parseFloat(response.headers['x-response-time'].replace(/ms/g, '')))
+      ({ player, cached } = data as { player: Player; cached: boolean });
+      responseTime = Math.round(parseFloat(response.headers['x-response-time']?.replace(/ms/g, '') ?? '0'))
         .toString()
         .padStart(4);
     } catch (err) {

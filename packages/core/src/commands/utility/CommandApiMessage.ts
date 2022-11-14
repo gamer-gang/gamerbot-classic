@@ -30,7 +30,7 @@ export class CommandApiMessage extends ChatCommand {
     const json = event.isInteraction() ? event.options.getString('json', true) : event.args;
 
     try {
-      event.reply(parseDiscohookJSON(json));
+      event.reply(parseDiscohookJSON(json) as any);
     } catch (err) {
       event.reply(Embed.error(codeBlock(err)).ephemeral());
     }

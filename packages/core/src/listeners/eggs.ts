@@ -7,7 +7,7 @@ import _ from 'lodash';
 import { setPresence } from '..';
 import { Config } from '../entities/Config';
 import { EggLeaderboard } from '../entities/EggLeaderboard';
-import { Gamerbot } from '../gamerbot';
+import { Gamerbot, sendMigrationMessage } from '../gamerbot';
 import { getORM } from '../providers';
 
 const eggfile = yaml.load(fse.readFileSync(resolvePath('assets/egg.yaml')).toString('utf-8'));
@@ -61,7 +61,7 @@ const getLeaderboardEntry = async (user: User) => {
   return entry;
 };
 
-export const get = async (client: Gamerbot): Promise<BigInt> => {
+export const get = async (client: Gamerbot): Promise<bigint> => {
   return (eggCount ??= await getEggsFromDB());
 };
 
@@ -84,24 +84,8 @@ export const onMessage = async (
 ): Promise<void | Message | MessageReaction> => {
   if (!config || !config.egg) return;
 
-  if (eggy(msg, config.prefix)) {
-    if (msg.author?.tag.endsWith('#0000')) {
-      msg.react('🥚');
-      return;
-    }
-
-    if (cooldowns[msg.author?.id as string]) {
-      const cooldown = cooldowns[msg.author?.id as string];
-      if (!cooldown.expired() && !cooldown.warned) {
-        cooldown.warned = true;
-        return msg.react('❄️');
-      }
-
-      if (!cooldown.expired()) return;
-    }
-
-    cooldowns[msg.author?.id as string] = new EggCooldown(Date.now());
-    grantEgg(msg);
+  if (msg.content === 'egg') {
+    sendMigrationMessage(msg.channel);
     return;
   }
 };

@@ -9,20 +9,20 @@ services:
       - POSTGRES_DB
       - POSTGRES_USER
       - POSTGRES_PASSWORD
-  # redis:
-  #   restart: unless-stopped
-  #   image: redis:6
-  #   volumes:
-  #     - redis-data:/data
-  # crafatar:
-  #   restart: unless-stopped
-  #   image: crafatar/crafatar:latest
-  #   volumes:
-  #     - crafatar-images:/crafatar/images
-  #   depends_on:
-  #     - redis
-  #   environment:
-  #     - REDIS_URL=redis://redis
+  redis:
+    restart: unless-stopped
+    image: redis:6
+    volumes:
+      - redis-data:/data
+  crafatar:
+    restart: unless-stopped
+    image: crafatar/crafatar:latest
+    volumes:
+      - crafatar-images:/crafatar/images
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=redis://redis
   # rabbitmq:
   #   image: rabbitmq:3
   #   volumes:
@@ -32,7 +32,6 @@ services:
     restart: unless-stopped
     build:
       context: .
-      dockerfile: Dockerfile.core
     volumes:
       - core-data:/app/data
       - logs:/app/logs

@@ -11,7 +11,7 @@ services:
   #   ports:
   #     - 127.0.0.1:3000:3000
   core:
-    user: '1000'
+    user: '1000:1001'
     volumes:
       - ./:/app
     ports:

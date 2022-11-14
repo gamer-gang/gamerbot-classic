@@ -86,7 +86,7 @@ const confirmMessage = async (json: string, event: CommandEvent) => {
 
   if (event.isMessage() || event.interaction.replied)
     await event.channel.send(parseDiscohookJSON(replacer(event)(json)));
-  await event.reply(parseDiscohookJSON(replacer(event)(json)));
+  await event.reply(parseDiscohookJSON(replacer(event)(json)) as any);
 
   const row = new MessageActionRow({
     components: [

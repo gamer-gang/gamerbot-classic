@@ -2,7 +2,7 @@
 
 import { canvasStyle as s } from '@gamerbot/common';
 import { Color } from '@gamerbot/util';
-import { NodeCanvasRenderingContext2D } from 'canvas';
+import { CanvasRenderingContext2D } from 'canvas';
 import { Player } from 'hypixel-types';
 import _ from 'lodash';
 import { getRank, rankPrefixes } from './rank';
@@ -160,7 +160,7 @@ export const drawPrestige = (c: CanvasRenderingContext2D, player: Player): numbe
 };
 
 export const drawRank = (
-  c: NodeCanvasRenderingContext2D,
+  c: CanvasRenderingContext2D,
   player: Player,
   x = s.padding,
   y = s.padding + s.headerHeight

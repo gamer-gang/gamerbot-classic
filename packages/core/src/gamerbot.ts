@@ -1,5 +1,14 @@
-import { PresenceManager, resolvePath } from '@gamerbot/util';
-import { Client, ClientOptions, ClientUser, Guild, GuildEmoji, Snowflake } from 'discord.js';
+import { Embed, findGuild, PresenceManager, resolvePath } from '@gamerbot/util';
+import { stripIndent } from 'common-tags';
+import {
+  Client,
+  ClientOptions,
+  ClientUser, Guild,
+  GuildEmoji,
+  Message,
+  Snowflake,
+  TextBasedChannel
+} from 'discord.js';
 import fse from 'fs-extra';
 import { google } from 'googleapis';
 import { getLogger } from 'log4js';
@@ -37,6 +46,40 @@ class NonNullableMap<K, V> extends Map<K, V> {
     return super.get(key) as V;
   }
 }
+
+export const migrationMessageLastSent = new Map<string, number>();
+export const sendMigrationMessage = async (
+  channel: TextBasedChannel
+): Promise<Message | undefined> => {
+  const guild = findGuild(channel);
+
+  if (!guild) return;
+
+  const lastSent = migrationMessageLastSent.get(guild.id);
+  if (lastSent && Date.now() - lastSent < 1000 * 60 * 60 * 24 * 2) return; // send at most once per 2 days
+
+  const embed = new Embed({
+    title: 'gamerbot is moving',
+    description: stripIndent`
+      **gamerbot v2 has been released** and is now available for use in your server!
+
+      Version 1 (this version) will not be receiving any new features or bug fixes, and **service will end on January 1, 2022**.
+
+      **All data (mostly egg data) has already been migrated to v2**, but you will need to re-invite the bot to your server.
+
+      **[Invite v2](https://gamerbot.dev/invite)** · **[v2 Documentation](https://gamerbot.dev/commands)**
+    `,
+  }).setDefaultAuthor();
+
+  const msg = await channel.send({
+    embeds: [embed],
+    files: embed.files,
+  });
+
+  migrationMessageLastSent.set(guild.id, Date.now());
+
+  return msg;
+};
 
 export class Gamerbot extends Client {
   readonly commands: Command[] = [];

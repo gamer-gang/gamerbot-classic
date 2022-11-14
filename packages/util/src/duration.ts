@@ -16,8 +16,7 @@ export function formatDuration(seconds: number): string;
 export function formatDuration(length: Duration | number): string {
   let duration: Duration;
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
+  // @ts-ignore yup
   if (Duration.isDuration(length)) duration = normalizeDuration(length);
   else duration = normalizeDuration(Duration.fromObject({ seconds: length }));
 

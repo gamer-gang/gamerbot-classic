@@ -1,11 +1,11 @@
 import { Embed, getDateFromSnowflake } from '@gamerbot/util';
-import { Message, PermissionString, Snowflake, TextBasedChannels, TextChannel } from 'discord.js';
+import { Message, PermissionString, Snowflake, TextBasedChannel, TextChannel } from 'discord.js';
 import { ChatCommand, CommandDocs, CommandOptions, MessageCommand } from '..';
 import { APIMessage, CommandEvent, ContextMenuCommandEvent } from '../../models/CommandEvent';
 
 const purgeTo = async (
   messageId: Snowflake,
-  channel: TextBasedChannels
+  channel: TextBasedChannel
 ): Promise<[deleted: number, message?: string]> => {
   const messages = await channel.messages.fetch();
 

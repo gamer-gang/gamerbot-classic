@@ -2,6 +2,7 @@ import { Embed, parseQuotes } from '@gamerbot/util';
 import { Connection, IDatabaseDriver, MikroORM } from '@mikro-orm/core';
 import {
   CommandInteraction,
+  CommandInteractionOptionResolver,
   ContextMenuInteraction,
   EmojiIdentifierResolvable,
   Guild,
@@ -162,8 +163,8 @@ class MessageCommandEvent extends BaseCommandEvent {
       if (this.#initialReply) this.#initialReply = await options.edit(this.#initialReply);
       else this.#initialReply = await options.reply(this.message);
     } else {
-      if (this.#initialReply) this.#initialReply = await this.#initialReply.edit(options);
-      else this.#initialReply = await this.message.reply(options);
+      if (this.#initialReply) this.#initialReply = await this.#initialReply.edit(options as any);
+      else this.#initialReply = await this.message.reply(options as any);
     }
 
     return this.#initialReply;
@@ -178,15 +179,15 @@ class MessageCommandEvent extends BaseCommandEvent {
   async reply(options: ReplyOptions): Promise<void> {
     if (!this.message.deleted) {
       if (options instanceof Embed) this.#initialReply = await options.reply(this.message);
-      else this.#initialReply = await this.message.reply(options);
+      else this.#initialReply = await this.message.reply(options as any);
     } else {
       if (options instanceof Embed) this.#initialReply = await options.send(this.message.channel);
-      else this.#initialReply = await this.message.channel.send(options);
+      else this.#initialReply = await this.message.channel.send(options as any);
     }
   }
   async followUp(options: ReplyOptions): ReturnType<CommandInteraction['followUp']> {
     if (!this.#initialReply) throw new Error('No initial reply to follow up on');
-    return this.#initialReply.reply(options);
+    return this.#initialReply.reply(options as any);
   }
 
   react(emoji: EmojiIdentifierResolvable) {
@@ -231,7 +232,7 @@ abstract class BaseInteractionCommandEvent extends BaseCommandEvent {
     return this.interaction.commandName;
   }
   get options() {
-    return this.interaction.options;
+    return this.interaction.options as CommandInteractionOptionResolver;
   }
   get guild() {
     return this.interaction.guild!;
@@ -249,7 +250,7 @@ abstract class BaseInteractionCommandEvent extends BaseCommandEvent {
     return this.interaction.deferReply(options) as Promise<void | Message>;
   }
   editReply(options: ReplyOptions): Promise<Message | APIMessage> {
-    if (options instanceof Embed) return options.edit(this.interaction);
+    if (options instanceof Embed) return options.edit(this.interaction as CommandInteraction);
     else return this.interaction.editReply(options);
   }
   deleteReply() {
@@ -259,11 +260,11 @@ abstract class BaseInteractionCommandEvent extends BaseCommandEvent {
     return this.interaction.fetchReply();
   }
   reply(options: ReplyOptions) {
-    if (options instanceof Embed) return options.reply(this.interaction);
+    if (options instanceof Embed) return options.reply(this.interaction as CommandInteraction);
     else return this.interaction.reply(options);
   }
   followUp(options: ReplyOptions): Promise<Message | APIMessage> {
-    if (options instanceof Embed) return options.followUp(this.interaction);
+    if (options instanceof Embed) return options.followUp(this.interaction as CommandInteraction);
     else return this.interaction.followUp(options);
   }
 }

@@ -36,7 +36,7 @@ export const setPresence = async (): Promise<void> => {
     activities: [
       {
         type: 'PLAYING',
-        name: `with ${num.toLocaleString()} egg${num === 1n ? '' : 's'} | /help`,
+        name: `upgrade to v2! | https://gamerbot.dev/invite`,
       },
     ],
   };

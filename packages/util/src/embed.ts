@@ -110,7 +110,10 @@ export class Embed extends MessageEmbed {
 
   setDefaultAuthor(): this {
     const client = getClient();
-    this.setAuthor('gamerbot', 'attachment://hexagon.png');
+    this.setAuthor({
+      name: 'gamerbot',
+      iconURL: 'attachment://hexagon.png',
+    });
     this.attachFiles(getProfilePicture(client));
     return this;
   }
@@ -156,9 +159,9 @@ export class Embed extends MessageEmbed {
   ): Promise<Message | void> {
     if (message instanceof CommandInteraction)
       return message.reply(
-        _.merge({ embeds: [this], files: this.files, ephemeral: this.#ephemeral }, options)
-      );
-    else return message.reply(_.merge({ embeds: [this], files: this.files }, options));
+        _.merge({ embeds: [this], files: this.files, ephemeral: this.#ephemeral }, options) as any
+      ) as any;
+    else return message.reply(_.merge({ embeds: [this], files: this.files }, options) as any);
   }
 
   edit(
@@ -177,7 +180,7 @@ export class Embed extends MessageEmbed {
       return message.editReply(
         _.merge({ embeds: [this], files: this.files, ephemeral: this.#ephemeral }, options)
       );
-    else return message.reply(_.merge({ embeds: [this], files: this.files }, options));
+    else return message.reply(_.merge({ embeds: [this], files: this.files }, options) as any);
   }
 
   followUp(

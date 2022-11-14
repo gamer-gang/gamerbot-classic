@@ -107,13 +107,13 @@ export const channelHandlers: LogHandlers = {
         );
       });
 
-      if (
-        auditEvent.action === 'CHANNEL_UPDATE' &&
-        (auditEvent.target as GuildChannel).id === next.id &&
-        Math.abs(auditEvent.createdTimestamp - Date.now()) < 1500 && // within 1500ms
-        auditEvent.executor
-      )
-        embed.addField('Updated by', auditEvent.executor.toString());
+      // if (
+      //   auditEvent.action === 'CHANNEL_UPDATE' &&
+      //   (auditEvent.target as GuildChannel).id === next.id &&
+      //   Math.abs(auditEvent.createdTimestamp - Date.now()) < 1500 && // within 1500ms
+      //   auditEvent.executor
+      // )
+      //   embed.addField('Updated by', auditEvent.executor.toString());
 
       embed.send(logChannel);
     },

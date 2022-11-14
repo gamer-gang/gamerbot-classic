@@ -38,7 +38,7 @@ export class CommandPlayFile extends ChatCommand {
 
       collector.on('end', (collected, reason) => {
         if (reason === 'file') {
-          const msg = collected.last()!;
+          const msg = (collected as any).last()!;
           return this.#queue(event, msg);
         } else {
           event.followUp(Embed.error('No response in 5 minutes, cancelling'));
