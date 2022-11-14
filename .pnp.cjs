@@ -6965,10 +6965,10 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
         }]\
       ]],\
       ["loader-utils", [\
-        ["npm:2.0.2", {\
-          "packageLocation": "./.yarn/cache/loader-utils-npm-2.0.2-c693411911-9078d1ed47.zip/node_modules/loader-utils/",\
+        ["npm:2.0.4", {\
+          "packageLocation": "./.yarn/cache/loader-utils-npm-2.0.4-ba3800585b-a5281f5fff.zip/node_modules/loader-utils/",\
           "packageDependencies": [\
-            ["loader-utils", "npm:2.0.2"],\
+            ["loader-utils", "npm:2.0.4"],\
             ["big.js", "npm:5.2.2"],\
             ["emojis-list", "npm:3.0.0"],\
             ["json5", "npm:2.2.0"]\
@@ -7764,7 +7764,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["node-loader", "virtual:790f4aa67817f22d117ea4a7ce2a309e0a65c4feba9ce4eb7b0719bf8ea66ba3ca8f5f2f3233f970c8c56b414f326924a8fbbc9cf2a3829d75f2504f7349a8c2#npm:2.0.0"],\
             ["@types/webpack", null],\
-            ["loader-utils", "npm:2.0.2"],\
+            ["loader-utils", "npm:2.0.4"],\
             ["webpack", "virtual:790f4aa67817f22d117ea4a7ce2a309e0a65c4feba9ce4eb7b0719bf8ea66ba3ca8f5f2f3233f970c8c56b414f326924a8fbbc9cf2a3829d75f2504f7349a8c2#npm:5.75.0"]\
           ],\
           "packagePeers": [\
@@ -7778,7 +7778,7 @@ function $$SETUP_STATE(hydrateRuntimeState, basePath) {
           "packageDependencies": [\
             ["node-loader", "virtual:c069b1b350416b0dfbf081106e108468bf5f02fee08d369db6328109f7d4ad5d0c615f43000b0ebf7f4fbb75c7dbbe7eccf76e40962a3eff3ffcdcedf220eb15#npm:2.0.0"],\
             ["@types/webpack", null],\
-            ["loader-utils", "npm:2.0.2"],\
+            ["loader-utils", "npm:2.0.4"],\
             ["webpack", "virtual:c069b1b350416b0dfbf081106e108468bf5f02fee08d369db6328109f7d4ad5d0c615f43000b0ebf7f4fbb75c7dbbe7eccf76e40962a3eff3ffcdcedf220eb15#npm:5.75.0"]\
           ],\
           "packagePeers": [\
